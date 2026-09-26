@@ -74,7 +74,9 @@ pub fn weather(trace: &mut MemoryTrace, profile: &EntityProfile) -> Option<Drift
     }
     let old_f = trace.fidelity;
     trace.fidelity = target;
-    if !trace.core.is_empty() {
+    // Charged Selfhood keeps its gist; fidelity may still fall.
+    let charged = trace.self_relevance >= 0.80 && trace.valence.abs() >= 0.40;
+    if !trace.core.is_empty() && !charged {
         trace.gist = fade_gist(&trace.gist, &trace.core, trace.fidelity);
     }
     let event = DriftEvent {
@@ -148,8 +150,9 @@ pub fn sculpt(trace: &mut MemoryTrace, profile: &EntityProfile) -> Option<DriftE
         return None;
     }
     let resist = 1.0 - 0.7 * trace.anchor;
+    let charged = trace.self_relevance >= 0.80 && trace.valence.abs() >= 0.40;
     let told = retell(&trace.gist, profile, trace.valence, trace.disgust);
-    let text_changed = told != trace.gist;
+    let text_changed = told != trace.gist && !charged;
     if text_changed {
         trace.gist = told;
         trace.fidelity = (trace.fidelity - 0.03 * resist).max(0.15);

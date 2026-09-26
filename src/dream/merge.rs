@@ -59,10 +59,20 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile, veto: bool) -> u32 
             }
             let other_clone = store.traces.get(other).cloned();
             let Some(src) = other_clone else { continue };
+            let keep_charged = !store.living_axiom_ids_for(&keep).is_empty();
             if let Some(dst) = store.traces.get_mut(&keep) {
-                dst.gist = fuse_gist(&dst.gist, &src.gist);
+                if !keep_charged {
+                    dst.gist = fuse_gist(&dst.gist, &src.gist);
+                }
                 dst.core = fuse_core(&dst.core, &src.core);
-                dst.valence = (dst.valence + src.valence) / 2.0;
+                // Do not average a charged hour toward the sibling's dull valence.
+                dst.valence = if keep_charged {
+                    dst.valence
+                } else if dst.valence.abs() >= src.valence.abs() {
+                    dst.valence
+                } else {
+                    src.valence
+                };
                 dst.disgust = dst.disgust.max(src.disgust);
                 dst.arousal = dst.arousal.max(src.arousal);
                 dst.anchor = dst.anchor.max(src.anchor);

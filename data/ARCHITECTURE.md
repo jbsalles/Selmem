@@ -15,7 +15,7 @@ experience
     → encode/     interpret → paint → split → gate → core
     → lived book + sealed archive
     → recall/     retrieve → reconstruct → judge → pull
-    → dream/      weather → rewrite → merge → ladder → release
+    → dream/      weather → ladder → rewrite → merge → release
     → persist/    one Snapshot, two containers
     → next encode already biased
 ```
@@ -96,7 +96,7 @@ It does not classify the miss.
 
 ## Night
 
-`NIGHT_PASSES = [weather, rewrite, merge, ladder, release]`.
+`NIGHT_PASSES = [weather, ladder, rewrite, merge, release]`.
 `SHALLOW_PASSES = [weather, release]`.
 
 `sleep()` spends a night only as deep as the budget: new Selfhood hours

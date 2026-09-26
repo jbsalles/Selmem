@@ -30,7 +30,10 @@ pub fn run(
                 t.status,
             )
         };
-        if channel.verbatim() || anchor >= 0.88 || status == TraceStatus::Latent {
+        if channel.verbatim() || status == TraceStatus::Latent {
+            continue;
+        }
+        if skip_rewrite(store, &id, anchor, schema.as_deref()) {
             continue;
         }
         let neighbors: Vec<crate::core::model::MemoryTrace> = store
@@ -84,4 +87,28 @@ pub fn run(
         }
     }
     rewritten
+}
+
+fn skip_rewrite(
+    store: &crate::core::store::MemoryStore,
+    id: &str,
+    anchor: f32,
+    schema: Option<&str>,
+) -> bool {
+    if anchor >= 0.80 {
+        return true;
+    }
+    if !store.living_axiom_ids_for(id).is_empty() {
+        return true;
+    }
+    let Some(schema) = schema else {
+        return false;
+    };
+    let charged = store.traces.values().filter(|t| {
+        t.schema.as_deref() == Some(schema)
+            && t.channel == Channel::Selfhood
+            && t.self_relevance >= 0.80
+            && t.valence.abs() >= 0.40
+    }).count();
+    charged >= 2
 }

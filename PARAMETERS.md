@@ -96,7 +96,7 @@ A generated sentence is a **miss** when `judge_against_core` returns a kind the 
 
 Embeddings still rank recall. They do not judge grounding.
 
-The check lives in `recall/judge.rs` (pure). Grip, strikes and the blend live in `recall/pull.rs`. Night uses the same miss test on a rewrite (`dream/rewrite.rs`). Pass order is `weather → rewrite → merge → ladder → release` (`dream/night.rs`, pinned by `tests/dream_order.rs`). A shallow night is `weather → release` only.
+The check lives in `recall/judge.rs` (pure). Grip, strikes and the blend live in `recall/pull.rs`. Night uses the same miss test on a rewrite (`dream/rewrite.rs`). Pass order is `weather → ladder → rewrite → merge → release` (`dream/night.rs`, pinned by `tests/dream_order.rs`). A shallow night is `weather → release` only.
 
 ---
 

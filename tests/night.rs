@@ -33,7 +33,7 @@ fn shallow_passes_are_weather_and_release() {
     assert_eq!(SHALLOW_PASSES, &["weather", "release"]);
     assert_eq!(
         NIGHT_PASSES,
-        &["weather", "rewrite", "merge", "ladder", "release"]
+        &["weather", "ladder", "rewrite", "merge", "release"]
     );
 }
 
@@ -368,4 +368,85 @@ fn axioms_only_mouth_does_not_name_the_scene() {
         reply.contains(&ax),
         "mouth should carry the axiom `{ax}`, got {reply}"
     );
+}
+
+#[test]
+fn merge_keeps_axiom_backed_gist_and_valence() {
+    let mut profile = EntityProfile::tender("Claire");
+    profile.encode_threshold = 0.05;
+    profile.merge_similarity = 0.10;
+    let mut mem = SelectiveMemory::new(profile);
+    mem.cut.merge_support_veto = false;
+    let keep = mem
+        .live_with(charged(
+            "The project was cancelled in front of the team.",
+            "office",
+        ))
+        .trace_id
+        .expect("keep");
+    let _ = mem
+        .live_with(dull(
+            "The project was cancelled in front of the staff.",
+            "office",
+        ))
+        .trace_id;
+    mem.store.add_axiom(selmem::IdentityAxiom {
+        id: "ax_office".into(),
+        statement: "Credit gone in public.".into(),
+        support_trace_ids: vec![keep.clone()],
+        valence: -0.7,
+        strength: 0.4,
+        created_at: 1,
+        superseded_by: None,
+        schema: Some("office".into()),
+        layer: selmem::AxiomLayer::Belief,
+    });
+    let before = mem.store.traces[&keep].gist.clone();
+    let val = mem.store.traces[&keep].valence;
+    let n = selmem::dream::merge::run(&mut mem.store, &mem.profile, false);
+    assert!(n >= 1, "similar office hours should merge");
+    let after = &mem.store.traces[&keep];
+    assert_eq!(after.gist, before, "axiom-backed gist must not fuse");
+    assert!(
+        (after.valence - val).abs() < 1e-5,
+        "axiom-backed valence must not average, got {}",
+        after.valence
+    );
+}
+
+#[test]
+fn rewrite_skips_axiom_backed_hours() {
+    let mut profile = EntityProfile::tender("Claire");
+    profile.encode_threshold = 0.05;
+    let mut mem = SelectiveMemory::new(profile);
+    let keep = mem
+        .live_with(charged(
+            "The project was cancelled in front of the team.",
+            "office",
+        ))
+        .trace_id
+        .expect("keep");
+    let _ = mem.live_with(dull("A later quiet day at the same desk.", "office"));
+    mem.store.add_axiom(selmem::IdentityAxiom {
+        id: "ax_office".into(),
+        statement: "Credit gone in public.".into(),
+        support_trace_ids: vec![keep.clone()],
+        valence: -0.7,
+        strength: 0.4,
+        created_at: 1,
+        superseded_by: None,
+        schema: Some("office".into()),
+        layer: selmem::AxiomLayer::Belief,
+    });
+    let before = mem.store.traces[&keep].gist.clone();
+    let n = selmem::dream::rewrite::run(
+        &mut mem.store,
+        &mem.profile,
+        &selmem::RuleNarrator,
+        &selmem::HashEmbedder,
+        true,
+    );
+    let after = &mem.store.traces[&keep].gist;
+    assert_eq!(after, &before, "rewrite must skip axiom-backed hours");
+    let _ = n;
 }

@@ -9,7 +9,7 @@ use crate::encode::embed::Embedder;
 use crate::recall::narrator::Narrator;
 
 /// Scientific order for a deep night. A swap changes the book; unit tests on traces will not see it.
-pub const NIGHT_PASSES: &[&str] = &["weather", "rewrite", "merge", "ladder", "release"];
+pub const NIGHT_PASSES: &[&str] = &["weather", "ladder", "rewrite", "merge", "release"];
 
 /// Shallow night: weather and release only. No rewrite, merge, or ladder.
 pub const SHALLOW_PASSES: &[&str] = &["weather", "release"];
@@ -115,13 +115,13 @@ pub fn dream_kind(
     singularite::apply_anchors(store);
     let w = weather::run(store, profile);
     let (rewritten, merged, axioms) = if kind == NightKind::Deep {
-        let rewritten = rewrite::run(store, profile, narrator, embedder, cut.ground);
-        let merged = merge::run(store, profile, cut.merge_support_veto);
         let axioms = if cut.ladder {
             ladder::run(store, narrator)
         } else {
             Vec::new()
         };
+        let rewritten = rewrite::run(store, profile, narrator, embedder, cut.ground);
+        let merged = merge::run(store, profile, cut.merge_support_veto);
         (rewritten, merged, axioms)
     } else {
         (0, 0, Vec::new())

@@ -15,7 +15,17 @@ LoCoMo (Maharana et al., ACL 2024). Public file `data/locomo10.json` from [snap-
 - n = **282**.
 - No LLM judge. Metric = evidence-id retrieval: a hit if **any** gold `dia_id` sits in the method’s window.
 - last-k window = last 8 speaker turns of that conversation, in order. last-24 is a note, not a SelMem cell.
-- C2 / static: **not run**. Encoding 5–7k turns through the organ to answer LoCoMo would test a store we refuse to be. Predicted: ≤ last-k, because the gate drops dull turns that still hold `dia_id`s.
+- C2 / static: **not run** on this page. Encoding every *turn* through the gate is the wrong object.
+
+## Horizon (not this window)
+
+One day LoCoMo should return a number that is **not good and not 0.7 %**. Still not a leaderboard row. Still not the persist claim.
+
+The only organ-shaped path: **session → hour**, not turn → hour. ~20 sessions per conversation become Selfhood/World traces; `remember(question)` retrieves a few hours; score = gold `dia_id` in those sessions (same metric as above). Target band to keep in sight: **better than last-8 / last-24, well below full-log 0.996**. Category 1 first. No judge model until that retrieval number exists.
+
+What would make it “too bad” forever: last-k as the method, or a gate that drops early dull sessions that hold the fact. What would make it a different product: stuffing every turn in Log and calling it SelMem.
+
+Do not start this while cut A / night-wash is open.
 
 ## Numbers
 

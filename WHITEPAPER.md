@@ -16,7 +16,7 @@ The verbatim event is kept in a sealed archive for tests and audit. The model ne
 experience → selection → trace → recall → sleep → identity → next encode
 ```
 
-**Claim:** After an hour retained on one side only, two copies of the same model do not stay interchangeable once the following stream is identical. Measured on the book, retrieve, and the mouth.
+**Claim** After an hour retained on one side only, two copies of the same model do not stay interchangeable once the following stream is identical. Measured on the book, retrieve, and the mouth.
 
 That is path dependence. Not intelligence, not creativity, not personality. Same freeze as README and experiments/REPORT.md.
 
@@ -67,7 +67,7 @@ experience
      talk frame holds the current thread (active ≤ 10 min gap, ≤ 2 h; sleep commits it through the gate, then drops it)
               ↓
            sleep
-     deep:    weather → rewrite → merge → ladder → release
+     deep:    weather → ladder → rewrite → merge → release
      shallow: weather → release
      (anchors before weather and after release; budget on new hours / charge)
               ↓
@@ -102,7 +102,7 @@ If the caller sends no affect: lexicon (FR+EN), then identity paint, then `Narra
 
 **Recall.** Small top-k. Mix embedding, lexicon, mood, access count. Each recall can cost fidelity and shift valence (`DriftKind::Reinterpret`). A miss is a kind the core does not authorize (`Elaborate` / `Reframe` / `Contradict` / `Depart`); `ground_min_overlap` is only the identity gate on `Hold`. `hold = narrator_firmness × importance`. Low hold: no ceiling on warp. High hold: after enough misses, blend gist toward a core-facing rewrite (`DriftKind::Ground`). Latent traces are not replayed as scenes.
 
-**Sleep.** Five passes, in this order: weather (decay, unused disgust, status) → rewrite → merge → ladder (motif / belief / trait) → release of spent latent hours. Anchors run before weather and after release. No LLM required. The judge of a night rewrite is the same `DetachKind` check as recall.
+**Sleep.** Five passes, in this order: weather (decay, unused disgust, status) → ladder (motif / belief / trait) → rewrite → merge → release of spent latent hours. Ladder runs before rewrite so a first deep night does not wash T₀ before it can mint. Anchors run before weather and after release. No LLM required. The judge of a night rewrite is the same `DetachKind` check as recall.
 
 **Layout.** Files follow those questions: `encode/` (enter), `recall/judge` + `recall/pull` (tell and license), `dream/*` (weather through time), `persist/snapshot.rs` (one field list, two containers). Map: [ARCHITECTURE.md](ARCHITECTURE.md).
 
