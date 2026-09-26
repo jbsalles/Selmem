@@ -45,7 +45,7 @@ JSON logs book (`fingerprint`, traces), retrieval (`t0_in_book_*`, `t0_rank_*`, 
 ./run.sh run --release --example persist -- --pairs 5 --seed 1 --last-k 8 --out selmem-persist-p1-grok-n5.json
 ```
 
-`benchmark --p0` on v0.1 was not run. Persist + ruminate already isolate the cuts. Official `marker_last` under-counts C2 once sleep has replaced T₀ words with *wound / credit*; read rank + the replies. Tables: [REPORT.md](REPORT.md) §7 (P0), §8 (P1 three-column), §9 (Drop, AMA, Lineage), §10 (hearth P2/P3). Published P1 dump: `experiments/selmem-persist-p1-grok-n5.json`. Drop dump: `selmem-persist-p1-drop-grok.json`. Lineage dump: `experiments/selmem-persist-p1-lineage-grok.json`. Hearth P2: `experiments/selmem-persist-p2-hearth-grok-n5.json`. Do not replay P1 on this binary and call it official (`pending_night`).
+`benchmark --p0` on v0.1 was not run. Persist + ruminate already isolate the cuts. Official `marker_last` under-counts C2 once sleep has replaced T₀ words with *wound / credit*; read rank + the replies. Tables: [REPORT.md](REPORT.md) §7 (P0), §8 (P1 three-column), §9 (Drop, AMA, Lineage), §10 (hearth P2/P3). Published P1 dump: `experiments/selmem-persist-p1-grok-n5.json`. Drop dump: `selmem-persist-p1-drop-grok.json`. Lineage dump: `experiments/selmem-persist-p1-lineage-grok.json`. Hearth P2: `experiments/selmem-persist-p2-hearth-grok-n5.json`. Office persist replay (current night): `experiments/selmem-persist-p1-replay-night-grok-n5.json` ([REPORT.md](REPORT.md) §10.4). Do not call that dump official P1. Ruminate P0 was not replayed.
 
 `data/v01_persist.json` and `data/v01_ruminate.json` must ship with the public tree. A checkout that omits them fails `cargo check --lib` (`include_str!` in `src/benchmark.rs`).
 
