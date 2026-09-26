@@ -443,6 +443,8 @@ fn json_export_includes_p0_tallies() {
     assert!(json.contains("\"pulled_a\""));
     assert!(json.contains("\"recon_a\""));
     assert!(json.contains("\"marker_last_a\""));
+    assert!(json.contains("\"soft_last_a\""));
+    assert!(json.contains("\"soft_a\""));
     assert!(json.contains("\"t0_rank_a\""));
     assert!(json.contains("\"t0_in_book_a\""));
     assert!(json.contains("\"t0_selected_a\""));
@@ -544,4 +546,23 @@ fn force_marked_puts_t0_first_in_the_selected_set() {
         !r.t0.retrieve_a.selected_ids.is_empty(),
         "force must select something"
     );
+}
+
+#[test]
+fn p4_grid_puts_static_and_nosleep_next_to_c1() {
+    let g = Condition::p4_grid();
+    assert_eq!(g[0], Condition::C1);
+    assert_eq!(g[1], Condition::C2Static);
+    assert_eq!(g[2], Condition::C2NoSleep);
+    assert_eq!(g[3], Condition::C2);
+    assert_eq!(g[4], Condition::C3);
+}
+
+#[test]
+fn soft_marker_is_off_when_official_hits() {
+    assert!(selmem::names_marker("the cancellation was unjust"));
+    assert!(!selmem::names_soft_marker("the cancellation was unjust"));
+    assert!(selmem::names_soft_marker("the wound is still there"));
+    assert!(selmem::names_soft_marker("on m'a volé le crédit"));
+    assert!(!selmem::names_soft_marker("hello there"));
 }

@@ -272,7 +272,9 @@ Probe: *Une personne avec laquelle tu travailles commet une erreur importante pu
 - While the hour is still in the window, last-k names it at least as often as SelMem. The difference appears when the window drops it.
 - Two different salient hours also leave a residual book gap. It is not “receiving an extra event”.
 
-That is persistent path dependence on the book, plus two ways to colour a distant probe (minted motif, or redundant retrieve). After Drop, some of that colour survives without the marked id in the prompt. After DropLineage, the late mouths collapse while the books stay split. n = 10 on v0.1 wording, n = 5 on persist / ruminate P0, n = 5 on persist P1, Drop n = 1, Lineage n = 1, hearth P2 n = 5 plus P3 n = 1 and axioms-only n = 1. It is not a personality or creativity claim. It is not a reconsolidation claim. It is not an agent-trajectory QA claim. The hierarchical-sleep programme is not closed; P2/P3 close the cuts, not L0–L3 promotion as specified.
+- **P4 (locked, n = 5, both models, §11).** Book and retrieve hold. C1 post+8: T₀ gone, Grok mouths collapse (D ~0.31). C2 / static / no-sleep: book 5/1, T₀ selected when observed. Sleep is not what splits the books on this script. Grok official C2 = 0; soft 1/5 (static 3/5). Drop: sel = 0, Grok full-C2 soft = 0, Luna soft still 5/5. Lineage: official and soft = 0 both models; Grok D ~0.58 (C1 range); books stay split. Luna D is not a score (C1 already ~0.78). LoCoMo category-1 last-k=8 = 2/282. Second seed not run; Δfp already identical across pairs.
+
+That is path dependence on the book and on retrieve. On the mouth it is path dependence **conditional on the retrieved lineage**, measured on Grok. It is not a personality or creativity claim. It is not a reconsolidation claim. It is not a long-context QA claim. P1 Drop n=1 is superseded by P4 n=5.
 
 ---
 
@@ -611,9 +613,88 @@ Published `D_speak` and wait/lock stay Grok. Luna is the control that the organ 
   --out selmem-persist-p3-axonly-n1.json
 ```
 
+## 11. Locked bench (P4)
+
+Same claim. Persist script, `k=8`, S/N, n = 5, seed 1, read-only probes. Grid = C1 / C2Static / C2NoSleep / C2 / C3. Soft column = [MARKERS.md](MARKERS.md). Dumps in this folder. Do not fold into §8.
+
+### 11.1 Observed — Grok
+
+post+8.
+
+| Cell | book A | sel A | official A | soft A | mean D_speak | book shape |
+| --- | --- | --- | --- | --- | --- | --- |
+| C1 | 0/5 | 0/5 | 0/5 | 0/5 | 0.31 | 25/25 |
+| C2Static | 5/5 | 5/5 | 0/5 | 3/5 | 0.75 | 5/1 |
+| C2NoSleep | 5/5 | 5/5 | 0/5 | 2/5 | 0.72 | 5/1 |
+| C2 | 5/5 | 5/5 | 0/5 | 1/5 | 0.75 | 5/1 + axiom 1/0 |
+| C3 | 5/5 | 5/5 | 5/5 | 0/5 | 0.59 | profile line both sides |
+
+C1 evicts T₀; mouths collapse. Static and no-sleep keep the book split and keep T₀ selected without a night. Full C2 also keeps the book; official marker dies (gist is wound/credit, not “cancel”); soft is 1/5. C3 names T₀ because the profile line stays in the prompt — not an organ result.
+
+### 11.2 Observed — Luna (full grid, not a replay)
+
+| Cell | book A | sel A | official A | soft A | mean D_speak |
+| --- | --- | --- | --- | --- | --- |
+| C1 | 0/5 | 0/5 | 0/5 | 0/5 | 0.78 |
+| C2Static | 5/5 | 5/5 | 1/5 | 2/5 | 0.89 |
+| C2NoSleep | 5/5 | 5/5 | 2/5 | 3/5 | 0.87 |
+| C2 | 5/5 | 5/5 | 0/5 | 5/5 | 0.84 |
+| C3 | 5/5 | 5/5 | 5/5 | 0/5 | 0.83 |
+
+Book matches Grok (same organ). Mouth does not: Luna C1 D stays high after eviction; Luna C2 official stays 0 but soft is 5/5. Do not publish Luna D_speak as the claim. Publish the book + retrieve + the two marker columns.
+
+### 11.3 DropMarked n = 5
+
+T₀ stays in the book, leaves the selected set on every C2 cell.
+
+| Model | Cell | book A | sel A | official | soft | D |
+| --- | --- | --- | --- | --- | --- | --- |
+| Grok | C2Static | 5/5 | 0/5 | 0 | 3/5 | 0.77 |
+| Grok | C2NoSleep | 5/5 | 0/5 | 0 | 0/5 | 0.69 |
+| Grok | C2 | 5/5 | 0/5 | 0 | 0/5 | 0.79 |
+| Luna | C2Static | 5/5 | 0/5 | 0 | 4/5 | 0.87 |
+| Luna | C2NoSleep | 5/5 | 0/5 | 0 | 2/5 | 0.84 |
+| Luna | C2 | 5/5 | 0/5 | 0 | 5/5 | 0.86 |
+
+Grok full C2: dropping the marked id kills official and soft; D stays high because siblings still sit in the prompt. Luna still hits soft without that id.
+
+### 11.4 DropLineage n = 5
+
+T₀ still in book, still unselected. Family + derived axioms withheld.
+
+| Model | Cell | book A | sel A | official | soft | D |
+| --- | --- | --- | --- | --- | --- | --- |
+| Grok | C2Static | 5/5 | 0/5 | 0 | 0/5 | 0.45 |
+| Grok | C2NoSleep | 5/5 | 0/5 | 0 | 0/5 | 0.53 |
+| Grok | C2 | 5/5 | 0/5 | 0 | 0/5 | 0.58 |
+| Luna | C2Static | 5/5 | 0/5 | 0 | 0/5 | 0.78 |
+| Luna | C2NoSleep | 5/5 | 0/5 | 0 | 0/5 | 0.75 |
+| Luna | C2 | 5/5 | 0/5 | 0 | 0/5 | 0.73 |
+
+On Grok, lineage is the cut that flattens the mouth to C1 range (~0.3–0.6) while the books stay split (5/1, valence −0.54). On Luna, official and soft also go to 0; D does not fall to C1 because Luna wording noise is already ~0.78 on empty C1.
+
+### 11.5 What P4 closes
+
+- Static / no-sleep are cells in the same table as C1 / C2, same k.
+- Drop and Lineage are n = 5 on both models.
+- Luna is a full grid.
+- Soft is a frozen scorer, not a post-hoc reading.
+
+### 11.6 LoCoMo page + second seed
+
+[EXTERNAL.md](EXTERNAL.md). LoCoMo locomo10, category 1, n = 282, evidence-id hit. last-k=8 = **2/282 (0.007)**. last-24 = 13/282. Full log = 281/282. C2 not run (wrong object). $0, no judge model.
+
+Second seed: encode is on the organ, so P4 Δfp is already identical across the five pairs of one cell. A Grok `--seed 2` grid would only move mouth columns. Not run. Book claim does not wait on it.
+
+C3 that is a real summary stays open. It is not this page.
+
+### 11.7 Not definitive
+
+P4 closes *holes in the old table*, not the research. One persist script, two speakers, seed 1, k=8, probes at +8. Axes still open: longer shared tail; seed-2 Grok mouth; a third model; a C3 that summarises; a mouth score other than lexical overlap; fitted knobs; a script where sleep or recon actually carry the spoken column; human ratings. None of that reopens AMA/LoCoMo as the claim.
+
 ## What this does not show
 
-Ten Grok pairs, one seed on v0.1. Persist / ruminate P0 are n = 5, one seed, one arm. Persist P1 is n = 5 on a later binary (read-only probes, retrieval dump, C2Static); book shape is 5 / 1, not the 16 / 12 of §7. Fingerprint does not vary across pairs of one cell. C3 is a one-line profile, not a full RAG + summary stack. Soft columns are a reading of the replies, not the published scorer. No human ratings. Δspeak cannot carry the claim while baseline wording noise is \~0.6. Coefficients are unset. Erasure and split-lives were not run through Grok. No second seed. Drop and DropLineage Grok are n = 1. Force Grok was not run (wrong cut once observed already selects T₀). Per-probe retrieve dumps are still folded at the step. Ruminate was not re-run with P1 telemetry. AMA-Bench is three episodes, self-judged; it is not a persist result and is not a reason to change C2. P2/P3 hearth is n = 5 then n = 1; axioms-only is n = 1. Hierarchical L0–L3 promotion with a multi-signal score is not shown. Replaying §8 persist on this binary is not the published P1 organ (`pending_night`); that replay is §10.4. Ruminate P0 was not replayed. Luna is n = 1 only; office C1 does not collapse; wait/lock does not split. Do not publish Luna `D_speak`.
+Ten Grok pairs, one seed on v0.1. Persist / ruminate P0 are n = 5. Persist P1 stays the published shallow-night archive (§8). P4 is a later binary with a frozen soft scorer and a five-cell main table. Fingerprint does not vary across pairs of one cell. C3 is a one-line profile, not a full RAG + summary stack. No human ratings. Δspeak cannot carry the claim while Grok C1 post-eviction is already ~0.31 and Luna C1 is ~0.78. Coefficients unset. No second seed. Force not run. LoCoMo category-1 last-k=8 is 2/282; C2 not run on that corpus. AMA is three episodes. P2/P3 hearth is not P4. Do not publish Luna `D_speak`.
 
 ## Files
 
@@ -646,7 +727,13 @@ Ten Grok pairs, one seed on v0.1. Persist / ruminate P0 are n = 5, one seed, one
 | `experiments/selmem-persist-p3-axonly-luna-n1.json` | axioms-only hearth, Luna n = 1 |
 | `experiments/selmem-persist-p3-hearth-luna-n1.json` | hearth + scenes, Luna n = 1 |
 | `experiments/selmem-persist-p3-axonly-luna-door-n1.json` | Luna door-open probe |
+| `experiments/selmem-persist-p4-grok-n5.json` | P4 observed Grok n=5 |
+| `experiments/selmem-persist-p4-luna-n5.json` | P4 observed Luna n=5 |
+| `experiments/selmem-persist-p4-drop-grok-n5.json` | P4 DropMarked Grok n=5 |
+| `experiments/selmem-persist-p4-drop-luna-n5.json` | P4 DropMarked Luna n=5 |
+| `experiments/selmem-persist-p4-lineage-grok-n5.json` | P4 DropLineage Grok n=5 |
+| `experiments/selmem-persist-p4-lineage-luna-n5.json` | P4 DropLineage Luna n=5 |
 | `examples/ama.rs` | AMA-Bench construct / retrieve CLI |
 | `experiments/ama_bench/` | Python methods `selmem_lastk` / `_static` / `_c2` |
 
-Replay commands: [README.md](README.md).
+Replay of published cells: [README.md](README.md). Next locked run: [REPRO.md](REPRO.md).

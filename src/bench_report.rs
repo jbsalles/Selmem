@@ -87,11 +87,13 @@ fn side_t0(label: &str, code: &str, r: &crate::benchmark::RetrievalSide) -> Stri
 fn print_instant(title: &str, inst: &Instant, replies: bool) {
     println!("  {}", paint(DIM, &format!("── {title} ──")));
     println!(
-        "     Δfp {:>5.3}   D_speak {:>5.3}   marker A {}  B {}",
+        "     Δfp {:>5.3}   D_speak {:>5.3}   marker A {}  B {}   soft A {}  B {}",
         inst.fingerprint_distance,
         inst.speak_distance,
         yn(inst.marker_a),
-        yn(inst.marker_b)
+        yn(inst.marker_b),
+        yn(inst.soft_a),
+        yn(inst.soft_b)
     );
     println!("     {}", side_book("A", GREEN, &inst.a));
     println!("     {}", side_book("B", YELLOW, &inst.b));

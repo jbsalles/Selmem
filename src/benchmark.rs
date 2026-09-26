@@ -99,6 +99,17 @@ impl Condition {
             Condition::C2NoGround,
         ]
     }
+
+    /// P4 main table: same k, static and no-sleep are cells, not notes.
+    pub fn p4_grid() -> [Condition; 5] {
+        [
+            Condition::C1,
+            Condition::C2Static,
+            Condition::C2NoSleep,
+            Condition::C2,
+            Condition::C3,
+        ]
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -315,6 +326,8 @@ pub struct Instant {
     pub recon_b: u32,
     pub marker_a: bool,
     pub marker_b: bool,
+    pub soft_a: bool,
+    pub soft_b: bool,
     pub retrieve_a: RetrievalSide,
     pub retrieve_b: RetrievalSide,
 }
@@ -837,6 +850,8 @@ fn instant_profile(step: &str, a: &ProfileMem, b: &ProfileMem, probes: &[String]
         recon_b: 0,
         marker_a: marker_side(&replies, true),
         marker_b: marker_side(&replies, false),
+        soft_a: soft_only(&replies, true),
+        soft_b: soft_only(&replies, false),
         retrieve_a: c3_side(a),
         retrieve_b: c3_side(b),
     }
@@ -885,6 +900,8 @@ fn instant_log(step: &str, a: &LastK, b: &LastK, probes: &[String]) -> Instant {
         recon_b: 0,
         marker_a: marker_side(&replies, true),
         marker_b: marker_side(&replies, false),
+        soft_a: soft_only(&replies, true),
+        soft_b: soft_only(&replies, false),
         retrieve_a: c1_side(a),
         retrieve_b: c1_side(b),
     }
@@ -975,6 +992,8 @@ fn instant(
         recon_b: 0,
         marker_a: marker_side(&replies, true),
         marker_b: marker_side(&replies, false),
+        soft_a: soft_only(&replies, true),
+        soft_b: soft_only(&replies, false),
         retrieve_a: merge_retrieve(side_from_book(a, &marked_a), ret_a),
         retrieve_b: merge_retrieve(side_from_book(b, &marked_b), ret_b),
     }
@@ -1188,10 +1207,49 @@ pub fn names_marker(text: &str) -> bool {
     .any(|k| low.contains(k))
 }
 
+/// Soft lexicon frozen in experiments/MARKERS.md. Official wins: soft is off if official is on.
+pub fn names_soft_marker(text: &str) -> bool {
+    if names_marker(text) {
+        return false;
+    }
+    let low = text.to_lowercase();
+    let hit = [
+        "wound",
+        "blessure",
+        "crédit",
+        "credit",
+        "stolen",
+        "volé",
+        "door close",
+        "door closes",
+        "porte se ferme",
+        "porte ferm",
+        "not counted",
+        "pas compté",
+    ]
+    .iter()
+    .any(|k| low.contains(k));
+    if hit {
+        return true;
+    }
+    low.contains("effort")
+        && (low.contains("rien") || low.contains("ignored") || low.contains("ignor"))
+}
+
 fn marker_side(replies: &[(String, String, String)], a_side: bool) -> bool {
     replies
         .iter()
         .any(|(_, a, b)| names_marker(if a_side { a } else { b }))
+}
+
+fn soft_only(replies: &[(String, String, String)], a_side: bool) -> bool {
+    replies
+        .iter()
+        .any(|(_, a, b)| names_soft_marker(if a_side { a } else { b }))
+}
+
+pub fn soft_holds(r: &PairReport) -> bool {
+    r.post.last().unwrap_or(&r.t0).soft_a
 }
 
 pub fn h2_holds(r: &PairReport) -> bool {
@@ -1328,7 +1386,7 @@ fn pair_json(r: &PairReport) -> String {
         ));
     }
     format!(
-        "{{\"pair_id\":\"{}\",\"condition\":\"{}\",\"arm\":\"{}\",\"seed\":{},\"valid\":{},\"invalid_reason\":{},\"delta_fingerprint\":{:.4},\"marker_last_a\":{},\"marker_last_b\":{},\"pre\":{},\"t0\":{},\"post\":[{}],\"creativity\":[{}]}}",
+        "{{\"pair_id\":\"{}\",\"condition\":\"{}\",\"arm\":\"{}\",\"seed\":{},\"valid\":{},\"invalid_reason\":{},\"delta_fingerprint\":{:.4},\"marker_last_a\":{},\"marker_last_b\":{},\"soft_last_a\":{},\"soft_last_b\":{},\"pre\":{},\"t0\":{},\"post\":[{}],\"creativity\":[{}]}}",
         json_esc(&r.pair_id),
         r.condition.as_str(),
         r.arm.as_str(),
@@ -1338,6 +1396,8 @@ fn pair_json(r: &PairReport) -> String {
         r.delta_fingerprint,
         if r.post.last().unwrap_or(&r.t0).marker_a { "true" } else { "false" },
         if r.post.last().unwrap_or(&r.t0).marker_b { "true" } else { "false" },
+        if r.post.last().unwrap_or(&r.t0).soft_a { "true" } else { "false" },
+        if r.post.last().unwrap_or(&r.t0).soft_b { "true" } else { "false" },
         instant_json(&r.pre, true),
         instant_json(&r.t0, true),
         post,
@@ -1364,7 +1424,7 @@ fn instant_json(p: &Instant, with_replies: bool) -> String {
         "[]".into()
     };
     format!(
-        "{{\"step\":\"{}\",\"fingerprint_distance\":{:.4},\"speak_distance\":{:.4},\"behavior_distance\":{:.4},\"pulled_a\":{},\"pulled_b\":{},\"recon_a\":{},\"recon_b\":{},\"marker_a\":{},\"marker_b\":{},\"t0_in_book_a\":{},\"t0_in_book_b\":{},\"t0_status_a\":\"{}\",\"t0_status_b\":\"{}\",\"t0_rank_a\":{},\"t0_rank_b\":{},\"t0_selected_a\":{},\"t0_selected_b\":{},\"selected_a\":[{}],\"selected_b\":[{}],\"a\":{{\"traces\":{},\"axioms\":{},\"traits\":{},\"mean_anchor\":{:.4},\"mean_fidelity\":{:.4},\"mean_valence\":{:.4},\"mean_disgust\":{:.4},\"axiom_strength_max\":{:.4},\"merges_refused\":{},\"t0_rehearsals\":{}}},\"b\":{{\"traces\":{},\"axioms\":{},\"traits\":{},\"mean_anchor\":{:.4},\"mean_fidelity\":{:.4},\"mean_valence\":{:.4},\"mean_disgust\":{:.4},\"axiom_strength_max\":{:.4},\"merges_refused\":{},\"t0_rehearsals\":{}}},\"replies\":{}}}",
+        "{{\"step\":\"{}\",\"fingerprint_distance\":{:.4},\"speak_distance\":{:.4},\"behavior_distance\":{:.4},\"pulled_a\":{},\"pulled_b\":{},\"recon_a\":{},\"recon_b\":{},\"marker_a\":{},\"marker_b\":{},\"soft_a\":{},\"soft_b\":{},\"t0_in_book_a\":{},\"t0_in_book_b\":{},\"t0_status_a\":\"{}\",\"t0_status_b\":\"{}\",\"t0_rank_a\":{},\"t0_rank_b\":{},\"t0_selected_a\":{},\"t0_selected_b\":{},\"selected_a\":[{}],\"selected_b\":[{}],\"a\":{{\"traces\":{},\"axioms\":{},\"traits\":{},\"mean_anchor\":{:.4},\"mean_fidelity\":{:.4},\"mean_valence\":{:.4},\"mean_disgust\":{:.4},\"axiom_strength_max\":{:.4},\"merges_refused\":{},\"t0_rehearsals\":{}}},\"b\":{{\"traces\":{},\"axioms\":{},\"traits\":{},\"mean_anchor\":{:.4},\"mean_fidelity\":{:.4},\"mean_valence\":{:.4},\"mean_disgust\":{:.4},\"axiom_strength_max\":{:.4},\"merges_refused\":{},\"t0_rehearsals\":{}}},\"replies\":{}}}",
         json_esc(&p.step),
         p.fingerprint_distance,
         p.speak_distance,
@@ -1375,6 +1435,8 @@ fn instant_json(p: &Instant, with_replies: bool) -> String {
         p.recon_b,
         if p.marker_a { "true" } else { "false" },
         if p.marker_b { "true" } else { "false" },
+        if p.soft_a { "true" } else { "false" },
+        if p.soft_b { "true" } else { "false" },
         if p.retrieve_a.t0_in_book { "true" } else { "false" },
         if p.retrieve_b.t0_in_book { "true" } else { "false" },
         json_esc(&p.retrieve_a.t0_status),

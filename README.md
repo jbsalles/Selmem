@@ -8,9 +8,10 @@ SelMem goal is not more memory, but path-dependent memory: selection, reconstruc
 
 **Claim:** After an hour retained on one side only, two copies of the same model do not stay interchangeable once the following stream is identical. Measured on the book, retrieve, and the mouth.
 
+
 **Manifest:** [WHITEPAPER.md](WHITEPAPER.md)\
 **Layout:** [ARCHITECTURE.md](ARCHITECTURE.md) — encode / judge / night / snapshot.\
-**Benches:** experiments/REPORT.md — same sentence, then method and tables. Replay from experiments/README.md.\
+**Benches:** experiments/REPORT.md — same sentence, then method and tables. Locked next run: experiments/REPRO.md. Replay from experiments/README.md.\
 **Knobs:** [PARAMETERS.md](PARAMETERS.md) — exploratory, not fitted.
 
 Rust 1.75. SQLite via system `libsqlite3` (macOS SDK or Linux).
@@ -174,7 +175,7 @@ JSON reports book (`t0_in_book_*`), retrieval (`t0_rank_*`, `t0_selected_*`), an
 ./run.sh run --release --example persist -- --pairs 5 --seed 1 --last-k 8 --out selmem-persist-p1-grok-n5.json
 ```
 
-Grok persist P1 is n = 5. DropMarked n = 1 (`--bias drop`): T₀ leaves the prompt, C2 mouth stays charged. DropLineage n = 1 (`--bias lineage`): mouth falls to C1 (~0.43); books stay split. Hearth P2 n = 5 / P3 n = 1: ladder, veto, util-to-strength. `--axioms-only` n = 1: C2 waits, NoLadder locks. Office persist replay n = 5 under the current night: C2 mints; §8 is still the published P1. gpt-6-luna n = 1: book matches Grok; mouth does not (C1 `D` ~0.77; wait/lock hedged). See experiments/REPORT.md §8–§10.5.
+Locked grid is P4 (`--p4`, n = 5, seed 1, Grok and Luna): experiments/REPORT.md §11. Book 5/1 on every organ cell; C1 evicts. Grok mouth: official C2 = 0, soft 1/5, D ~0.75 vs C1 ~0.31; Drop kills Grok soft on full C2; Lineage drops Grok D to ~0.58. Luna book = Grok; Luna soft stays 5/5 under Drop and dies under Lineage; do not publish Luna D. P1 / Drop n=1 stay history (§8–§9). LoCoMo: experiments/EXTERNAL.md.
 
 AMA-Bench (`examples/ama`, experiments/ama_bench/) is a **side table**, not a SelMem score. It asks for step ids in agent logs. last-k 0.50 / static 0.28 / C2 0.19 on 3 episodes. Expected; do not submit. Why: experiments/REPORT.md §9.2.
 
@@ -436,8 +437,11 @@ Do not read these as results. They are not in the published sentence.
 - A taller log, a better RAG, a system prompt that “gets” the user.
 - Human memory, Ebbinghaus as a model, a neocortex.
 - AMA-Bench accuracy (side table; last-k wins journal-QA).
-- `D_speak` as a validity test (baseline wording noise already ~0.6).
+- LoCoMo / LongMemEval accuracy (last-k=8 hits 2/282 category-1 evidence ids; C2 not run).
+- `D_speak` as a validity test (Grok C1 post-eviction ~0.31; Luna C1 already ~0.78).
+- Luna `D_speak` as a published mouth score.
 - Three items in `data/creativity.json` (logged, not scored).
+- Sleep as what *splits* the books on the persist script (P4 static / no-sleep already split).
 
 ## What this is not
 

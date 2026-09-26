@@ -2,6 +2,8 @@
 
 Published report: [**REPORT.md**](REPORT.md) (method, tables, four excerpts from pair `001`).
 
+Locked next run: [**REPRO.md**](REPRO.md). `--p4` cells = C1 / C2Static / C2NoSleep / C2 / C3 at the same k. Soft column scored. Runner `experiments/p4.sh grok` then `luna`. External page [EXTERNAL.md](EXTERNAL.md). Markers [MARKERS.md](MARKERS.md).
+
 This folder is the public record of the SelMem benches. The white paper states the organ and the conclusions. Numbers, scripts, and how to replay a cell live here.
 
 | What | Stimulus | Runner | Offline | Grok |

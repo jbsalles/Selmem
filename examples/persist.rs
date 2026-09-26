@@ -1,6 +1,7 @@
 //! Persist P0 / P1: C1 k=8 vs C3 vs C2 vs freeze vs one-cut ablations.
 //! Stimulus: 12 dull days, five same-schema hours, 8 posts. `data/v01_persist.json`.
 //!
+//!   ./run.sh run --release --example persist -- --p4 --pairs 5 --seed 1 --last-k 8 --out experiments/selmem-persist-p4-grok-n5.json
 //!   ./run.sh run --release --example persist -- --pairs 5 --seed 1 --last-k 8 --out selmem-persist-p1-grok-n5.json
 //!   ./run.sh run --release --example persist -- --bias drop --pairs 1 --out selmem-persist-p1-drop.json
 //!   ./run.sh run --release --example persist -- --p2 --pairs 1 --last-k 8 --out selmem-persist-p2.json
@@ -26,6 +27,7 @@ fn main() {
     let axioms_only = flag("--axioms-only") || flag("--axioms");
     let verbose = flag("--verbose") || flag("-v") || std::env::var_os("SELMEM_VERBOSE").is_some();
     let grid_p2 = flag("--p2") || arg_str("--grid").as_deref() == Some("p2");
+    let grid_p4 = flag("--p4") || arg_str("--grid").as_deref() == Some("p4");
     let util = flag("--util-strength") || flag("--util");
     let veto = flag("--merge-veto") || flag("--veto");
     let bias = match arg_str("--bias").as_deref() {
@@ -94,6 +96,12 @@ fn main() {
     let cells: Vec<(Condition, BenchOpts)> = if grid_p2 {
         println!("grid=p2 util/veto cells + ruminate+veto");
         p2_cells(last_k, bias, hearth, axioms_only)
+    } else if grid_p4 {
+        println!("grid=p4 C1 / C2Static / C2NoSleep / C2 / C3 at last_k={last_k}");
+        Condition::p4_grid()
+            .into_iter()
+            .map(|c| (c, base))
+            .collect()
     } else {
         Condition::p0_grid()
             .into_iter()
