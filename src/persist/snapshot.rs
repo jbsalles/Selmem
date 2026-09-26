@@ -136,7 +136,7 @@ pub fn assemble_mood(valence: f32, arousal: f32, disgust: f32) -> Mood {
 
 pub fn profile_params_line(p: &EntityProfile) -> String {
     format!(
-        "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
+        "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
         p.encode_threshold,
         p.w_arousal,
         p.w_novelty,
@@ -159,7 +159,9 @@ pub fn profile_params_line(p: &EntityProfile) -> String {
         p.merge_similarity,
         p.ground_min_overlap,
         p.ground_strikes,
-        p.narrator_firmness
+        p.narrator_firmness,
+        p.deep_min_hours,
+        p.deep_min_charge
     )
 }
 
@@ -193,6 +195,8 @@ pub fn profile_from_params(name: impl Into<String>, n: &[f32]) -> Option<EntityP
         ground_min_overlap: n.get(20).copied().unwrap_or(0.18),
         ground_strikes: n.get(21).copied().unwrap_or(3.0) as usize,
         narrator_firmness: n.get(22).copied().unwrap_or(0.55),
+        deep_min_hours: n.get(23).copied().unwrap_or(1.0) as u32,
+        deep_min_charge: n.get(24).copied().unwrap_or(9.0),
         voice: crate::core::profile::Voice::from_gains(n[9], n[10]),
     })
 }

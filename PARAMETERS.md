@@ -96,11 +96,35 @@ A generated sentence is a **miss** when `judge_against_core` returns a kind the 
 
 Embeddings still rank recall. They do not judge grounding.
 
-The check lives in `recall/judge.rs` (pure). Grip, strikes and the blend live in `recall/pull.rs`. Night uses the same miss test on a rewrite (`dream/rewrite.rs`). Pass order is `weather → rewrite → merge → ladder → release` (`dream/night.rs`, pinned by `tests/dream_order.rs`).
+The check lives in `recall/judge.rs` (pure). Grip, strikes and the blend live in `recall/pull.rs`. Night uses the same miss test on a rewrite (`dream/rewrite.rs`). Pass order is `weather → rewrite → merge → ladder → release` (`dream/night.rs`, pinned by `tests/dream_order.rs`). A shallow night is `weather → release` only.
+
+---
+
+## Night budget: `deep_min_hours` / `deep_min_charge`
+
+`deep_min_hours = 1` · `deep_min_charge = 9.0`
+
+A deep night runs merge and ladder. A shallow night only weathers and may release spent latent hours. Deep if new Selfhood hours since `last_deep_at` reach `deep_min_hours`, **or** those hours' `arousal + disgust` reach `deep_min_charge`.
+
+**Why 1 and 9.0.** Contrast-safe defaults: one new hour is still a deep night, so persist / v0.1 do not move. `9.0` is out of reach of a single hour (max charge 2.0). Live setting under test: `3` / `1.2` — three dull hours, or one charged hour. **Ad hoc.** `sleep_deep()` ignores the cut.
+
+Spoken `rehearsals` increment only when live `speak` selects the hour that enters the mouth. `remember` and isolated probes do not. Latent encode still bumps rehearsal when a new hour reactivates a latent trace (`encode/identity.rs`); that path is not spoken utility.
 
 **Why 0.18 and 3.** Same status as `τ`. **Exploratory.** The kinds are the mechanism; the cut is not.
 
 `narrator_firmness` default `0.55` (tender `0.42`, austere `0.72`). CLI `--narrator-firmness`. `GET|POST /profile`.
+
+### P2 / P3 cuts (default off)
+
+`util_to_strength` — live `speak` / lab `note_spoken` adds `+0.08` on living axioms that list the hour, clipped to the **layer cap** (motif 0.42, belief 0.70, trait 1.0). Isolated probes do not. Persist `--p2` stamps marked hours once after the first T0 night.
+
+`merge_support_veto` — merge skips a pair if either hour is pinned (`anchor ≥ 0.85`) or the two hours have different axiom-support sets (including empty vs nonempty). Count: `store.merges_refused`.
+
+Mint starts low (motif ≈ 0.28). A second night on the same schema **keeps** the living axiom and unions support; it does not remint a new sentence. Unused prior axioms rust `−0.05` per deep night toward the layer floor.
+
+`pending_night` forces a deep night when new Selfhood hours arrived in the same wall-clock second as `last_deep_at` (lab persist). Published P0 / P1 dumps were taken **before** that clock fix. Replaying those commands now is a different organ. Flags `util` / `veto` / `--hearth` / `--axioms-only` stay off on the published P0 / P1 command lines.
+
+`--axioms-only` — isolated probes still retrieve (ranks / dump), but the narrator sees `who_am_i()` only. Default off.
 
 ---
 

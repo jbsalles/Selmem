@@ -2,15 +2,15 @@
 
 Selective reconstructive memory for an LLM entity. v0.5
 
-An LLM maps context to the next token. Adding facts increases coverage, but does not necessarily create divergence: identical contexts tend toward identical continuations. SelMem instead sculpts a particular past so that otherwise identical instances can follow different paths.
+An LLM maps context to the next token. Adding facts increases coverage, but does not necessarily create divergence: identical contexts tend toward identical continuations. 
+
+SelMem instead sculpts a particular past so that otherwise identical instances can follow different paths and develop a singular identity..
 
 Its goal is not more memory, but path-dependent memory: selection, reconstruction, sleep, rumination, and identity transform experience into a history that actively shapes future context. The result is not a taller log, but a different past and therefore a different trajectory.
 
-SelMem sculpts a particular past, allowing otherwise identical instances to diverge and develop a singular identity.
-
 **Manifest:** [WHITEPAPER.md](WHITEPAPER.md)\
 **Layout:** [ARCHITECTURE.md](ARCHITECTURE.md) — encode / judge / night / snapshot.\
-**Benches:** experiments/REPORT.md — method, tables, P0 / P1, Drop / Lineage n=1. Replay from experiments/README.md.\
+**Benches:** experiments/REPORT.md — method, tables, P0 / P1, Drop / Lineage n=1, hearth P2/P3. Replay from experiments/README.md.\
 **Knobs:** [PARAMETERS.md](PARAMETERS.md) — exploratory, not fitted.
 
 Rust 1.75. SQLite via system `libsqlite3` (macOS SDK or Linux).
@@ -40,7 +40,9 @@ experience → interpret → paint → split → gate → core
  talk frame keeps the live sitting
         ↓
       sleep (talk goes through the gate, then the frame dies)
- weather → rewrite → merge → ladder → release
+ deep:    weather → rewrite → merge → ladder → release
+ shallow: weather → release
+ (deep if new hours or charge clear the budget; sleep_deep forces it)
         ↓
    next experience is already colored
 ```
@@ -172,7 +174,7 @@ JSON reports book (`t0_in_book_*`), retrieval (`t0_rank_*`, `t0_selected_*`), an
 ./run.sh run --release --example persist -- --pairs 5 --seed 1 --last-k 8 --out selmem-persist-p1-grok-n5.json
 ```
 
-Grok persist P1 is n = 5. DropMarked n = 1 (`--bias drop`): T₀ leaves the prompt, C2 mouth stays charged. DropLineage n = 1 (`--bias lineage`): mouth falls to C1 (~0.43); books stay split. See experiments/REPORT.md §8–§9.3.
+Grok persist P1 is n = 5. DropMarked n = 1 (`--bias drop`): T₀ leaves the prompt, C2 mouth stays charged. DropLineage n = 1 (`--bias lineage`): mouth falls to C1 (~0.43); books stay split. Hearth P2 n = 5 / P3 n = 1: ladder, veto, util-to-strength. `--axioms-only` n = 1: C2 waits, NoLadder locks. See experiments/REPORT.md §8–§10.
 
 AMA-Bench (`examples/ama`, experiments/ama_bench/) is a **side table**, not a SelMem score. It asks for step ids in agent logs. last-k 0.50 / static 0.28 / C2 0.19 on 3 episodes. Expected; do not submit. Why: experiments/REPORT.md §9.2.
 

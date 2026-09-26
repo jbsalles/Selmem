@@ -319,6 +319,19 @@ impl SelectiveMemory {
     pub fn sleep(&mut self) -> DreamReport {
         self.commit_talk();
         crate::persist::prune_orphaned_archives(&mut self.store);
+        dream::dream_budget(
+            &mut self.store,
+            &self.profile,
+            self.narrator.as_ref(),
+            self.embedder.as_ref(),
+            self.cut,
+        )
+    }
+
+    /// Full night regardless of budget. Lab path.
+    pub fn sleep_deep(&mut self) -> DreamReport {
+        self.commit_talk();
+        crate::persist::prune_orphaned_archives(&mut self.store);
         dream::dream_cut(
             &mut self.store,
             &self.profile,
@@ -359,7 +372,7 @@ impl SelectiveMemory {
     }
 
     pub fn speak(&mut self, user: &str) -> String {
-        self.speak_inner(user, true, RecallBias::Observed, &[]).0
+        self.speak_inner(user, true, RecallBias::Observed, &[], false).0
     }
 
     /// Probe path. Does not read or write the live thread, and does not write the book.
@@ -373,7 +386,17 @@ impl SelectiveMemory {
         bias: RecallBias,
         marked: &[String],
     ) -> (String, RetrievalDump) {
-        self.speak_inner(user, false, bias, marked)
+        self.speak_inner(user, false, bias, marked, false)
+    }
+
+    /// Isolated probe whose mouth sees living axioms only — no retrieved gists.
+    pub fn speak_isolated_axioms(
+        &mut self,
+        user: &str,
+        bias: RecallBias,
+        marked: &[String],
+    ) -> (String, RetrievalDump) {
+        self.speak_inner(user, false, bias, marked, true)
     }
 
     pub fn clear_talk(&mut self) {
@@ -480,6 +503,7 @@ impl SelectiveMemory {
         hold: bool,
         bias: RecallBias,
         marked: &[String],
+        axioms_only: bool,
     ) -> (String, RetrievalDump) {
         if hold {
             self.talk.hear(user, None);
@@ -495,6 +519,12 @@ impl SelectiveMemory {
             RecallWrite::ReadOnly
         };
         let (recalled, dump) = self.remember_with(&query, write, bias, marked);
+        if hold {
+            // Spoken utility: the hour that actually entered the mouth, not every neighbor.
+            if let Some(id) = dump.selected.first() {
+                self.note_spoken(id);
+            }
+        }
         let empty = WorkingTalk::default();
         let talk = if hold { &self.talk } else { &empty };
         // Isolated probes: retrieved scenes + living axioms.
@@ -541,7 +571,11 @@ impl SelectiveMemory {
                 .map(|a| a.statement.clone())
                 .collect();
             (
-                recalled.into_iter().map(|r| r.narrative).collect(),
+                if axioms_only {
+                    Vec::new()
+                } else {
+                    recalled.into_iter().map(|r| r.narrative).collect()
+                },
                 axioms,
             )
         };
@@ -558,6 +592,35 @@ impl SelectiveMemory {
         let trace = self.store.traces.get(trace_id)?;
         let aid = trace.archive_id.as_ref()?;
         self.store.archives.get(aid).map(|a| a.verbatim.as_str())
+    }
+
+    /// Spoken utility stamp. Live `speak` calls this on the selected hour.
+    /// Isolated probes do not. When `util_to_strength` is on, living axioms
+    /// that list the hour gain a bounded step of strength.
+    pub fn note_spoken(&mut self, trace_id: &str) -> bool {
+        let verbatim = match self.store.traces.get(trace_id) {
+            Some(t) => t.channel.verbatim(),
+            None => return false,
+        };
+        if verbatim {
+            return false;
+        }
+        if let Some(t) = self.store.traces.get_mut(trace_id) {
+            t.rehearsals = t.rehearsals.saturating_add(1);
+        }
+        if self.cut.util_to_strength {
+            const STEP: f32 = 0.08;
+            let ids = self.store.living_axiom_ids_for(trace_id);
+            for id in ids {
+                if let Some(a) = self.store.axioms.get_mut(&id) {
+                    if a.superseded_by.is_none() {
+                        let cap = a.layer.strength_cap();
+                        a.strength = (a.strength + STEP).min(cap);
+                    }
+                }
+            }
+        }
+        true
     }
 
     /// Keep this hour. Does not open the archive. Next nights decay it more slowly.

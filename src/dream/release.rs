@@ -1,7 +1,7 @@
 //! Last night pass: a spent latent hour may leave.
 //! Only traces that were already latent *before* this night.
 
-use crate::core::model::{Channel, TraceStatus};
+use crate::core::model::TraceStatus;
 use crate::core::store::MemoryStore;
 
 /// Scene already gone, charge unused, no living axiom leans on it → leave the book.

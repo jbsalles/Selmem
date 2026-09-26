@@ -1,4 +1,4 @@
-use selmem::dream::NIGHT_PASSES;
+use selmem::dream::{NIGHT_PASSES, SHALLOW_PASSES};
 
 #[test]
 fn night_passes_stay_in_scientific_order() {
@@ -6,4 +6,5 @@ fn night_passes_stay_in_scientific_order() {
         NIGHT_PASSES,
         &["weather", "rewrite", "merge", "ladder", "release"]
     );
+    assert_eq!(SHALLOW_PASSES, &["weather", "release"]);
 }

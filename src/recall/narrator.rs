@@ -118,7 +118,11 @@ impl Narrator for RuleNarrator {
                 }
             }
         }
-        let dominant = counts.into_iter().max_by_key(|(_, n)| *n)?.0;
+        let dominant = counts
+            .into_iter()
+            .max_by_key(|(_, n)| *n)
+            .map(|(s, _)| s)
+            .unwrap_or_else(|| "self".into());
         let mean_v: f32 = traces.iter().map(|t| t.valence).sum::<f32>() / traces.len() as f32;
         let copy = crate::lexicon::rule();
         let tmpl = if mean_v < -0.2 {

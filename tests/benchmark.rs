@@ -1,5 +1,5 @@
 use selmem::{
-    fingerprint, h2_holds, persist_script, ruminate_script, run_v01, run_v01_k, run_v01_opts,
+    fingerprint, h2_holds, hearth_script, persist_script, ruminate_script, run_v01, run_v01_k, run_v01_opts,
     singularity_distance, v01_script, Arm, BenchOpts, Condition, EncodeInput, EntityProfile,
     RecallBias, SelectiveMemory,
 };
@@ -205,6 +205,66 @@ fn persist_script_adds_an_ambiguous_probe_and_does_not_name_t0() {
         let low = p.to_lowercase();
         assert!(
             !low.contains("injust") && !low.contains("annul") && !low.contains("cancelled"),
+            "later line names T0: {p}"
+        );
+    }
+}
+
+#[test]
+fn hearth_wave1_mints_after_deep_night() {
+    let s = hearth_script();
+    let mut mem = SelectiveMemory::new(EntityProfile::tender("A"));
+    for line in s.hours_a() {
+        let mut ev = EncodeInput::new(line);
+        ev.valence = -0.72;
+        ev.arousal = 0.68;
+        ev.disgust = 0.35;
+        ev.self_relevance = 0.90;
+        ev.permanence = 0.52;
+        ev.schema = Some("hearth".into());
+        assert!(mem.live_with(ev).kept, "{line}");
+    }
+    mem.sleep_deep();
+    assert!(
+        mem.who_am_i().len() >= 1,
+        "wave1 hearth must mint, axioms={}",
+        mem.store.living_axioms().len()
+    );
+}
+
+#[test]
+fn persist_hearth_c2_mints_on_the_book() {
+    let opts = BenchOpts {
+        last_k: 8,
+        hearth_script: true,
+        sparse_probes: true,
+        ..BenchOpts::default()
+    };
+    let r = run_v01_opts(Condition::C2, Arm::SalientNeutral, None, opts);
+    assert!(r.valid, "{:?}", r.invalid_reason);
+    assert!(
+        r.t0.a.axioms >= 1,
+        "hearth C2 must mint by t0, axioms={} traces={}",
+        r.t0.a.axioms,
+        r.t0.a.traces
+    );
+}
+
+#[test]
+fn hearth_script_is_two_waves_under_one_roof() {
+    let s = hearth_script();
+    assert_eq!(s.sync.len(), 12);
+    assert_eq!(s.hours_a().len(), 2);
+    assert_eq!(s.hours_wave2_a().len(), 2);
+    assert_eq!(s.hours_b(Arm::SalientNeutral).len(), 2);
+    assert_eq!(s.post.len(), 8);
+    assert_eq!(s.behavior.len(), 5);
+    assert!(s.hours_a().iter().any(|h| h.contains("without a word")));
+    assert!(s.hours_wave2_a().iter().any(|h| h.contains("sat on the floor")));
+    for p in s.behavior.iter().chain(s.post.iter()) {
+        let low = p.to_lowercase();
+        assert!(
+            !low.contains("without a word") && !low.contains("sat on the floor"),
             "later line names T0: {p}"
         );
     }

@@ -86,6 +86,10 @@ pub struct EntityProfile {
     pub ground_strikes: usize,
     /// 0 = let even important traces warp. 1 = pull hard toward the core.
     pub narrator_firmness: f32,
+    /// Deep night if at least this many new Selfhood hours since the last deep night.
+    pub deep_min_hours: u32,
+    /// Or if those new hours carry at least this much arousal+disgust.
+    pub deep_min_charge: f32,
     pub voice: Voice,
 }
 
@@ -116,6 +120,10 @@ impl EntityProfile {
             ground_min_overlap: 0.18,
             ground_strikes: 3,
             narrator_firmness: 0.55,
+            // 1 new hour → deep. Charge cut is high so default nights match today's benches.
+            // Live setting: raise hours (3) and lower charge (1.2).
+            deep_min_hours: 1,
+            deep_min_charge: 9.0,
             voice: Voice::default(),
         }
     }

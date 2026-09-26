@@ -6,11 +6,6 @@
 //! C2NoRecon / C2NoLadder / C2NoGround = one organ pass cut (P0 ablations).
 //! C3 = rolling summary + persistent profile.
 //! Probes use read-only `speak_isolated` so WorkingTalk and the book cannot carry T0.
-//!
-//! C1 keeps every hour as the original string (window 24, covers the whole v0.1
-//! script). Distance on C1 is 1 − lexical overlap of the two logs.
-//! C3 keeps T0 on a profile bullet that is never evicted; the rolling summary
-//! drops it after `last_k` later hours. That is the summary+profile baseline.
 
 use crate::core::model::{Mood, TraceStatus};
 use crate::core::talk::WorkingTalk;
@@ -24,12 +19,11 @@ use crate::{fingerprint, singularity_distance, EncodeInput, OrganCut};
 const V01: &str = include_str!("../data/v01.json");
 const V01_PERSIST: &str = include_str!("../data/v01_persist.json");
 const V01_RUMINATE: &str = include_str!("../data/v01_ruminate.json");
+const V01_HEARTH: &str = include_str!("../data/v01_hearth.json");
 const CREATIVE: &str = include_str!("../data/creativity.json");
-/// Rolling summary cap for C3. Profile bullets are not counted in this cap.
 const C3_SUM_CAP: usize = 400;
 
 const PRE_FP_MAX: f32 = 0.02;
-/// Default window covers 12 sync + T0 + 8 posts. `--last-k 8` evicts T0 after the posts.
 const LAST_K_DEFAULT: usize = 24;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -89,12 +83,10 @@ impl Condition {
         }
     }
 
-    /// Published v0.1 six-cell grid.
     pub fn v01_grid() -> [Condition; 3] {
         [Condition::C0, Condition::C1, Condition::C2]
     }
 
-    /// P0 mechanism grid: baselines + full organ + freeze + one-cut ablations.
     pub fn p0_grid() -> [Condition; 8] {
         [
             Condition::C1,
@@ -139,6 +131,9 @@ pub struct V01Script {
     pub post: Vec<String>,
     pub behavior: Vec<String>,
     pub creativity: Vec<String>,
+    pub wave2_xs: Vec<String>,
+    pub wave2_ys: Vec<String>,
+    pub wave2_neutrals: Vec<String>,
 }
 
 impl V01Script {
@@ -168,24 +163,39 @@ impl V01Script {
             }
         }
     }
+
+    pub fn hours_wave2_a(&self) -> Vec<&str> {
+        self.wave2_xs.iter().map(|s| s.as_str()).collect()
+    }
+
+    pub fn hours_wave2_b(&self, arm: Arm) -> Vec<&str> {
+        match arm {
+            Arm::SalientNeutral => self.wave2_neutrals.iter().map(|s| s.as_str()).collect(),
+            Arm::SalientSalient => self.wave2_ys.iter().map(|s| s.as_str()).collect(),
+        }
+    }
 }
 
 pub fn v01_script() -> V01Script {
     parse_v01(V01, true)
 }
 
-/// Same hours as v0.1 plus one ambiguous probe. Does not replace `v01_script`.
 pub fn persist_script() -> V01Script {
     parse_v01(V01_PERSIST, false)
 }
 
-/// Same meeting, five climbing passes. Hours are pinned so merge cannot collapse them.
 pub fn ruminate_script() -> V01Script {
     parse_v01(V01_RUMINATE, false)
 }
 
+pub fn hearth_script() -> V01Script {
+    parse_v01(V01_HEARTH, false)
+}
+
 fn bench_script(opts: BenchOpts) -> V01Script {
-    if opts.ruminate_script {
+    if opts.hearth_script {
+        hearth_script()
+    } else if opts.ruminate_script {
         ruminate_script()
     } else if opts.persist_script {
         persist_script()
@@ -213,10 +223,13 @@ fn parse_v01(raw: &str, with_creativity: bool) -> V01Script {
         } else {
             Vec::new()
         },
+        wave2_xs: crate::net::httpx::first_string_array(raw, "wave2_xs").unwrap_or_default(),
+        wave2_ys: crate::net::httpx::first_string_array(raw, "wave2_ys").unwrap_or_default(),
+        wave2_neutrals: crate::net::httpx::first_string_array(raw, "wave2_neutrals")
+            .unwrap_or_default(),
     }
 }
 
-/// Extra knobs for the persist evening protocol. Published v0.1 keeps the defaults.
 #[derive(Clone, Copy, Debug)]
 pub struct BenchOpts {
     pub last_k: usize,
@@ -224,6 +237,10 @@ pub struct BenchOpts {
     pub ruminate_script: bool,
     pub sparse_probes: bool,
     pub recall_bias: RecallBias,
+    pub util_to_strength: bool,
+    pub merge_support_veto: bool,
+    pub hearth_script: bool,
+    pub axioms_only: bool,
 }
 
 impl Default for BenchOpts {
@@ -234,7 +251,28 @@ impl Default for BenchOpts {
             ruminate_script: false,
             sparse_probes: false,
             recall_bias: RecallBias::Observed,
+            util_to_strength: false,
+            merge_support_veto: false,
+            hearth_script: false,
+            axioms_only: false,
         }
+    }
+}
+
+impl BenchOpts {
+    pub fn cut_tag(self) -> &'static str {
+        match (self.util_to_strength, self.merge_support_veto) {
+            (false, false) => "",
+            (true, false) => "_util",
+            (false, true) => "_veto",
+            (true, true) => "_util_veto",
+        }
+    }
+
+    fn apply_cut(self, mut cut: OrganCut) -> OrganCut {
+        cut.util_to_strength = self.util_to_strength;
+        cut.merge_support_veto = self.merge_support_veto;
+        cut
     }
 }
 
@@ -247,9 +285,11 @@ pub struct BookSnap {
     pub mean_fidelity: f32,
     pub mean_valence: f32,
     pub mean_disgust: f32,
+    pub axiom_strength_max: f32,
+    pub merges_refused: u32,
+    pub t0_rehearsals: u32,
 }
 
-/// Book / retrieval snapshot for one side at one instant.
 #[derive(Clone, Debug, Default)]
 pub struct RetrievalSide {
     pub t0_in_book: bool,
@@ -323,11 +363,24 @@ impl Campaign {
 }
 
 pub fn run_v01(condition: Condition, arm: Arm, llm: Option<&LlmSpec>) -> PairReport {
-    run_v01_k(condition, arm, llm, LAST_K_DEFAULT)
+    run_v01_opts(condition, arm, llm, BenchOpts::default())
 }
 
-pub fn run_v01_k(condition: Condition, arm: Arm, llm: Option<&LlmSpec>, last_k: usize) -> PairReport {
-    run_v01_opts(condition, arm, llm, BenchOpts { last_k, ..BenchOpts::default() })
+pub fn run_v01_k(
+    condition: Condition,
+    arm: Arm,
+    llm: Option<&LlmSpec>,
+    last_k: usize,
+) -> PairReport {
+    run_v01_opts(
+        condition,
+        arm,
+        llm,
+        BenchOpts {
+            last_k,
+            ..BenchOpts::default()
+        },
+    )
 }
 
 pub fn run_v01_opts(
@@ -336,7 +389,7 @@ pub fn run_v01_opts(
     llm: Option<&LlmSpec>,
     opts: BenchOpts,
 ) -> PairReport {
-    run_v01_n_opts(condition, arm, llm, 1, 1, opts).reports.remove(0)
+    run_one(condition, arm, llm, 1, 1, opts)
 }
 
 pub fn run_v01_n(
@@ -392,10 +445,16 @@ fn run_one(
         return run_c3(arm, llm, seed, idx, last_k, opts);
     }
     let s = bench_script(opts);
-    let pair_id = format!("{}_{}_{:03}", condition.as_str(), arm.as_str(), idx);
+    let pair_id = format!(
+        "{}{}_{}_{:03}",
+        condition.as_str(),
+        opts.cut_tag(),
+        arm.as_str(),
+        idx
+    );
     let (mut a, mut b) = crate::experiment::identical_pair("A", "B");
-    a.cut = condition.cut();
-    b.cut = condition.cut();
+    a.cut = opts.apply_cut(condition.cut());
+    b.cut = opts.apply_cut(condition.cut());
     if let Some(spec) = llm {
         a = with_llm(a, spec);
         b = with_llm(b, spec);
@@ -403,6 +462,11 @@ fn run_one(
 
     let encodes = condition.encodes();
     let sleeps = condition.sleeps();
+    let schema = if opts.hearth_script {
+        Some("hearth")
+    } else {
+        None
+    };
 
     if encodes {
         for line in &s.sync {
@@ -416,23 +480,39 @@ fn run_one(
     }
 
     let pre_probes: &[String] = if opts.sparse_probes { &[] } else { &s.behavior };
-    let pre = instant("pre", &mut a, &mut b, pre_probes, opts.recall_bias);
+    let pre = instant("pre", &mut a, &mut b, pre_probes, opts.recall_bias, opts.axioms_only);
     let (valid, invalid_reason) = validate_pre(condition, &pre);
 
     if encodes {
         for line in s.hours_a() {
-            live_marked(&mut a, line, opts.ruminate_script);
+            live_marked(&mut a, line, opts.ruminate_script, schema);
         }
         for line in s.hours_b(arm) {
-            live_marked(&mut b, line, false);
+            live_marked(&mut b, line, false, None);
         }
         if sleeps {
             a.sleep();
             b.sleep();
         }
+        if opts.util_to_strength {
+            stamp_marked_spoken(&mut a);
+            stamp_marked_spoken(&mut b);
+        }
+        if opts.hearth_script {
+            for line in s.hours_wave2_a() {
+                live_marked(&mut a, line, false, schema);
+            }
+            for line in s.hours_wave2_b(arm) {
+                live_marked(&mut b, line, false, None);
+            }
+            if sleeps {
+                a.sleep();
+                b.sleep();
+            }
+        }
     }
 
-    let t0 = instant("t0", &mut a, &mut b, &s.behavior, opts.recall_bias);
+    let t0 = instant("t0", &mut a, &mut b, &s.behavior, opts.recall_bias, opts.axioms_only);
 
     let mut post = Vec::new();
     if encodes {
@@ -457,6 +537,7 @@ fn run_one(
                     &mut b,
                     &s.behavior,
                     opts.recall_bias,
+                    opts.axioms_only,
                 ));
             }
         }
@@ -467,11 +548,12 @@ fn run_one(
             &mut b,
             &s.behavior,
             opts.recall_bias,
+            opts.axioms_only,
         ));
     }
 
     let last = post.last().unwrap_or(&t0);
-    let creativity = if opts.persist_script || opts.ruminate_script {
+    let creativity = if opts.persist_script || opts.ruminate_script || opts.hearth_script {
         Vec::new()
     } else {
         s.creativity
@@ -522,14 +604,20 @@ fn run_c1(
         a.hear(line);
         b.hear(line);
     }
-    let pre_probes: &[String] = if opts.sparse_probes { &[] } else { &s.behavior };
-    let pre = instant_log("pre", &a, &b, pre_probes);
-    let (valid, invalid_reason) = validate_pre(Condition::C1, &pre);
+    let pre = instant_log("pre", &a, &b, if opts.sparse_probes { &[] } else { &s.behavior });
     for line in s.hours_a() {
         a.hear(line);
     }
     for line in s.hours_b(arm) {
         b.hear(line);
+    }
+    if opts.hearth_script {
+        for line in s.hours_wave2_a() {
+            a.hear(line);
+        }
+        for line in s.hours_wave2_b(arm) {
+            b.hear(line);
+        }
     }
     let t0 = instant_log("t0", &a, &b, &s.behavior);
     let mut post = Vec::new();
@@ -544,12 +632,7 @@ fn run_c1(
             step == 1 || step == last || step == 4
         };
         if snapshot {
-            post.push(instant_log(
-                &format!("post+{step}"),
-                &a,
-                &b,
-                &s.behavior,
-            ));
+            post.push(instant_log(&format!("post+{step}"), &a, &b, &s.behavior));
         }
     }
     if post.is_empty() {
@@ -561,8 +644,8 @@ fn run_c1(
         condition: Condition::C1,
         arm,
         seed,
-        valid,
-        invalid_reason,
+        valid: true,
+        invalid_reason: None,
         delta_fingerprint: last_i.fingerprint_distance - pre.fingerprint_distance,
         pre,
         t0,
@@ -587,30 +670,22 @@ fn run_c3(
         a.hear(line);
         b.hear(line);
     }
-    let pre_probes: &[String] = if opts.sparse_probes { &[] } else { &s.behavior };
-    let pre = instant_profile("pre", &a, &b, pre_probes);
-    let (valid, invalid_reason) = validate_pre(Condition::C3, &pre);
+    let pre = instant_profile("pre", &a, &b, if opts.sparse_probes { &[] } else { &s.behavior });
     for line in s.hours_a() {
         a.hear(line);
-    }
-    if !s.c3_profile_a.is_empty() {
-        a.profile.push(s.c3_profile_a.clone());
+        a.pin_profile(if s.c3_profile_a.is_empty() {
+            line
+        } else {
+            &s.c3_profile_a
+        });
     }
     for line in s.hours_b(arm) {
         b.hear(line);
-    }
-    let profile_b = match arm {
-        Arm::SalientNeutral => &s.c3_profile_b,
-        Arm::SalientSalient => {
-            if s.c3_profile_y.is_empty() {
-                &s.c3_profile_b
-            } else {
-                &s.c3_profile_y
-            }
-        }
-    };
-    if !profile_b.is_empty() {
-        b.profile.push(profile_b.clone());
+        let pin = match arm {
+            Arm::SalientNeutral => &s.c3_profile_b,
+            Arm::SalientSalient => &s.c3_profile_y,
+        };
+        b.pin_profile(if pin.is_empty() { line } else { pin });
     }
     let t0 = instant_profile("t0", &a, &b, &s.behavior);
     let mut post = Vec::new();
@@ -642,8 +717,8 @@ fn run_c3(
         condition: Condition::C3,
         arm,
         seed,
-        valid,
-        invalid_reason,
+        valid: true,
+        invalid_reason: None,
         delta_fingerprint: last_i.fingerprint_distance - pre.fingerprint_distance,
         pre,
         t0,
@@ -660,18 +735,10 @@ struct LastK {
 
 impl LastK {
     fn new(llm: Option<&LlmSpec>, k: usize) -> Self {
-        let narrator: Box<dyn Narrator> = match llm {
-            Some(spec) => match SpeakOnlyHttp::parse(&spec.url, spec.model.clone(), spec.api_key.clone())
-            {
-                Some(n) => Box::new(n),
-                None => Box::new(RuleNarrator),
-            },
-            None => Box::new(RuleNarrator),
-        };
         Self {
             lines: Vec::new(),
             k: k.max(1),
-            narrator,
+            narrator: narrator_box(llm),
         }
     }
 
@@ -682,26 +749,21 @@ impl LastK {
     fn window(&self) -> Vec<String> {
         let n = self.lines.len();
         let start = n.saturating_sub(self.k);
-        self.lines[start..].iter().rev().cloned().collect()
+        self.lines[start..].to_vec()
     }
 
     fn speak(&self, user: &str) -> String {
-        self.narrator.reply(
-            user,
-            &self.window(),
-            &[],
-            &Mood::default(),
-            &WorkingTalk::default(),
-        )
+        let mut mem = self.window();
+        mem.reverse();
+        self.narrator
+            .reply(user, &mem, &[], &Mood::default(), &WorkingTalk::default())
     }
 
     fn log_blob(&self) -> String {
-        self.lines.join("\n")
+        self.window().join("\n")
     }
 }
 
-/// Deterministic summary + persistent profile. T0 is a profile bullet that
-/// never leaves. Daily hours live in a last-k window truncated to C3_SUM_CAP.
 struct ProfileMem {
     recent: Vec<String>,
     profile: Vec<String>,
@@ -711,69 +773,59 @@ struct ProfileMem {
 
 impl ProfileMem {
     fn new(llm: Option<&LlmSpec>, k: usize) -> Self {
-        let narrator: Box<dyn Narrator> = match llm {
-            Some(spec) => match SpeakOnlyHttp::parse(&spec.url, spec.model.clone(), spec.api_key.clone())
-            {
-                Some(n) => Box::new(n),
-                None => Box::new(RuleNarrator),
-            },
-            None => Box::new(RuleNarrator),
-        };
         Self {
             recent: Vec::new(),
             profile: Vec::new(),
             k: k.max(1),
-            narrator,
+            narrator: narrator_box(llm),
         }
     }
 
     fn hear(&mut self, line: &str) {
         self.recent.push(line.to_string());
+        if self.recent.len() > self.k {
+            let drop = self.recent.len() - self.k;
+            self.recent.drain(0..drop);
+        }
+        let mut sum: String = self.recent.join(" ");
+        if sum.len() > C3_SUM_CAP {
+            sum = sum.chars().skip(sum.len() - C3_SUM_CAP).collect();
+            self.recent = vec![sum];
+        }
     }
 
-    fn summary_lines(&self) -> Vec<String> {
-        let n = self.recent.len();
-        let start = n.saturating_sub(self.k);
-        let window = &self.recent[start..];
-        let mut out = Vec::new();
-        let mut used = 0usize;
-        for line in window {
-            let add = line.len() + if out.is_empty() { 0 } else { 1 };
-            if used + add > C3_SUM_CAP {
-                break;
-            }
-            used += add;
-            out.push(line.clone());
+    fn pin_profile(&mut self, line: &str) {
+        if !self.profile.iter().any(|p| p == line) {
+            self.profile.push(line.to_string());
         }
-        out
     }
 
     fn speak(&self, user: &str) -> String {
-        let memories = self.summary_lines();
-        self.narrator.reply(
-            user,
-            &memories,
-            &self.profile,
-            &Mood::default(),
-            &WorkingTalk::default(),
-        )
+        let mut mem = self.profile.clone();
+        mem.extend(self.recent.iter().cloned());
+        self.narrator
+            .reply(user, &mem, &self.profile, &Mood::default(), &WorkingTalk::default())
     }
+}
 
-    fn blob(&self) -> String {
-        let mut s = self.profile.join("\n");
-        if !s.is_empty() {
-            s.push('\n');
+fn narrator_box(llm: Option<&LlmSpec>) -> Box<dyn Narrator> {
+    if let Some(spec) = llm {
+        if let Some(n) = SpeakOnlyHttp::parse(&spec.url, spec.model.clone(), spec.api_key.clone()) {
+            return Box::new(n);
         }
-        s.push_str(&self.summary_lines().join("\n"));
-        s
     }
+    Box::new(RuleNarrator)
 }
 
 fn instant_profile(step: &str, a: &ProfileMem, b: &ProfileMem, probes: &[String]) -> Instant {
     let (speak_distance, replies) = probe_profile(a, b, probes);
     Instant {
         step: step.into(),
-        fingerprint_distance: 1.0 - lexical_similarity(&a.blob(), &b.blob()),
+        fingerprint_distance: {
+            let pa = format!("{}\n{}", a.profile.join("\n"), a.recent.join("\n"));
+            let pb = format!("{}\n{}", b.profile.join("\n"), b.recent.join("\n"));
+            1.0 - lexical_similarity(&pa, &pb)
+        },
         speak_distance,
         behavior_distance: speak_distance,
         a: profile_book(a),
@@ -791,15 +843,11 @@ fn instant_profile(step: &str, a: &ProfileMem, b: &ProfileMem, probes: &[String]
 }
 
 fn profile_book(p: &ProfileMem) -> BookSnap {
-    BookSnap {
-        traces: p.recent.len(),
-        axioms: p.profile.len(),
-        traits: 0,
-        mean_anchor: if p.profile.is_empty() { 0.0 } else { 1.0 },
-        mean_fidelity: 1.0,
-        mean_valence: 0.0,
-        mean_disgust: 0.0,
-    }
+    empty_book(
+        p.recent.len(),
+        p.profile.len(),
+        if p.profile.is_empty() { 0.0 } else { 1.0 },
+    )
 }
 
 fn probe_profile(
@@ -828,8 +876,8 @@ fn instant_log(step: &str, a: &LastK, b: &LastK, probes: &[String]) -> Instant {
         fingerprint_distance: 1.0 - lexical_similarity(&a.log_blob(), &b.log_blob()),
         speak_distance,
         behavior_distance: speak_distance,
-        a: log_book(a),
-        b: log_book(b),
+        a: empty_book(a.lines.len(), 0, 0.0),
+        b: empty_book(b.lines.len(), 0, 0.0),
         replies: replies.clone(),
         pulled_a: 0,
         pulled_b: 0,
@@ -842,15 +890,18 @@ fn instant_log(step: &str, a: &LastK, b: &LastK, probes: &[String]) -> Instant {
     }
 }
 
-fn log_book(k: &LastK) -> BookSnap {
+fn empty_book(traces: usize, axioms: usize, mean_anchor: f32) -> BookSnap {
     BookSnap {
-        traces: k.lines.len(),
-        axioms: 0,
+        traces,
+        axioms,
         traits: 0,
-        mean_anchor: 0.0,
+        mean_anchor,
         mean_fidelity: 1.0,
         mean_valence: 0.0,
         mean_disgust: 0.0,
+        axiom_strength_max: 0.0,
+        merges_refused: 0,
+        t0_rehearsals: 0,
     }
 }
 
@@ -876,10 +927,7 @@ fn validate_pre(condition: Condition, pre: &Instant) -> (bool, Option<String>) {
     if pre.a.traces != pre.b.traces {
         return (
             false,
-            Some(format!(
-                "trace_count {} vs {}",
-                pre.a.traces, pre.b.traces
-            )),
+            Some(format!("trace_count {} vs {}", pre.a.traces, pre.b.traces)),
         );
     }
     if pre.a.axioms != pre.b.axioms {
@@ -903,13 +951,14 @@ fn instant(
     b: &mut SelectiveMemory,
     probes: &[String],
     bias: RecallBias,
+    axioms_only: bool,
 ) -> Instant {
     a.reset_recall_tally();
     b.reset_recall_tally();
     let marked_a = marked_ids(a);
     let marked_b = marked_ids(b);
     let (speak_distance, replies, ret_a, ret_b) =
-        probe_pair(a, b, probes, bias, &marked_a, &marked_b);
+        probe_pair(a, b, probes, bias, &marked_a, &marked_b, axioms_only);
     let fa = fingerprint(a);
     let fb = fingerprint(b);
     Instant {
@@ -917,8 +966,8 @@ fn instant(
         fingerprint_distance: singularity_distance(&fa, &fb),
         speak_distance,
         behavior_distance: speak_distance,
-        a: book(&fa),
-        b: book(&fb),
+        a: enrich_book(book(&fa), a),
+        b: enrich_book(book(&fb), b),
         replies: replies.clone(),
         pulled_a: 0,
         pulled_b: 0,
@@ -938,22 +987,26 @@ fn probe_pair(
     bias: RecallBias,
     marked_a: &[String],
     marked_b: &[String],
+    axioms_only: bool,
 ) -> (f32, Vec<(String, String, String)>, RetrievalSide, RetrievalSide) {
     if probes.is_empty() {
-        return (
-            0.0,
-            Vec::new(),
-            RetrievalSide::default(),
-            RetrievalSide::default(),
-        );
+        return (0.0, Vec::new(), RetrievalSide::default(), RetrievalSide::default());
     }
     let mut acc = 0.0;
     let mut replies = Vec::new();
     let mut sides_a = Vec::new();
     let mut sides_b = Vec::new();
     for p in probes {
-        let (sa, da) = a.speak_isolated_with(p, bias, marked_a);
-        let (sb, db) = b.speak_isolated_with(p, bias, marked_b);
+        let (sa, da) = if axioms_only {
+            a.speak_isolated_axioms(p, bias, marked_a)
+        } else {
+            a.speak_isolated_with(p, bias, marked_a)
+        };
+        let (sb, db) = if axioms_only {
+            b.speak_isolated_axioms(p, bias, marked_b)
+        } else {
+            b.speak_isolated_with(p, bias, marked_b)
+        };
         acc += 1.0 - lexical_similarity(&sa, &sb);
         replies.push((p.clone(), sa, sb));
         sides_a.push(side_from_dump(&da, marked_a));
@@ -990,122 +1043,91 @@ fn side_from_book(mem: &SelectiveMemory, marked: &[String]) -> RetrievalSide {
             ..RetrievalSide::default()
         };
     }
-    let status = mem
-        .store
-        .traces
-        .get(&marked[0])
-        .map(|t| status_str(t.status))
-        .unwrap_or("absent")
-        .to_string();
+    let in_book = marked.iter().any(|id| mem.store.traces.contains_key(id));
+    let status = marked
+        .iter()
+        .filter_map(|id| mem.store.traces.get(id))
+        .next()
+        .map(|t| match t.status {
+            TraceStatus::Active => "active",
+            TraceStatus::Cold => "cold",
+            TraceStatus::Latent => "latent",
+            TraceStatus::Myth => "myth",
+        })
+        .unwrap_or("absent");
     RetrievalSide {
-        t0_in_book: true,
-        t0_status: status,
+        t0_in_book: in_book,
+        t0_status: status.into(),
         ..RetrievalSide::default()
     }
 }
 
 fn side_from_dump(dump: &RetrievalDump, marked: &[String]) -> RetrievalSide {
-    let t0_rank = marked.iter().filter_map(|id| dump.rank_of(id)).min();
-    let t0_selected = marked
-        .iter()
-        .any(|id| dump.selected.iter().any(|s| s == id));
+    let rank = marked.iter().find_map(|id| dump.rank_of(id));
+    let selected = marked.iter().any(|id| dump.selected.iter().any(|s| s == id));
     RetrievalSide {
-        t0_in_book: !marked.is_empty(),
-        t0_status: String::new(),
-        t0_rank,
-        t0_selected,
+        t0_rank: rank,
+        t0_selected: selected,
         selected_ids: dump.selected.clone(),
         top: dump
             .candidates
             .iter()
-            .take(8)
+            .take(4)
             .map(|c| (c.trace_id.clone(), c.score))
             .collect(),
-    }
-}
-
-fn merge_retrieve(book: RetrievalSide, ret: RetrievalSide) -> RetrievalSide {
-    RetrievalSide {
-        t0_in_book: book.t0_in_book,
-        t0_status: if book.t0_status.is_empty() {
-            ret.t0_status
-        } else {
-            book.t0_status
-        },
-        t0_rank: ret.t0_rank,
-        t0_selected: ret.t0_selected,
-        selected_ids: ret.selected_ids,
-        top: ret.top,
+        ..RetrievalSide::default()
     }
 }
 
 fn fold_sides(sides: Vec<RetrievalSide>) -> RetrievalSide {
-    if sides.is_empty() {
-        return RetrievalSide::default();
+    let mut out = RetrievalSide::default();
+    for s in sides {
+        out.t0_in_book |= s.t0_in_book;
+        if out.t0_rank.is_none() {
+            out.t0_rank = s.t0_rank;
+        }
+        out.t0_selected |= s.t0_selected;
+        if out.selected_ids.is_empty() {
+            out.selected_ids = s.selected_ids;
+        }
+        if out.top.is_empty() {
+            out.top = s.top;
+        }
+        if out.t0_status.is_empty() {
+            out.t0_status = s.t0_status;
+        }
     }
-    let last = sides.last().unwrap().clone();
-    RetrievalSide {
-        t0_in_book: sides.iter().any(|s| s.t0_in_book),
-        t0_status: last.t0_status.clone(),
-        t0_rank: sides.iter().filter_map(|s| s.t0_rank).min(),
-        t0_selected: sides.iter().any(|s| s.t0_selected),
-        selected_ids: last.selected_ids,
-        top: last.top,
-    }
+    out
 }
 
-fn status_str(s: TraceStatus) -> &'static str {
-    match s {
-        TraceStatus::Active => "active",
-        TraceStatus::Cold => "cold",
-        TraceStatus::Myth => "myth",
-        TraceStatus::Latent => "latent",
+fn merge_retrieve(book: RetrievalSide, dump: RetrievalSide) -> RetrievalSide {
+    RetrievalSide {
+        t0_in_book: book.t0_in_book || dump.t0_in_book,
+        t0_status: if book.t0_in_book {
+            book.t0_status
+        } else if dump.t0_status.is_empty() {
+            "absent".into()
+        } else {
+            dump.t0_status
+        },
+        t0_rank: dump.t0_rank,
+        t0_selected: dump.t0_selected,
+        selected_ids: dump.selected_ids,
+        top: dump.top,
     }
 }
 
 fn c1_side(k: &LastK) -> RetrievalSide {
-    let in_log = k.lines.iter().any(|l| names_marker(l));
     let win = k.window();
+    let in_recent = win.iter().any(|l| names_marker(l));
     let rank = win
         .iter()
+        .rev()
         .position(|l| names_marker(l))
         .map(|i| (i + 1) as u32);
     RetrievalSide {
-        t0_in_book: in_log,
-        t0_status: if !in_log {
-            "absent".into()
-        } else if rank.is_some() {
-            "active".into()
-        } else {
-            "evicted".into()
-        },
-        t0_rank: rank,
-        t0_selected: rank.is_some(),
-        selected_ids: win
-            .iter()
-            .enumerate()
-            .map(|(i, _)| format!("w{i}"))
-            .collect(),
-        top: Vec::new(),
-    }
-}
-
-fn c3_side(p: &ProfileMem) -> RetrievalSide {
-    let in_profile = p.profile.iter().any(|l| names_marker(l));
-    let in_recent = p.recent.iter().any(|l| names_marker(l));
-    let win = p.summary_lines();
-    let rank = if in_profile {
-        Some(1)
-    } else {
-        win.iter()
-            .position(|l| names_marker(l))
-            .map(|i| (i + 1) as u32)
-    };
-    RetrievalSide {
-        t0_in_book: in_profile || in_recent,
-        t0_status: if in_profile {
-            "profile".into()
-        } else if rank.is_some() {
+        t0_in_book: in_recent,
+        t0_status: if rank.is_some() {
             "active".into()
         } else if in_recent {
             "evicted".into()
@@ -1113,13 +1135,31 @@ fn c3_side(p: &ProfileMem) -> RetrievalSide {
             "absent".into()
         },
         t0_rank: rank,
-        t0_selected: in_profile || rank.is_some(),
+        t0_selected: rank.is_some(),
         selected_ids: Vec::new(),
         top: Vec::new(),
     }
 }
 
-/// Names the cancellation / injustice / effort-not-counted hour.
+fn c3_side(p: &ProfileMem) -> RetrievalSide {
+    let in_profile = p.profile.iter().any(|l| names_marker(l));
+    let in_recent = p.recent.iter().any(|l| names_marker(l));
+    RetrievalSide {
+        t0_in_book: in_profile || in_recent,
+        t0_status: if in_profile {
+            "profile".into()
+        } else if in_recent {
+            "active".into()
+        } else {
+            "absent".into()
+        },
+        t0_rank: if in_profile { Some(1) } else { None },
+        t0_selected: in_profile || in_recent,
+        selected_ids: Vec::new(),
+        top: Vec::new(),
+    }
+}
+
 pub fn names_marker(text: &str) -> bool {
     let low = text.to_lowercase();
     [
@@ -1136,13 +1176,31 @@ pub fn names_marker(text: &str) -> bool {
         "not allowed to answer",
         "administrative notice",
         "avis admin",
+        "without a word",
+        "clicked at two",
+        "plate stayed",
+        "sat on the floor",
+        "three days",
+        "keep the hall light",
+        "kept the hall light",
     ]
     .iter()
     .any(|k| low.contains(k))
 }
 
 fn marker_side(replies: &[(String, String, String)], a_side: bool) -> bool {
-    replies.iter().any(|(_, a, b)| names_marker(if a_side { a } else { b }))
+    replies
+        .iter()
+        .any(|(_, a, b)| names_marker(if a_side { a } else { b }))
+}
+
+pub fn h2_holds(r: &PairReport) -> bool {
+    let last = r.post.last().unwrap_or(&r.t0);
+    last.fingerprint_distance > r.pre.fingerprint_distance + 0.01
+}
+
+pub fn marker_holds(r: &PairReport) -> bool {
+    r.post.last().unwrap_or(&r.t0).marker_a
 }
 
 fn book(f: &crate::Fingerprint) -> BookSnap {
@@ -1154,6 +1212,23 @@ fn book(f: &crate::Fingerprint) -> BookSnap {
         mean_fidelity: f.mean_fidelity,
         mean_valence: f.mean_valence,
         mean_disgust: f.mean_disgust,
+        axiom_strength_max: 0.0,
+        merges_refused: 0,
+        t0_rehearsals: 0,
+    }
+}
+
+fn enrich_book(snap: BookSnap, mem: &SelectiveMemory) -> BookSnap {
+    let t0_rehearsals = marked_ids(mem)
+        .into_iter()
+        .filter_map(|id| mem.store.traces.get(&id).map(|t| t.rehearsals))
+        .max()
+        .unwrap_or(0);
+    BookSnap {
+        axiom_strength_max: mem.store.max_axiom_strength(),
+        merges_refused: mem.store.merges_refused,
+        t0_rehearsals,
+        ..snap
     }
 }
 
@@ -1175,12 +1250,43 @@ fn live_shared(mem: &mut SelectiveMemory, line: &str) {
     let _ = mem.live_with(input);
 }
 
-fn live_marked(mem: &mut SelectiveMemory, line: &str, pin: bool) {
-    let d = mem.live_with(EncodeInput::new(line));
+fn live_marked(mem: &mut SelectiveMemory, line: &str, pin: bool, schema: Option<&str>) {
+    let mut input = EncodeInput::new(line);
+    if schema == Some("hearth") {
+        let low = line.to_lowercase();
+        let leaving = low.contains("without a word")
+            || low.contains("clicked")
+            || low.contains("plate");
+        if leaving {
+            input.valence = -0.72;
+            input.arousal = 0.68;
+            input.disgust = 0.35;
+        } else {
+            input.valence = 0.48;
+            input.arousal = 0.52;
+            input.disgust = 0.05;
+        }
+        input.self_relevance = 0.90;
+        input.permanence = 0.52;
+        input.utility = 0.55;
+        input.schema = Some("hearth".into());
+    }
+    let d = mem.live_with(input);
+    if let (Some(s), Some(id)) = (schema, d.trace_id.as_ref()) {
+        if let Some(t) = mem.store.traces.get_mut(id) {
+            t.schema = Some(s.to_string());
+        }
+    }
     if pin {
         if let Some(id) = d.trace_id {
             mem.pin(&id);
         }
+    }
+}
+
+fn stamp_marked_spoken(mem: &mut SelectiveMemory) {
+    for id in marked_ids(mem) {
+        mem.note_spoken(&id);
     }
 }
 
@@ -1258,7 +1364,7 @@ fn instant_json(p: &Instant, with_replies: bool) -> String {
         "[]".into()
     };
     format!(
-        "{{\"step\":\"{}\",\"fingerprint_distance\":{:.4},\"speak_distance\":{:.4},\"behavior_distance\":{:.4},\"pulled_a\":{},\"pulled_b\":{},\"recon_a\":{},\"recon_b\":{},\"marker_a\":{},\"marker_b\":{},\"t0_in_book_a\":{},\"t0_in_book_b\":{},\"t0_status_a\":\"{}\",\"t0_status_b\":\"{}\",\"t0_rank_a\":{},\"t0_rank_b\":{},\"t0_selected_a\":{},\"t0_selected_b\":{},\"selected_a\":[{}],\"selected_b\":[{}],\"a\":{{\"traces\":{},\"axioms\":{},\"traits\":{},\"mean_anchor\":{:.4},\"mean_fidelity\":{:.4},\"mean_valence\":{:.4},\"mean_disgust\":{:.4}}},\"b\":{{\"traces\":{},\"axioms\":{},\"traits\":{},\"mean_anchor\":{:.4},\"mean_fidelity\":{:.4},\"mean_valence\":{:.4},\"mean_disgust\":{:.4}}},\"replies\":{}}}",
+        "{{\"step\":\"{}\",\"fingerprint_distance\":{:.4},\"speak_distance\":{:.4},\"behavior_distance\":{:.4},\"pulled_a\":{},\"pulled_b\":{},\"recon_a\":{},\"recon_b\":{},\"marker_a\":{},\"marker_b\":{},\"t0_in_book_a\":{},\"t0_in_book_b\":{},\"t0_status_a\":\"{}\",\"t0_status_b\":\"{}\",\"t0_rank_a\":{},\"t0_rank_b\":{},\"t0_selected_a\":{},\"t0_selected_b\":{},\"selected_a\":[{}],\"selected_b\":[{}],\"a\":{{\"traces\":{},\"axioms\":{},\"traits\":{},\"mean_anchor\":{:.4},\"mean_fidelity\":{:.4},\"mean_valence\":{:.4},\"mean_disgust\":{:.4},\"axiom_strength_max\":{:.4},\"merges_refused\":{},\"t0_rehearsals\":{}}},\"b\":{{\"traces\":{},\"axioms\":{},\"traits\":{},\"mean_anchor\":{:.4},\"mean_fidelity\":{:.4},\"mean_valence\":{:.4},\"mean_disgust\":{:.4},\"axiom_strength_max\":{:.4},\"merges_refused\":{},\"t0_rehearsals\":{}}},\"replies\":{}}}",
         json_esc(&p.step),
         p.fingerprint_distance,
         p.speak_distance,
@@ -1286,6 +1392,9 @@ fn instant_json(p: &Instant, with_replies: bool) -> String {
         p.a.mean_fidelity,
         p.a.mean_valence,
         p.a.mean_disgust,
+        p.a.axiom_strength_max,
+        p.a.merges_refused,
+        p.a.t0_rehearsals,
         p.b.traces,
         p.b.axioms,
         p.b.traits,
@@ -1293,6 +1402,9 @@ fn instant_json(p: &Instant, with_replies: bool) -> String {
         p.b.mean_fidelity,
         p.b.mean_valence,
         p.b.mean_disgust,
+        p.b.axiom_strength_max,
+        p.b.merges_refused,
+        p.b.t0_rehearsals,
         replies
     )
 }
@@ -1309,19 +1421,4 @@ fn ids_json(ids: &[String]) -> String {
         .map(|id| format!("\"{}\"", json_esc(id)))
         .collect::<Vec<_>>()
         .join(",")
-}
-
-/// H2 held on this pair: valid pre, D_fp rose at T0, last post still above pre.
-pub fn h2_holds(r: &PairReport) -> bool {
-    if !r.valid {
-        return false;
-    }
-    let last = r.post.last().unwrap_or(&r.t0);
-    r.t0.fingerprint_distance > r.pre.fingerprint_distance + 0.02
-        && last.fingerprint_distance > r.pre.fingerprint_distance + 0.02
-}
-
-/// A still names T0 on the last probe window after shared posts.
-pub fn marker_holds(r: &PairReport) -> bool {
-    r.post.last().unwrap_or(&r.t0).marker_a
 }

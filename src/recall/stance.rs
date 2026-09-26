@@ -3,7 +3,7 @@
 //! Default `speak_isolated` does not use these. Persist showed that withholding
 //! the scene makes C2 A ≈ C2 B; the live path keeps retrieved narratives.
 
-use crate::core::model::{Channel, MemoryTrace, Mood, TraceStatus};
+use crate::core::model::{MemoryTrace, Mood, TraceStatus};
 use crate::core::store::MemoryStore;
 
 pub fn is_charged(trace: &MemoryTrace) -> bool {

@@ -4,7 +4,7 @@
 //! Live recall can write the book (rehearsal, grounding, reconsolidation).
 //! Isolated probes use `RecallWrite::ReadOnly` and must not.
 
-use crate::core::model::{now_secs, Channel, Mood, OrganCut, RecalledMemory, TraceStatus};
+use crate::core::model::{now_secs, Mood, OrganCut, RecalledMemory, TraceStatus};
 use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
 use crate::dream::drift::apply_reconsolidation;
@@ -175,7 +175,7 @@ pub fn recall_with(
 
         if live {
             if let Some(trace) = store.traces.get_mut(trace_id) {
-                trace.rehearsals += 1;
+                // Access clock only. Rehearsal is spoken utility, stamped in speak.
                 trace.last_recalled_at = Some(now_secs());
             }
         }
@@ -271,24 +271,9 @@ fn can_force(store: &MemoryStore, id: &str) -> bool {
     }
 }
 
-/// Marked ids plus every trace that shares a non-empty schema with one of them.
+/// Marked ids, same-schema siblings, merge edges, and axiom supports that touch the set.
 pub fn lineage_of(store: &MemoryStore, marked: &[String]) -> Vec<String> {
-    let mut schemas: Vec<String> = Vec::new();
-    for id in marked {
-        if let Some(s) = store.traces.get(id).and_then(|t| t.schema.clone()) {
-            if !s.is_empty() && !schemas.iter().any(|x| x == &s) {
-                schemas.push(s);
-            }
-        }
-    }
-    let mut out = marked.to_vec();
-    for t in store.traces.values() {
-        let Some(s) = t.schema.as_ref() else { continue };
-        if schemas.iter().any(|x| x == s) && !out.iter().any(|id| id == &t.id) {
-            out.push(t.id.clone());
-        }
-    }
-    out
+    store.lineage(marked)
 }
 
 pub fn axiom_supported_by_lineage(

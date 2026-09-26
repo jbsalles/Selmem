@@ -284,7 +284,7 @@ pub fn dispatch(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
             mem.talk.topic = topic;
             let _ = mem.save();
             ok(format!(
-                "{{\"faded\":{},\"cold\":{},\"myth\":{},\"merged\":{},\"extinguished\":{},\"weathered\":{},\"rewritten\":{},\"released\":{},\"sculpted\":{},\"axioms\":{},\"sitting\":{}}}",
+                "{{\"faded\":{},\"cold\":{},\"myth\":{},\"merged\":{},\"extinguished\":{},\"weathered\":{},\"rewritten\":{},\"released\":{},\"sculpted\":{},\"axioms\":{},\"sitting\":{},\"kind\":\"{}\",\"new_hours\":{},\"charge\":{:.3}}}",
                 report.faded,
                 report.cold,
                 report.myth,
@@ -295,7 +295,10 @@ pub fn dispatch(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
                 report.released,
                 report.sculpted.len(),
                 report.axioms.len(),
-                sitting
+                sitting,
+                report.kind.as_str(),
+                report.new_hours,
+                report.charge
             ))
         }
         ("POST", "/speak") => {

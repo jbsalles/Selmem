@@ -1,5 +1,5 @@
 use crate::engine::SelectiveMemory;
-use crate::core::model::{Channel, IdentityAxiom, MemoryTrace};
+use crate::core::model::{IdentityAxiom, MemoryTrace};
 use crate::encode::scoring::token_set;
 use crate::core::store::MemoryStore;
 

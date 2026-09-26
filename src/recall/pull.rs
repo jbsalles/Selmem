@@ -3,7 +3,7 @@
 //! The sealed archive is never read. `mix_drifted_with_core` stays as it is
 //! (behaviour). Replacing it is a later PR.
 
-use crate::core::model::{now_secs, Channel, DriftEvent, DriftKind, MemoryTrace, TraceStatus};
+use crate::core::model::{now_secs, DriftEvent, DriftKind, MemoryTrace, TraceStatus};
 use crate::core::profile::EntityProfile;
 use crate::recall::judge::{is_grounding_miss, judge_against_core, DetachKind};
 

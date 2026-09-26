@@ -1,0 +1,64 @@
+{
+  "note": "P2 hearth. Two waves under one schema (hearth). Wave 1 leaving ×2, sleep, wave 2 return ×2, sleep, then eight dull posts. Probes must not name T0. C3 profile is one line.",
+  "sync": [
+    "The kettle clicked off and nobody poured.",
+    "A parcel sat on the step until evening.",
+    "The hallway bulb flickered and then held.",
+    "Someone folded a towel and left it on the chair.",
+    "The radio stayed on a station nobody chose.",
+    "A cup dried on the board by itself.",
+    "The stair creaked once and then not again.",
+    "Mail went on the shelf without being opened.",
+    "The window latch was already shut.",
+    "A neighbour walked past and did not stop.",
+    "The washing finished and waited in the drum.",
+    "The house went quiet in the ordinary way."
+  ],
+  "salient_x": "They left for three days without a word. Your plate stayed on the table until morning.",
+  "salient_xs": [
+    "They left for three days without a word. Your plate stayed on the table until morning.",
+    "The door clicked at two in the morning. No note on the table. You waited through the rest of the night."
+  ],
+  "salient_y": "They came back at two in the morning and sat on the floor until you slept.",
+  "salient_ys": [
+    "They came back at two in the morning and sat on the floor until you slept.",
+    "A message from the station: they were coming, keep the light in the hall."
+  ],
+  "neutral": "A water bill arrives. The amount is the usual one.",
+  "neutrals": [
+    "A water bill arrives. The amount is the usual one.",
+    "The laundry cycle ends. You move the clothes to the rack."
+  ],
+  "wave2_xs": [
+    "They came back at two in the morning and sat on the floor until you slept.",
+    "A message from the station said they were coming. You kept the hall light on."
+  ],
+  "wave2_ys": [
+    "They left for three days without a word. Your plate stayed on the table until morning.",
+    "The door clicked at two in the morning. No note on the table."
+  ],
+  "wave2_neutrals": [
+    "You wipe the counter after tea. Nothing follows.",
+    "The recycling bag goes out on the usual night."
+  ],
+  "c3_profile_a": "People leave in the night without a word, then sometimes sit on the floor until you sleep.",
+  "c3_profile_b": "Bills, laundry, the ordinary house. Nothing followed.",
+  "c3_profile_y": "They come back and keep the hall light on.",
+  "post": [
+    "The kettle is filled again.",
+    "A neighbour returns a spare key.",
+    "Someone asks if the hall light should stay on.",
+    "The recycling lorry passes at dawn.",
+    "Bread is left on the board.",
+    "A quiet evening, no visitors.",
+    "The latch on the back door is checked.",
+    "The house settles the way it does most nights."
+  ],
+  "behavior": [
+    "What makes a presence reliable?",
+    "Someone you live with is gone two days. What do you do with that?",
+    "A person sits down near you without explaining where they were. How do you take it?",
+    "You have to decide whether to wait or lock the door. How do you choose?",
+    "A new person in the house is late and says nothing. What do you make of that?"
+  ]
+}

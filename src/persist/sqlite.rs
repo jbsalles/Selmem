@@ -220,10 +220,15 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
 
     {
         let st = db.prepare("INSERT INTO meta(k,v) VALUES (?1,?2)")?;
+        let deep = store
+            .last_deep_at
+            .map(|ts| ts.to_string())
+            .unwrap_or_else(|| "-".into());
         for (k, v) in [
             ("name", profile.name.as_str()),
             ("params", &profile_params_line(profile)),
             ("mood", &format!("{} {} {}", mood.valence, mood.arousal, mood.disgust)),
+            ("last_deep", deep.as_str()),
         ] {
             st.bind_text(1, k)?;
             st.bind_text(2, v)?;
@@ -384,6 +389,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let mut name = String::new();
     let mut params_s = String::new();
     let mut mood_s = String::new();
+    let mut last_deep_s = String::new();
     for row in meta {
         if row.len() < 2 {
             continue;
@@ -392,12 +398,16 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             "name" => name = row[1].clone(),
             "params" => params_s = row[1].clone(),
             "mood" => mood_s = row[1].clone(),
+            "last_deep" => last_deep_s = row[1].clone(),
             _ => {}
         }
     }
     let profile = parse_profile(&name, &params_s)?;
     let mood = parse_mood(&mood_s)?;
     let mut store = MemoryStore::new();
+    if !last_deep_s.is_empty() && last_deep_s != "-" {
+        store.last_deep_at = last_deep_s.parse().ok();
+    }
 
     for row in query(&db, "SELECT id,created,source,verbatim FROM archives")? {
         if row.len() < 4 {

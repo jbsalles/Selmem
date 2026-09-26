@@ -1,4 +1,4 @@
-use crate::core::model::{now_secs, Channel, DriftEvent, DriftKind, MemoryTrace};
+use crate::core::model::{now_secs, DriftEvent, DriftKind, MemoryTrace};
 use crate::core::profile::EntityProfile;
 
 pub fn apply_reconsolidation(

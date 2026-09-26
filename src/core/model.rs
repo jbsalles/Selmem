@@ -65,6 +65,25 @@ pub enum AxiomLayer {
     Trait,
 }
 
+impl AxiomLayer {
+    /// A motif cannot become a law. Only a trait may sit at 1.0.
+    pub fn strength_cap(self) -> f32 {
+        match self {
+            AxiomLayer::Motif => 0.42,
+            AxiomLayer::Belief => 0.70,
+            AxiomLayer::Trait => 1.0,
+        }
+    }
+
+    pub fn strength_floor(self) -> f32 {
+        match self {
+            AxiomLayer::Motif => 0.18,
+            AxiomLayer::Belief => 0.28,
+            AxiomLayer::Trait => 0.40,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct DriftEvent {
     pub kind: DriftKind,
@@ -174,7 +193,7 @@ impl Mood {
     }
 }
 
-/// Runtime cuts for P0 ablations. Not persisted. Default is the full organ.
+/// Runtime cuts for P0 / P2 ablations. Not persisted. Default is the full organ.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct OrganCut {
     pub reconsolidate: bool,
@@ -182,6 +201,10 @@ pub struct OrganCut {
     pub ladder: bool,
     /// When false, readout is the stored gist. No reconstruct / write-back.
     pub reconstruct: bool,
+    /// Live speak (or `note_spoken`) raises strength on axioms that list the hour.
+    pub util_to_strength: bool,
+    /// Night merge refuses a pair that supports distinct living axioms, or a pin.
+    pub merge_support_veto: bool,
 }
 
 impl Default for OrganCut {
@@ -197,6 +220,8 @@ impl OrganCut {
             ground: true,
             ladder: true,
             reconstruct: true,
+            util_to_strength: false,
+            merge_support_veto: false,
         }
     }
 
@@ -206,6 +231,8 @@ impl OrganCut {
             ground: false,
             ladder: false,
             reconstruct: false,
+            util_to_strength: false,
+            merge_support_veto: false,
         }
     }
 

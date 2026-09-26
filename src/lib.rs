@@ -18,7 +18,10 @@ pub use core::model::{
 pub use core::talk::{TalkTurn, WorkingTalk, ACTIVE_GAP_SECS, MAX_SESSION_SECS};
 pub use core::profile::{EntityProfile, Voice};
 pub use core::store::MemoryStore;
-pub use dream::{detail_retention, fingerprint, seed_anchor, stability_days, DreamReport, Fingerprint};
+pub use dream::{
+    detail_retention, evaluate_budget, fingerprint, seed_anchor, stability_days, DreamReport,
+    Fingerprint, NightKind, NIGHT_PASSES, SHALLOW_PASSES,
+};
 pub use dream::singularite::distance as singularity_distance;
 pub use encode::embed::{cosine, Embedder, HashEmbedder, HttpEmbedder};
 pub use encode::{
@@ -27,7 +30,7 @@ pub use encode::{
 };
 pub use engine::SelectiveMemory;
 pub use benchmark::{
-    h2_holds, marker_holds, names_marker, persist_script, ruminate_script, run_v01, run_v01_k, run_v01_n,
+    h2_holds, hearth_script, marker_holds, names_marker, persist_script, ruminate_script, run_v01, run_v01_k, run_v01_n,
     run_v01_n_opts, run_v01_opts, v01_script, Arm, BenchOpts, Campaign, Condition, Instant,
     PairReport, V01Script,
 };

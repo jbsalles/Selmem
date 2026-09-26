@@ -57,6 +57,10 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
         for (src, dst) in pairs {
             writeln!(w, "edge {src} {dst}")?;
         }
+        match store.last_deep_at {
+            Some(ts) => writeln!(w, "deep {ts}")?,
+            None => writeln!(w, "deep -")?,
+        }
     }
     fs::rename(tmp, path)?;
     Ok(())
@@ -108,6 +112,18 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             return fail("malformed edge");
         }
         store.link(p[1], p[2]);
+    }
+
+    match read_line(&mut r) {
+        Ok(line) => {
+            if let Some(rest) = line.strip_prefix("deep ") {
+                if rest != "-" {
+                    store.last_deep_at = rest.parse().ok();
+                }
+            }
+        }
+        Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {}
+        Err(e) => return Err(e),
     }
 
     crate::persist::bump_id_counter(&store);

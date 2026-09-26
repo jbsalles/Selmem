@@ -7,7 +7,7 @@ use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
 use crate::encode::scoring::lexical_similarity;
 
-pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> u32 {
+pub fn run(store: &mut MemoryStore, profile: &EntityProfile, veto: bool) -> u32 {
     let mut groups: HashMap<String, Vec<String>> = HashMap::new();
     for t in store.traces.values() {
         if t.channel != Channel::Selfhood {
@@ -53,6 +53,10 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> u32 {
             if !similar {
                 continue;
             }
+            if veto && merge_vetoed(store, &keep, other) {
+                store.merges_refused = store.merges_refused.saturating_add(1);
+                continue;
+            }
             let other_clone = store.traces.get(other).cloned();
             let Some(src) = other_clone else { continue };
             if let Some(dst) = store.traces.get_mut(&keep) {
@@ -84,10 +88,33 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> u32 {
                 src_mut.status = TraceStatus::Myth;
             }
             store.link(&keep, other);
+            for axiom in store.axioms.values_mut() {
+                let touches = axiom.support_trace_ids.iter().any(|id| id == other);
+                if touches && !axiom.support_trace_ids.iter().any(|id| id == &keep) {
+                    axiom.support_trace_ids.push(keep.clone());
+                }
+            }
             merged += 1;
         }
     }
     merged
+}
+
+fn merge_vetoed(store: &MemoryStore, keep: &str, other: &str) -> bool {
+    let pinned = |id: &str| {
+        store
+            .traces
+            .get(id)
+            .map(|t| t.anchor >= 0.85)
+            .unwrap_or(false)
+    };
+    if pinned(keep) || pinned(other) {
+        return true;
+    }
+    let a = store.living_axiom_ids_for(keep);
+    let b = store.living_axiom_ids_for(other);
+    // Empty vs supported is distinct: a new hour must not fold into a minted family.
+    a != b
 }
 
 fn merge_weight(trace: &crate::core::model::MemoryTrace) -> (i32, i32, i32, String) {

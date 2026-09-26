@@ -1,7 +1,7 @@
 //! First night pass: decay detail, unused disgust, status, latent revive.
 //! World traces stay Active with access = 1.
 
-use crate::core::model::{now_secs, Channel, DriftEvent, TraceStatus};
+use crate::core::model::{now_secs, DriftEvent, TraceStatus};
 use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
 use crate::dream::drift::{sculpt, weather};

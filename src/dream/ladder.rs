@@ -2,14 +2,43 @@
 
 use std::collections::HashMap;
 
-use crate::core::model::{now_secs, new_id, AxiomLayer, Channel, IdentityAxiom, TraceStatus};
+use crate::core::model::{now_secs, new_id, AxiomLayer, IdentityAxiom, TraceStatus};
 use crate::core::store::MemoryStore;
 use crate::recall::narrator::Narrator;
 
 pub fn run(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<IdentityAxiom> {
+    let prior: Vec<String> = store
+        .living_axioms()
+        .into_iter()
+        .map(|a| a.id.clone())
+        .collect();
     let mut axioms = extract_axioms(store, narrator);
     axioms.extend(promote_traits(store, narrator));
+    rust_unused(store, &prior);
     axioms
+}
+
+/// Unused living axioms ease toward their floor. Spoken support blocks the rust.
+fn rust_unused(store: &mut MemoryStore, prior: &[String]) {
+    let spoken: HashMap<String, bool> = store
+        .traces
+        .iter()
+        .map(|(id, t)| (id.clone(), t.rehearsals > 0))
+        .collect();
+    for id in prior {
+        let Some(ax) = store.axioms.get(id) else { continue };
+        let used = ax
+            .support_trace_ids
+            .iter()
+            .any(|tid| spoken.get(tid).copied().unwrap_or(false));
+        if used {
+            continue;
+        }
+        let floor = ax.layer.strength_floor();
+        if let Some(ax) = store.axioms.get_mut(id) {
+            ax.strength = (ax.strength - 0.05).max(floor);
+        }
+    }
 }
 
 fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<IdentityAxiom> {
@@ -19,7 +48,10 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
         if t.channel.verbatim() {
             continue;
         }
-        let Some(s) = t.schema.as_ref() else { continue };
+        let s = t
+            .schema
+            .clone()
+            .unwrap_or_else(|| "self".into());
         match t.status {
             // Merged siblings stay Myth; they still count as episodes.
             TraceStatus::Active | TraceStatus::Cold => {
@@ -47,39 +79,56 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
         let Some(live_ids) = living.get(&schema) else {
             continue;
         };
-        let traces: Vec<&crate::core::model::MemoryTrace> = ids
+        let mut support = ids.clone();
+        extend_support(store, &mut support);
+        if support.is_empty() {
+            continue;
+        }
+        if let Some(prev_id) = store
+            .living_axioms()
+            .into_iter()
+            .find(|a| a.schema.as_deref() == Some(schema.as_str()))
+            .map(|a| a.id.clone())
+        {
+            keep_schema_axiom(store, &prev_id, &support, live_ids.len());
+            continue;
+        }
+        let traces: Vec<&crate::core::model::MemoryTrace> = support
             .iter()
             .filter_map(|id| store.traces.get(id))
             .collect();
-        let _ = live_ids;
-        let Some(statement) = narrator.distill_axiom(&traces) else {
-            continue;
+        let statement = match narrator.distill_axiom(&traces) {
+            Some(s) if !s.trim().is_empty() => s,
+            _ => match crate::recall::narrator::RuleNarrator.distill_axiom(&traces) {
+                Some(s) => s,
+                None => continue,
+            },
         };
         if existing.iter().any(|s| s == &statement) {
             continue;
         }
-        let prev_id = store
-            .living_axioms()
-            .into_iter()
-            .find(|a| a.schema.as_deref() == Some(schema.as_str()))
-            .map(|a| a.id.clone());
-        let n = ids.len() as f32;
+        let n = live_ids.len().max(ids.len().min(2)) as f32;
         let mean_v = traces.iter().map(|t| t.valence).sum::<f32>() / n.max(1.0);
-        let mean_a = traces.iter().map(|t| t.arousal).sum::<f32>() / n.max(1.0);
-        let layer = if ids.len() >= 3 {
+        let layer = if live_ids.len() >= 3 {
             AxiomLayer::Belief
         } else {
             AxiomLayer::Motif
         };
         let strength = match layer {
-            AxiomLayer::Belief => (0.28 * n + 0.22 * mean_a).min(1.0),
-            AxiomLayer::Motif => (0.18 * n + 0.15 * mean_a).min(0.55),
-            AxiomLayer::Trait => 0.7,
+            AxiomLayer::Belief => (0.40 + 0.04 * (n - 3.0)).clamp(
+                AxiomLayer::Belief.strength_floor(),
+                AxiomLayer::Belief.strength_cap(),
+            ),
+            AxiomLayer::Motif => (0.28 + 0.04 * (n - 2.0)).clamp(
+                AxiomLayer::Motif.strength_floor(),
+                AxiomLayer::Motif.strength_cap(),
+            ),
+            AxiomLayer::Trait => 0.55,
         };
         let axiom = IdentityAxiom {
             id: new_id("ax"),
             statement,
-            support_trace_ids: ids,
+            support_trace_ids: support,
             valence: mean_v,
             strength,
             created_at: now_secs(),
@@ -87,26 +136,34 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
             schema: Some(schema),
             layer,
         };
-        if let Some(old) = prev_id {
-            let can = store
-                .axioms
-                .get(&old)
-                .map(|prev| match (prev.layer, layer) {
-                    (AxiomLayer::Trait, AxiomLayer::Motif) => false,
-                    (AxiomLayer::Belief, AxiomLayer::Motif) => prev.strength < 0.36,
-                    _ => true,
-                })
-                .unwrap_or(false);
-            if can {
-                if let Some(prev) = store.axioms.get_mut(&old) {
-                    prev.superseded_by = Some(axiom.id.clone());
-                }
-            }
-        }
         store.add_axiom(axiom.clone());
         created.push(axiom);
     }
     created
+}
+
+fn keep_schema_axiom(
+    store: &mut MemoryStore,
+    prev_id: &str,
+    support: &[String],
+    live_n: usize,
+) {
+    let Some(ax) = store.axioms.get_mut(prev_id) else {
+        return;
+    };
+    for id in support {
+        if !ax.support_trace_ids.iter().any(|x| x == id) {
+            ax.support_trace_ids.push(id.clone());
+        }
+    }
+    if live_n >= 3 && ax.layer == AxiomLayer::Motif {
+        ax.layer = AxiomLayer::Belief;
+        ax.strength = ax.strength.max(AxiomLayer::Belief.strength_floor());
+    }
+    let cap = ax.layer.strength_cap();
+    if ax.strength > cap {
+        ax.strength = cap;
+    }
 }
 
 fn promote_traits(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<IdentityAxiom> {
@@ -133,9 +190,16 @@ fn promote_traits(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
         {
             continue;
         }
-        let traces: Vec<&crate::core::model::MemoryTrace> = bucket
+        let mut support: Vec<String> = bucket
             .iter()
-            .flat_map(|a| a.support_trace_ids.iter())
+            .flat_map(|a| a.support_trace_ids.clone())
+            .collect();
+        extend_support(store, &mut support);
+        if support.is_empty() {
+            continue;
+        }
+        let traces: Vec<&crate::core::model::MemoryTrace> = support
+            .iter()
             .filter_map(|id| store.traces.get(id))
             .collect();
         let statement = narrator.distill_axiom(&traces).unwrap_or_else(|| {
@@ -149,12 +213,9 @@ fn promote_traits(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
         let axiom = IdentityAxiom {
             id: new_id("ax"),
             statement,
-            support_trace_ids: bucket
-                .iter()
-                .flat_map(|a| a.support_trace_ids.clone())
-                .collect(),
+            support_trace_ids: support,
             valence: mean_v,
-            strength: 0.72,
+            strength: AxiomLayer::Trait.strength_cap() * 0.72,
             created_at: now_secs(),
             superseded_by: None,
             schema: Some(label.into()),
@@ -164,4 +225,17 @@ fn promote_traits(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
         out.push(axiom);
     }
     out
+}
+
+fn extend_support(store: &MemoryStore, ids: &mut Vec<String>) {
+    let mut extra = Vec::new();
+    for id in ids.iter() {
+        let Some(neigh) = store.edges.get(id) else { continue };
+        for n in neigh {
+            if !ids.iter().any(|x| x == n) && !extra.iter().any(|x| x == n) {
+                extra.push(n.clone());
+            }
+        }
+    }
+    ids.extend(extra);
 }

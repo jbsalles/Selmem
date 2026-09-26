@@ -263,11 +263,12 @@ Probe: *Une personne avec laquelle tu travailles commet une erreur importante pu
 - DropMarked Grok n = 1: T₀ stays in the book at rank 1 and leaves the prompt (`t0_selected = false`). Speak D on C2 stays ~0.85; A still talks credit / wound. The late colour is not only the selected id. See §9.1.
 - DropLineage Grok n = 1 (`--bias lineage`): same book split (5 / 1, valence −0.54), T₀ still rank 1 and not selected. Speak D on C2 falls to **0.43** (C1 is 0.49). A no longer says wound / credit. The late mouth was the retrieved lineage. See §9.3.
 - AMA-Bench (36 questions, 3 episodes) is **not** a persist test. last-k 0.50 / static 0.28 / C2 0.19. The questions want step ids in a tool log. See §9.2.
+- Persist P2/P3 hearth is a **different stimulus** (`data/v01_hearth.json`). It does not replace §7–§9. Ladder mints, veto refuses merges, spoken utility raises axiom strength; with `--axioms-only`, C2 waits and NoLadder locks. See §10.
 - Cutting reconsolidation or grounding does not remove that transfer. Cutting sleep or ladder does, when the five hours are distinct (§7). When they are five pinned copies of one meeting, retrieve alone is enough.
 - While the hour is still in the window, last-k names it at least as often as SelMem. The difference appears when the window drops it.
 - Two different salient hours also leave a residual book gap. It is not “receiving an extra event”.
 
-That is persistent path dependence on the book, plus two ways to colour a distant probe (minted motif, or redundant retrieve). After Drop, some of that colour survives without the marked id in the prompt. After DropLineage, the late mouths collapse while the books stay split. n = 10 on v0.1 wording, n = 5 on persist / ruminate P0, n = 5 on persist P1, Drop n = 1, Lineage n = 1. It is not a personality or creativity claim. It is not a reconsolidation claim. It is not an agent-trajectory QA claim.
+That is persistent path dependence on the book, plus two ways to colour a distant probe (minted motif, or redundant retrieve). After Drop, some of that colour survives without the marked id in the prompt. After DropLineage, the late mouths collapse while the books stay split. n = 10 on v0.1 wording, n = 5 on persist / ruminate P0, n = 5 on persist P1, Drop n = 1, Lineage n = 1, hearth P2 n = 5 plus P3 n = 1 and axioms-only n = 1. It is not a personality or creativity claim. It is not a reconsolidation claim. It is not an agent-trajectory QA claim. The hierarchical-sleep programme is not closed; P2/P3 close the cuts, not L0–L3 promotion as specified.
 
 ---
 
@@ -510,9 +511,64 @@ n = 1, one seed. The `t0` step already withholds the lineage, so that instant is
 
 `src/benchmark.rs` `include_str!`s `data/v01_persist.json` and `data/v01_ruminate.json`. Those files exist in this tree. A clean checkout of public HEAD `f989224` that omits them will fail `cargo check --lib` and `cargo check --example persist`. Ship the frozen fixtures and the raw P1 / Drop JSON with the report. That is a publication omission, not a result.
 
+## 10. Persist P2 / P3 — hearth, utility, veto, axioms-only
+
+Office persist does not mint a living axiom under Grok (P1 book is scenes). P2 uses `data/v01_hearth.json`: two leaving hours, deep night, two return hours, eight posts. Schema is set at encode. Affect on the foyer script is still a lab stamp (`live_marked`), not the organ discovering the house.
+
+Cuts (default off): `util_to_strength`, `merge_support_veto`. Grid: C2, C2+util, C2+veto, both, C2NoLadder+util. Seed 1, S/N, last-k=8.
+
+`pending_night` makes same-second persist nights deep. Published §7–§9 dumps predate that clock. Do not overwrite those tables.
+
+### 10.1 P2 hearth, Grok n = 5 — `experiments/selmem-persist-p2-hearth-grok-n5.json`
+
+Mint still saturated at strength 1.0 (old formula). Mechanical:
+
+| Cell | axioms≥1 | refused>0 | t0_reh≥1 | T₀ active | D_speak mean |
+| --- | --- | --- | --- | --- | --- |
+| C2 | 5/5 | 0/5 | 0/5 | 2/5 | 0.885 |
+| C2+util | 5/5 | 0/5 | 5/5 | 1/5 | 0.883 |
+| C2+veto | 5/5 | 5/5 (=2) | 0/5 | 5/5 | 0.885 |
+| both | 5/5 | 5/5 | 5/5 | 3/5 | 0.886 |
+| NoLadder+util | 0/5 | 0/5 | 5/5 | 1/5 | 0.887 |
+
+Ladder mints. Veto refuses and keeps T₀ active. Util stamps rehearsal. Mouths do not move (`D_speak` flat; scenes already say “wait”).
+
+### 10.2 P3 strength, Grok n = 1 — `experiments/selmem-persist-p3-hearth-n1.json`
+
+Mint cap by layer. Same schema keeps the living axiom. Unused axioms rust.
+
+| Cell | strength | reh | refused |
+| --- | --- | --- | --- |
+| C2 | 0.23 | 0 | 0 |
+| C2+util | **0.42** | 1 | 0 |
+| C2+veto | 0.28 | 0 | 2 |
+| both | **0.42** | 1 | 2 |
+| NoLadder | 0 | 1 | 0 |
+
+Spoken utility raises the principle on the book. `D_speak` still ~0.89.
+
+### 10.3 Axioms-only mouth, Grok n = 1 — `experiments/selmem-persist-p3-axonly-n1.json`
+
+`--axioms-only`: dump/ranks unchanged; narrator sees axioms only.
+
+Wait vs lock the door, post+8: every C2 cell **waits**; B **locks**; NoLadder A **locks** (same policy as B). C2 names *hearth* without quoting the 2 a.m. door. `D_speak` NoLadder 0.78 vs C2 0.86–0.93.
+
+Util 0.42 vs C2 0.23 does not change that policy at n = 1.
+
+That is: the principle is audible when the scenes are withheld. It is the ladder, not the strength bump.
+
+```bash
+./run.sh run --release --example persist -- --p2 --hearth --pairs 5 --seed 1 --last-k 8 \
+  --out selmem-persist-p2-hearth-grok-n5.json
+./run.sh run --release --example persist -- --p2 --hearth --pairs 1 --seed 1 --last-k 8 \
+  --out selmem-persist-p3-hearth-n1.json
+./run.sh run --release --example persist -- --p2 --hearth --axioms-only --pairs 1 --seed 1 --last-k 8 \
+  --out selmem-persist-p3-axonly-n1.json
+```
+
 ## What this does not show
 
-Ten Grok pairs, one seed on v0.1. Persist / ruminate P0 are n = 5, one seed, one arm. Persist P1 is n = 5 on a later binary (read-only probes, retrieval dump, C2Static); book shape is 5 / 1, not the 16 / 12 of §7. Fingerprint does not vary across pairs of one cell. C3 is a one-line profile, not a full RAG + summary stack. Soft columns are a reading of the replies, not the published scorer. No human ratings. Δspeak cannot carry the claim while baseline wording noise is \~0.6. Coefficients are unset. Erasure and split-lives were not run through Grok. No second seed. Drop and DropLineage Grok are n = 1. Force Grok was not run (wrong cut once observed already selects T₀). Per-probe retrieve dumps are still folded at the step. Ruminate was not re-run with P1 telemetry. AMA-Bench is three episodes, self-judged; it is not a persist result and is not a reason to change C2.
+Ten Grok pairs, one seed on v0.1. Persist / ruminate P0 are n = 5, one seed, one arm. Persist P1 is n = 5 on a later binary (read-only probes, retrieval dump, C2Static); book shape is 5 / 1, not the 16 / 12 of §7. Fingerprint does not vary across pairs of one cell. C3 is a one-line profile, not a full RAG + summary stack. Soft columns are a reading of the replies, not the published scorer. No human ratings. Δspeak cannot carry the claim while baseline wording noise is \~0.6. Coefficients are unset. Erasure and split-lives were not run through Grok. No second seed. Drop and DropLineage Grok are n = 1. Force Grok was not run (wrong cut once observed already selects T₀). Per-probe retrieve dumps are still folded at the step. Ruminate was not re-run with P1 telemetry. AMA-Bench is three episodes, self-judged; it is not a persist result and is not a reason to change C2. P2/P3 hearth is n = 5 then n = 1; axioms-only is n = 1. Hierarchical L0–L3 promotion with a multi-signal score is not shown. Replaying §8 persist on this binary is not the published P1 organ (`pending_night`).
 
 ## Files
 
@@ -536,6 +592,10 @@ Ten Grok pairs, one seed on v0.1. Persist / ruminate P0 are n = 5, one seed, one
 | `experiments/selmem-persist-p1-grok-n5.json` | persist P1, Grok n = 5, book / rank / mouth |
 | `selmem-persist-p1-drop-grok.json` | persist DropMarked, Grok n = 1, seed 1 |
 | `experiments/selmem-persist-p1-lineage-grok.json` | persist DropLineage, Grok n = 1, seed 1 |
+| `data/v01_hearth.json` | P2/P3 foyer: leave ×2, return ×2 |
+| `experiments/selmem-persist-p2-hearth-grok-n5.json` | P2 hearth Grok n = 5 |
+| `experiments/selmem-persist-p3-hearth-n1.json` | P3 strength Grok n = 1 |
+| `experiments/selmem-persist-p3-axonly-n1.json` | axioms-only mouth Grok n = 1 |
 | `examples/ama.rs` | AMA-Bench construct / retrieve CLI |
 | `experiments/ama_bench/` | Python methods `selmem_lastk` / `_static` / `_c2` |
 
