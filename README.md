@@ -174,7 +174,7 @@ JSON reports book (`t0_in_book_*`), retrieval (`t0_rank_*`, `t0_selected_*`), an
 ./run.sh run --release --example persist -- --pairs 5 --seed 1 --last-k 8 --out selmem-persist-p1-grok-n5.json
 ```
 
-Grok persist P1 is n = 5. DropMarked n = 1 (`--bias drop`): T₀ leaves the prompt, C2 mouth stays charged. DropLineage n = 1 (`--bias lineage`): mouth falls to C1 (~0.43); books stay split. Hearth P2 n = 5 / P3 n = 1: ladder, veto, util-to-strength. `--axioms-only` n = 1: C2 waits, NoLadder locks. Office persist replay n = 5 under the current night: C2 mints; §8 is still the published P1. See experiments/REPORT.md §8–§10.
+Grok persist P1 is n = 5. DropMarked n = 1 (`--bias drop`): T₀ leaves the prompt, C2 mouth stays charged. DropLineage n = 1 (`--bias lineage`): mouth falls to C1 (~0.43); books stay split. Hearth P2 n = 5 / P3 n = 1: ladder, veto, util-to-strength. `--axioms-only` n = 1: C2 waits, NoLadder locks. Office persist replay n = 5 under the current night: C2 mints; §8 is still the published P1. gpt-6-luna n = 1: book matches Grok; mouth does not (C1 `D` ~0.77; wait/lock hedged). See experiments/REPORT.md §8–§10.5.
 
 AMA-Bench (`examples/ama`, experiments/ama_bench/) is a **side table**, not a SelMem score. It asks for step ids in agent logs. last-k 0.50 / static 0.28 / C2 0.19 on 3 episodes. Expected; do not submit. Why: experiments/REPORT.md §9.2.
 

@@ -32,8 +32,9 @@ impl HttpNarrator {
         } else {
             format!(",\"reasoning_effort\":\"{}\"", json_esc(&effort))
         };
+        let cap = token_cap_field(&self.url, &self.model);
         let body = format!(
-            "{{\"model\":\"{}\",\"temperature\":{},\"max_tokens\":280{} ,\"messages\":[{{\"role\":\"system\",\"content\":\"{}\"}},{{\"role\":\"user\",\"content\":\"{}\"}}]}}",
+            "{{\"model\":\"{}\",\"temperature\":{},\"{cap}\":280{} ,\"messages\":[{{\"role\":\"system\",\"content\":\"{}\"}},{{\"role\":\"user\",\"content\":\"{}\"}}]}}",
             json_esc(&self.model),
             temp,
             extra,
@@ -50,6 +51,23 @@ impl HttpNarrator {
                 let clip: String = raw.chars().take(240).collect();
                 format!("unreadable LLM reply: {clip}")
             })
+    }
+}
+
+/// GPT-5/6 and the o-series reject `max_tokens`. Grok / Ollama still want it.
+fn token_cap_field(url: &str, model: &str) -> &'static str {
+    let m = model.to_ascii_lowercase();
+    let openai = url.contains("api.openai.com")
+        || url.contains("openai.azure.com")
+        || m.starts_with("gpt-5")
+        || m.starts_with("gpt-6")
+        || m.starts_with("o1")
+        || m.starts_with("o3")
+        || m.starts_with("o4");
+    if openai {
+        "max_completion_tokens"
+    } else {
+        "max_tokens"
     }
 }
 
@@ -229,8 +247,12 @@ impl Narrator for HttpNarrator {
             ctx.push_str(a);
             ctx.push('\n');
         }
-        for m in memories.iter().take(4) {
-            ctx.push_str("- memory: ");
+        for (i, m) in memories.iter().take(4).enumerate() {
+            if i == 0 {
+                ctx.push_str("cette heure: ");
+            } else {
+                ctx.push_str("- memory: ");
+            }
             ctx.push_str(m);
             ctx.push('\n');
         }

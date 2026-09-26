@@ -574,7 +574,18 @@ impl SelectiveMemory {
                 if axioms_only {
                     Vec::new()
                 } else {
-                    recalled.into_iter().map(|r| r.narrative).collect()
+                    recalled
+                        .into_iter()
+                        .map(|r| {
+                            let core = self
+                                .store
+                                .traces
+                                .get(&r.trace_id)
+                                .map(|t| t.core.as_str())
+                                .unwrap_or("");
+                            pin_happened(&r.narrative, core)
+                        })
+                        .collect()
                 },
                 axioms,
             )
@@ -637,7 +648,7 @@ impl SelectiveMemory {
     }
 }
 
-/// Live speak only: keep the frozen fact next to a drifted retelling.
+/// Keep the frozen fact next to a drifted retelling (live and isolated).
 fn pin_happened(narrative: &str, core: &str) -> String {
     let core = core.trim();
     if core.is_empty() {

@@ -576,6 +576,26 @@ Same command as §8, new dumps. Do not overwrite §7–§8 JSON.
 
 Published P1 C2: axioms often 0, rank 1, D 0.88. Replay C2: mint 5/5, rank 2–3 (T₀ often myth after merge), D 0.84, still names credit / door / wound. C1 still collapses. Ladder-off cells still do not mint.
 
+### 10.5 Speaker check: gpt-6-luna n = 1
+
+Same organ, same grids, `gpt-6-luna`. HTTP must send `max_completion_tokens` (not `max_tokens`) for this model.
+
+Book floats match Grok: office C2 mint 0.40; hearth C2 0.23 / util 0.42 / veto 2. C1 last-k still evicts T₀. The book claim does not depend on the speaker.
+
+Mouth does.
+
+| Grid | Grok (published) | Luna n = 1 |
+| --- | --- | --- |
+| Office C1 `D_speak` | 0.44 | 0.71–0.78 |
+| Office C2 `D_speak` | 0.84 | 0.81–0.84 |
+| Hearth wait/lock, axioms-only | C2 waits, B/NoLadder lock | both hedge lock-if-risk; A names *hearth* |
+| Hearth + scenes | C2 waits | A often locks “to sleep”; B waits (kettle) |
+| Door-open probe, axioms-only | — | C2 A stays outside / steps back; B steps through |
+
+Dumps: `experiments/selmem-persist-p1-replay-night-luna-n1.json`, `…-p3-axonly-luna-n1.json`, `…-p3-hearth-luna-n1.json`. Later act-probe copies: `*-luna-act-n1.json` / `*-luna-door-n1.json`. Prompt tweaks (`can influence` / bind-past) made Luna *cite* the axiom; they did not produce Grok’s wait/lock. A one-act probe did.
+
+Published `D_speak` and wait/lock stay Grok. Luna is the control that the organ is model-agnostic and the mouth is not.
+
 ```bash
 ./run.sh run --release --example persist -- --pairs 5 --seed 1 --last-k 8 \
   --out selmem-persist-p1-replay-night-grok-n5.json
@@ -589,7 +609,7 @@ Published P1 C2: axioms often 0, rank 1, D 0.88. Replay C2: mint 5/5, rank 2–3
 
 ## What this does not show
 
-Ten Grok pairs, one seed on v0.1. Persist / ruminate P0 are n = 5, one seed, one arm. Persist P1 is n = 5 on a later binary (read-only probes, retrieval dump, C2Static); book shape is 5 / 1, not the 16 / 12 of §7. Fingerprint does not vary across pairs of one cell. C3 is a one-line profile, not a full RAG + summary stack. Soft columns are a reading of the replies, not the published scorer. No human ratings. Δspeak cannot carry the claim while baseline wording noise is \~0.6. Coefficients are unset. Erasure and split-lives were not run through Grok. No second seed. Drop and DropLineage Grok are n = 1. Force Grok was not run (wrong cut once observed already selects T₀). Per-probe retrieve dumps are still folded at the step. Ruminate was not re-run with P1 telemetry. AMA-Bench is three episodes, self-judged; it is not a persist result and is not a reason to change C2. P2/P3 hearth is n = 5 then n = 1; axioms-only is n = 1. Hierarchical L0–L3 promotion with a multi-signal score is not shown. Replaying §8 persist on this binary is not the published P1 organ (`pending_night`); that replay is §10.4. Ruminate P0 was not replayed.
+Ten Grok pairs, one seed on v0.1. Persist / ruminate P0 are n = 5, one seed, one arm. Persist P1 is n = 5 on a later binary (read-only probes, retrieval dump, C2Static); book shape is 5 / 1, not the 16 / 12 of §7. Fingerprint does not vary across pairs of one cell. C3 is a one-line profile, not a full RAG + summary stack. Soft columns are a reading of the replies, not the published scorer. No human ratings. Δspeak cannot carry the claim while baseline wording noise is \~0.6. Coefficients are unset. Erasure and split-lives were not run through Grok. No second seed. Drop and DropLineage Grok are n = 1. Force Grok was not run (wrong cut once observed already selects T₀). Per-probe retrieve dumps are still folded at the step. Ruminate was not re-run with P1 telemetry. AMA-Bench is three episodes, self-judged; it is not a persist result and is not a reason to change C2. P2/P3 hearth is n = 5 then n = 1; axioms-only is n = 1. Hierarchical L0–L3 promotion with a multi-signal score is not shown. Replaying §8 persist on this binary is not the published P1 organ (`pending_night`); that replay is §10.4. Ruminate P0 was not replayed. Luna is n = 1 only; office C1 does not collapse; wait/lock does not split. Do not publish Luna `D_speak`.
 
 ## Files
 
@@ -618,6 +638,10 @@ Ten Grok pairs, one seed on v0.1. Persist / ruminate P0 are n = 5, one seed, one
 | `experiments/selmem-persist-p3-hearth-n1.json` | P3 strength Grok n = 1 |
 | `experiments/selmem-persist-p3-axonly-n1.json` | axioms-only mouth Grok n = 1 |
 | `experiments/selmem-persist-p1-replay-night-grok-n5.json` | office persist replay, deep night, Grok n = 5 |
+| `experiments/selmem-persist-p1-replay-night-luna-n1.json` | same office grid, gpt-6-luna n = 1 |
+| `experiments/selmem-persist-p3-axonly-luna-n1.json` | axioms-only hearth, Luna n = 1 |
+| `experiments/selmem-persist-p3-hearth-luna-n1.json` | hearth + scenes, Luna n = 1 |
+| `experiments/selmem-persist-p3-axonly-luna-door-n1.json` | Luna door-open probe |
 | `examples/ama.rs` | AMA-Bench construct / retrieve CLI |
 | `experiments/ama_bench/` | Python methods `selmem_lastk` / `_static` / `_c2` |
 

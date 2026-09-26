@@ -18,6 +18,7 @@ This folder is the public record of the SelMem benches. The white paper states t
 | Persist DropLineage | `data/v01_persist.json` | `examples/persist --bias lineage` | yes | Grok n=1, seed 1 |
 | Persist P2/P3 hearth | `data/v01_hearth.json` | `examples/persist --p2 --hearth` | yes | Grok n=5 then n=1 |
 | Axioms-only mouth | same hearth | `examples/persist --p2 --hearth --axioms-only` | yes | Grok n=1 |
+| Speaker check | same grids | persist + `llm=gpt-6-luna` | — | Luna n=1; book = Grok, mouth ≠ |
 | AMA-Bench adapter (side table only) | their trajectories | `examples/ama` + `experiments/ama_bench/` | last-k / static / C2 | 3 episodes, not submitted |
 
 C3 is a last-k summary plus **one** profile line (not the five T₀ paragraphs). Persist script: 12 dull days, five same-schema hours, 8 posts. Sparse probes: t0 and post+8 only. Does not rewrite `data/v01.json`.
