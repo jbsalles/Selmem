@@ -1,3 +1,4 @@
+pub mod bench_report;
 pub mod benchmark;
 pub mod config;
 pub mod core;
@@ -29,6 +30,7 @@ pub use encode::{
     split_event, EncodeDecision, EncodeInput,
 };
 pub use engine::SelectiveMemory;
+pub use bench_report::{print_banner, print_pair_verbose};
 pub use benchmark::{
     h2_holds, hearth_script, marker_holds, names_marker, persist_script, ruminate_script, run_v01, run_v01_k, run_v01_n,
     run_v01_n_opts, run_v01_opts, v01_script, Arm, BenchOpts, Campaign, Condition, Instant,

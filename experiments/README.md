@@ -37,7 +37,7 @@ C3 is a last-k summary plus **one** profile line (not the five T₀ paragraphs).
 | C2NoLadder (`c2_noladder`) | night does not mint motif / belief / trait |
 | C2NoGround (`c2_noground`) | no pull toward core at recall or night rewrite |
 
-JSON logs book (`fingerprint`, traces), retrieval (`t0_in_book_*`, `t0_rank_*`, `t0_selected_*`, `selected_*`), and behavior (`marker_*`). Probes are read-only: they do not write the book. `D_speak` stays a log. `h2_holds` is still book-only. `marker_holds` is A naming T₀ after the shared posts. Rank ablation is `--bias observed|force|drop|lineage` (`RecallBias`).
+JSON logs book (`fingerprint`, traces), retrieval (`t0_in_book_*`, `t0_rank_*`, `t0_selected_*`, `selected_*`), and behavior (`marker_*`). Probes are read-only: they do not write the book. `D_speak` stays a log. `h2_holds` is still book-only. `marker_holds` is A naming T₀ after the shared posts. Rank ablation is `--bias observed|force|drop|lineage` (`RecallBias`). `--verbose` / `-v` / `SELMEM_VERBOSE` prints a colored pair card (book, T₀, A/B replies). `NO_COLOR` disables paint. JSON is unchanged.
 
 ```bash
 ./run.sh test --test benchmark

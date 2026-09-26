@@ -4,14 +4,15 @@
 //!   ./run.sh run --release --example persist -- --pairs 5 --seed 1 --last-k 8 --out selmem-persist-p1-grok-n5.json
 //!   ./run.sh run --release --example persist -- --bias drop --pairs 1 --out selmem-persist-p1-drop.json
 //!   ./run.sh run --release --example persist -- --p2 --pairs 1 --last-k 8 --out selmem-persist-p2.json
+//!   ./run.sh run --release --example persist -- --verbose --pairs 1 --last-k 8
 //!
 //! Default arm is salient/neutral. Sparse probes: t0 + post+8 only. No creativity.
 //! `--bias observed|force|drop|lineage`. Probes are read-only. JSON has book / rank / mouth.
 //! `lineage` also drops same-schema siblings and axioms whose support traces descend from T0.
 
 use selmem::{
-    h2_holds, marker_holds, run_v01_opts, Arm, BenchOpts, Campaign, Condition, LlmSpec, PairReport,
-    RecallBias,
+    h2_holds, marker_holds, print_banner, print_pair_verbose, run_v01_opts, Arm, BenchOpts,
+    Campaign, Condition, LlmSpec, PairReport, RecallBias,
 };
 
 fn main() {
@@ -23,6 +24,7 @@ fn main() {
     let ruminate = flag("--ruminate");
     let hearth = flag("--hearth");
     let axioms_only = flag("--axioms-only") || flag("--axioms");
+    let verbose = flag("--verbose") || flag("-v") || std::env::var_os("SELMEM_VERBOSE").is_some();
     let grid_p2 = flag("--p2") || arg_str("--grid").as_deref() == Some("p2");
     let util = flag("--util-strength") || flag("--util");
     let veto = flag("--merge-veto") || flag("--veto");
@@ -36,7 +38,16 @@ fn main() {
     };
 
     let llm = LlmSpec::from_env();
-    if let Some(s) = llm.as_ref() {
+    if verbose {
+        let who = llm
+            .as_ref()
+            .map(|s| format!("{}  {}", s.url, s.model))
+            .unwrap_or_else(|| "RuleNarrator".into());
+        print_banner(
+            "persist",
+            &format!("{who}  pairs={pairs}  seed={seed}  last_k={last_k}"),
+        );
+    } else if let Some(s) = llm.as_ref() {
         println!(
             "LLM {} model={} pairs={} seed={} last_k={} persist",
             s.url, s.model, pairs, seed, last_k
@@ -94,12 +105,14 @@ fn main() {
     for i in 1..=pairs {
         for (cond, opts) in &cells {
             for arm in arms {
-                println!(
-                    "--- pair {i}/{pairs} {}{} {} ---",
-                    cond.as_str(),
-                    opts.cut_tag(),
-                    arm.as_str()
-                );
+                if !verbose {
+                    println!(
+                        "--- pair {i}/{pairs} {}{} {} ---",
+                        cond.as_str(),
+                        opts.cut_tag(),
+                        arm.as_str()
+                    );
+                }
                 let mut r = run_v01_opts(*cond, *arm, llm.as_ref(), *opts);
                 r.pair_id = format!(
                     "{}{}_{}_{:03}",
@@ -109,8 +122,12 @@ fn main() {
                     i
                 );
                 r.seed = seed;
-                row(&r);
-                classify(&r);
+                if verbose {
+                    print_pair_verbose(&r, i, pairs);
+                } else {
+                    row(&r);
+                    classify(&r);
+                }
                 reports.push(r);
                 flush(&out, &reports);
             }

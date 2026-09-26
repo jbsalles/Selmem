@@ -5,7 +5,10 @@
 //! LLM: llm= in `.selmem` or SELMEM_LLM. Without it this is RuleNarrator and
 //! ten pairs are identical.
 
-use selmem::{h2_holds, run_v01_k, Arm, Campaign, Condition, LlmSpec, PairReport};
+use selmem::{
+    h2_holds, print_banner, print_pair_verbose, run_v01_k, Arm, Campaign, Condition, LlmSpec,
+    PairReport,
+};
 
 fn main() {
     let pairs = arg_u32("--pairs").unwrap_or(1).max(1);
@@ -13,9 +16,19 @@ fn main() {
     let last_k = arg_u32("--last-k").unwrap_or(24).max(1) as usize;
     let out = arg_str("--out").unwrap_or_else(|| "selmem-v01.json".into());
     let p0 = flag("--p0");
+    let verbose = flag("--verbose") || flag("-v") || std::env::var_os("SELMEM_VERBOSE").is_some();
 
     let llm = LlmSpec::from_env();
-    if let Some(s) = llm.as_ref() {
+    if verbose {
+        let who = llm
+            .as_ref()
+            .map(|s| format!("{}  {}", s.url, s.model))
+            .unwrap_or_else(|| "RuleNarrator".into());
+        print_banner(
+            "v0.1",
+            &format!("{who}  pairs={pairs}  seed={seed}  last_k={last_k}"),
+        );
+    } else if let Some(s) = llm.as_ref() {
         println!("LLM {} model={} pairs={} seed={} last_k={}", s.url, s.model, pairs, seed, last_k);
     } else {
         println!("RuleNarrator (no llm) pairs={} — C2 fingerprints will repeat", pairs);
@@ -28,11 +41,17 @@ fn main() {
         let conds: &[Condition] = if p0 { &p0_conds } else { &v01_conds };
         for cond in conds.iter().copied() {
             for arm in [Arm::SalientNeutral, Arm::SalientSalient] {
-                println!("--- pair {i}/{pairs} {} {} ---", cond.as_str(), arm.as_str());
+                if !verbose {
+                    println!("--- pair {i}/{pairs} {} {} ---", cond.as_str(), arm.as_str());
+                }
                 let mut r = run_v01_k(cond, arm, llm.as_ref(), last_k);
                 r.pair_id = format!("{}_{}_{:03}", cond.as_str(), arm.as_str(), i);
                 r.seed = seed;
-                row(&r);
+                if verbose {
+                    print_pair_verbose(&r, i, pairs);
+                } else {
+                    row(&r);
+                }
                 reports.push(r);
                 flush(&out, &reports);
             }
