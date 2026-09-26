@@ -4,13 +4,13 @@ Selective reconstructive memory for an LLM entity. v0.5
 
 An LLM maps context to the next token. Adding facts increases coverage, but does not necessarily create divergence: identical contexts tend toward identical continuations. 
 
-SelMem instead sculpts a particular past so that otherwise identical instances can follow different paths and develop a singular identity..
+SelMem goal is not more memory, but path-dependent memory: selection, reconstruction, sleep, rumination, and identity transform experience into a history that actively shapes future context. The result is not a taller log, but a different past and therefore a different trajectory.
 
-Its goal is not more memory, but path-dependent memory: selection, reconstruction, sleep, rumination, and identity transform experience into a history that actively shapes future context. The result is not a taller log, but a different past and therefore a different trajectory.
+**Claim:** After an hour retained on one side only, two copies of the same model do not stay interchangeable once the following stream is identical. Measured on the book, retrieve, and the mouth.
 
 **Manifest:** [WHITEPAPER.md](WHITEPAPER.md)\
 **Layout:** [ARCHITECTURE.md](ARCHITECTURE.md) — encode / judge / night / snapshot.\
-**Benches:** experiments/REPORT.md — method, tables, P0 / P1, Drop / Lineage n=1, hearth P2/P3. Replay from experiments/README.md.\
+**Benches:** experiments/REPORT.md — same sentence, then method and tables. Replay from experiments/README.md.\
 **Knobs:** [PARAMETERS.md](PARAMETERS.md) — exploratory, not fitted.
 
 Rust 1.75. SQLite via system `libsqlite3` (macOS SDK or Linux).
@@ -49,7 +49,7 @@ experience → interpret → paint → split → gate → core
 
 The model never sees the archive. Only gist, core, schema, affect, fidelity, mood, living axioms.
 
-Claire and Silas are not characters. They are two sensitivities (`tender` / `austere`) on the same corpus. After nights they are not the same past.
+`tender` / `austere` are two gates on the same corpus, not characters. After nights the books can differ. That is the claim above, not a personality.
 
 ## Build
 
@@ -409,10 +409,9 @@ One thread per connection. `/health` and `/` do not take the memory lock. `/turn
 - Living axioms color the next encoding before the gate.
 - Cherished memories embellish. Recalled disgust amplifies. Neglected disgust extinguishes.
 - Recall can shift *meaning* (valence under current mood), not only wording.
-- Nearby episodes fuse into myth. Heavy anchors do not merge.
+- Nearby episodes can fuse. Heavy anchors do not merge.
 - Axioms climb: 2 traces → motif, 3+ → belief, aligned beliefs → trait. Lineage stays.
-- Two profiles on the same corpus diverge. Fingerprint uses founders, traits, contradictions.
-- Proxy for originality: reconstruction sticks less than the unmodified log; clones are not interchangeable; `world` facts survive (`originality_is_path_dependent_not_a_taller_log`).
+- Two profiles on the same corpus can keep different books. Fingerprint is a lab metric on the book, not a personality score.
 - Persistence: `.db` (SQLite) or `.selmem` (flat file).
 
 ## Rust API
@@ -428,10 +427,22 @@ mem.lineage("loyalty");
 singularity_distance(&fingerprint(&a), &fingerprint(&b));
 ```
 
+## Hors claim
+
+Do not read these as results. They are not in the published sentence.
+
+- Personality, character, “Claire / Silas as people.”
+- Creativity, originality, intelligence, “more human.”
+- A taller log, a better RAG, a system prompt that “gets” the user.
+- Human memory, Ebbinghaus as a model, a neocortex.
+- AMA-Bench accuracy (side table; last-k wins journal-QA).
+- `D_speak` as a validity test (baseline wording noise already ~0.6).
+- Three items in `data/creativity.json` (logged, not scored).
+
 ## What this is not
 
 Not RAG. Not a vector database. Not a personality in a system prompt.\
-Not a neocortex and not a brain. An executive–autobiographical loop around a next-token transducer.\
+Not a brain. A loop (select → reconstruct → sleep) around a next-token transducer.\
 No local neural encoder ships in-tree: pass `--embed` if you have one.
 
 ## How it's built

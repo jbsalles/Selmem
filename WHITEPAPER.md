@@ -16,7 +16,9 @@ The verbatim event is kept in a sealed archive for tests and audit. The model ne
 experience → selection → trace → recall → sleep → identity → next encode
 ```
 
-Claim under test: two copies of the same model, given different retained histories, will not stay interchangeable. That is path dependence, not a claim of better intelligence or creativity.
+**Claim:** After an hour retained on one side only, two copies of the same model do not stay interchangeable once the following stream is identical. Measured on the book, retrieve, and the mouth.
+
+That is path dependence. Not intelligence, not creativity, not personality. Same freeze as README and experiments/REPORT.md.
 
 ---
 

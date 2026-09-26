@@ -4,13 +4,17 @@ v0.5 · Grok 4.3 · one seed · September 2026
 
 ## Question
 
-After one marked hour, do two clones of the same model stay interchangeable if they then receive identical prompts?
+**Claim:** After an hour retained on one side only, two copies of the same model do not stay interchangeable once the following stream is identical. Measured on the book, retrieve, and the mouth.
 
-Three successive claims. Only the first two are tested here.
+Everything else — personality, creativity, “like a human,” a better log — is hors claim. Same freeze as README.
 
-1. **Selection.** Some hours enter the book; others do not.
-2. **Persistent path dependence.** A stored hour keeps the books and the later answers apart after shared input.
-3. **Creativity.** Deferred. Three items are logged, not scored.
+What the tables split, so the one sentence can be checked:
+
+1. **Book.** Some hours enter one book and not the other (`t0_in_book_*`, Δfp, traces / axioms).
+2. **Retrieve.** After shared later hours, which traces are candidates and which enter the prompt (`t0_rank_*`, `t0_selected_*`).
+3. **Mouth.** Whether later answers stay apart (`marker_*`, replies, `D_speak` as wording overlap only).
+
+Creativity stays deferred. Three items in `data/creativity.json` are logged, not scored.
 
 ## Method
 
