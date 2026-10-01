@@ -10,7 +10,7 @@ use std::sync::Arc;
 use crate::dream::{self, DreamReport};
 use crate::encode::embed::{Embedder, HashEmbedder};
 use crate::encode::{self, EncodeDecision, EncodeInput};
-use crate::core::model::{IdentityAxiom, Mood, OrganCut, RecallTally, RecalledMemory};
+use crate::core::model::{ClockGuard, IdentityAxiom, MemoryClock, Mood, OrganCut, RecallTally, RecalledMemory};
 use crate::core::talk::WorkingTalk;
 use crate::recall::narrator::{Narrator, RuleNarrator};
 use crate::recall::{RecallBias, RecallWrite, RetrievalDump};
@@ -33,6 +33,7 @@ pub struct SelectiveMemory {
     narrator: Arc<dyn Narrator>,
     /// Experiment seed. Does not make the night stochastic; it seeds the id stream.
     pub seed: u32,
+    pub clock: MemoryClock,
     embedder: Box<dyn Embedder>,
 }
 
@@ -68,6 +69,7 @@ impl SelectiveMemory {
             narrator: Arc::new(RuleNarrator),
             embedder: Box::new(HashEmbedder),
             seed: 0,
+            clock: MemoryClock::default(),
         }
     }
 
@@ -91,6 +93,7 @@ impl SelectiveMemory {
                 narrator: Arc::new(RuleNarrator),
                 embedder: Box::new(HashEmbedder),
                 seed: 0,
+                clock: MemoryClock::default(),
             })
         } else {
             Ok(Self {
@@ -105,6 +108,7 @@ impl SelectiveMemory {
                 narrator: Arc::new(RuleNarrator),
                 embedder: Box::new(HashEmbedder),
                 seed: 0,
+                clock: MemoryClock::default(),
             })
         }
     }
@@ -116,6 +120,10 @@ impl SelectiveMemory {
 
     pub fn narrator_arc(&self) -> Arc<dyn Narrator> {
         Arc::clone(&self.narrator)
+    }
+
+    pub fn embed_log(&self) -> crate::encode::embed::EmbedLog {
+        self.embedder.embed_log()
     }
 
     /// Record the seed and offset the process id stream so two seeds are not the same run.
@@ -192,7 +200,21 @@ impl SelectiveMemory {
         self.live_with(ev)
     }
 
+    pub fn detach_clock(mut self) -> Self {
+        self.clock = self.clock.detach();
+        self
+    }
+
+    pub fn advance_hours(&mut self, hours: f32) {
+        self.clock.advance_hours(hours);
+    }
+
+    fn enter_clock(&self) -> ClockGuard {
+        ClockGuard::push(self.clock.clone())
+    }
+
     pub fn live_with(&mut self, input: EncodeInput<'_>) -> EncodeDecision {
+        let _clock = self.enter_clock();
         self.ingest(input, true)
     }
 
@@ -297,6 +319,7 @@ impl SelectiveMemory {
         bias: RecallBias,
         marked: &[String],
     ) -> (Vec<RecalledMemory>, RetrievalDump) {
+        let _clock = self.enter_clock();
         let out = recall::recall_with(
             &mut self.store,
             &self.profile,
@@ -345,6 +368,7 @@ impl SelectiveMemory {
     }
 
     pub fn sleep(&mut self) -> DreamReport {
+        let _clock = self.enter_clock();
         self.commit_talk();
         crate::persist::prune_orphaned_archives(&mut self.store);
         dream::dream_budget(
@@ -358,6 +382,7 @@ impl SelectiveMemory {
 
     /// Full night regardless of budget. Lab path.
     pub fn sleep_deep(&mut self) -> DreamReport {
+        let _clock = self.enter_clock();
         self.commit_talk();
         crate::persist::prune_orphaned_archives(&mut self.store);
         dream::dream_cut(
@@ -576,6 +601,7 @@ impl SelectiveMemory {
         marked: &[String],
         axioms_only: bool,
     ) -> MouthDraft {
+        let _clock = self.enter_clock();
         if hold {
             self.talk.hear(user, None);
         }
@@ -725,6 +751,36 @@ impl SelectiveMemory {
             fidelity_delta: 0.0,
             valence_delta: 0.0,
             disgust_delta: 0.0,
+        });
+        true
+    }
+
+    /// Revise the interpretation. The archive and the reality claim stay.
+    pub fn reinterpret(&mut self, trace_id: &str, statement: &str) -> bool {
+        let statement = statement.trim();
+        if statement.is_empty() {
+            return false;
+        }
+        let Some(t) = self.store.traces.get_mut(trace_id) else {
+            return false;
+        };
+        let before = t.interpretation.statement.clone();
+        if before == statement {
+            return true;
+        }
+        t.interpretation.statement = statement.to_string();
+        t.interpretation.confidence = (t.interpretation.confidence * 0.85).clamp(0.2, 1.0);
+        t.semantic.claim = statement.to_string();
+        t.record_operation(crate::core::model::MemoryOperation {
+            kind: "reinterpret".into(),
+            at: crate::core::model::now_secs(),
+            source_trace_ids: vec![trace_id.to_string()],
+            source_axiom_ids: Vec::new(),
+            source_center: t.schema.clone(),
+            before,
+            after: statement.to_string(),
+            confidence: t.interpretation.confidence,
+            origin: crate::core::model::EvidenceOrigin::Event,
         });
         true
     }

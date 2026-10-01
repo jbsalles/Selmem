@@ -149,3 +149,6 @@ A third (`entail`) does not exist. If it arrives, fallback is the local judge.
 | `tests/suppress.rs` | directed forgetting; confidence ≠ access |
 
 
+## Grounding and anchor
+
+CoreJudgement now carries event, claim, causal, entity, polarity, novelty. Two different because-clauses are Elaborate even when the act words match. A shared departure is not a Depart. RealityAnchor.claim is frozen at encode; reinterpret() revises interpretation and records an operation, it does not rewrite the anchor or the archive. MergeDecision refuses a fuse when affective difference is at least 0.55, anchors conflict, or valence signs oppose.

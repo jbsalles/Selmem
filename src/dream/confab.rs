@@ -93,6 +93,8 @@ pub fn fill_if_hole(store: &mut MemoryStore, id: &str, profile: &EntityProfile) 
         });
         t.fidelity = (t.fidelity - 0.02).max(0.15);
         t.recompute_confidence();
+        // A confabulated clause is not event evidence. Keep it findable, not sure.
+        t.confidence = (t.confidence * 0.62).max(0.12);
         t.clamp();
         debug_assert_eq!(t.core, core);
         return true;

@@ -29,14 +29,100 @@ fn origin_real() -> u64 {
     }
 }
 
-/// Virtual now. Encodes, weather, and recall stamps all use this.
-pub fn now_secs() -> u64 {
+/// One organ's virtual clock. Detached clocks do not share the process jump.
+#[derive(Clone, Debug)]
+pub struct MemoryClock {
+    pub origin_real: u64,
+    pub jump: u64,
+    pub scale: u32,
+    pub detached: bool,
+}
+
+impl Default for MemoryClock {
+    fn default() -> Self {
+        Self {
+            origin_real: 0,
+            jump: 0,
+            scale: 24,
+            detached: false,
+        }
+    }
+}
+
+impl MemoryClock {
+    pub fn detach(mut self) -> Self {
+        self.origin_real = origin_real();
+        self.jump = CLOCK_JUMP.load(Ordering::Relaxed);
+        self.scale = clock_scale();
+        self.detached = true;
+        self
+    }
+
+    pub fn now(&self) -> u64 {
+        if !self.detached {
+            return process_now();
+        }
+        let elapsed = wall_secs().saturating_sub(self.origin_real);
+        self.origin_real
+            .saturating_add(elapsed.saturating_mul(self.scale.max(1) as u64))
+            .saturating_add(self.jump)
+    }
+
+    pub fn advance_hours(&mut self, hours: f32) {
+        let secs = (hours.max(0.0) * 3600.0) as u64;
+        if self.detached {
+            self.jump = self.jump.saturating_add(secs);
+        } else {
+            CLOCK_JUMP.fetch_add(secs, Ordering::Relaxed);
+        }
+    }
+
+    pub fn set_scale(&mut self, scale: u32) {
+        let scale = scale.clamp(1, 200);
+        self.scale = scale;
+        if !self.detached {
+            CLOCK_SCALE.store(scale, Ordering::Relaxed);
+        }
+    }
+}
+
+std::thread_local! {
+    static ACTIVE_CLOCK: std::cell::RefCell<Option<MemoryClock>> = std::cell::RefCell::new(None);
+}
+
+pub struct ClockGuard {
+    prev: Option<MemoryClock>,
+}
+
+impl ClockGuard {
+    pub fn push(clock: MemoryClock) -> Self {
+        let prev = ACTIVE_CLOCK.with(|c| c.borrow_mut().replace(clock));
+        Self { prev }
+    }
+}
+
+impl Drop for ClockGuard {
+    fn drop(&mut self) {
+        let prev = self.prev.take();
+        ACTIVE_CLOCK.with(|c| *c.borrow_mut() = prev);
+    }
+}
+
+fn process_now() -> u64 {
     let origin = origin_real();
     let elapsed = wall_secs().saturating_sub(origin);
-    let scale = clock_scale() as u64;
+    let scale = CLOCK_SCALE.load(Ordering::Relaxed).clamp(1, 200) as u64;
     origin
         .saturating_add(elapsed.saturating_mul(scale))
         .saturating_add(CLOCK_JUMP.load(Ordering::Relaxed))
+}
+
+/// Virtual now. An organ guard wins when its clock is detached.
+pub fn now_secs() -> u64 {
+    ACTIVE_CLOCK.with(|c| match c.borrow().as_ref() {
+        Some(clock) if clock.detached => clock.now(),
+        _ => process_now(),
+    })
 }
 
 pub fn clock_scale() -> u32 {
@@ -221,6 +307,98 @@ pub struct MemoryOperation {
     pub origin: EvidenceOrigin,
 }
 
+/// Claim plus the pieces a lexical core cannot name. The string core stays the freeze.
+#[derive(Clone, Debug)]
+pub struct SemanticCore {
+    pub claim: String,
+    pub entities: Vec<String>,
+    pub actions: Vec<String>,
+    pub polarity: f32,
+    pub confidence: f32,
+}
+
+impl Default for SemanticCore {
+    fn default() -> Self {
+        Self {
+            claim: String::new(),
+            entities: Vec::new(),
+            actions: Vec::new(),
+            polarity: 0.0,
+            confidence: 0.0,
+        }
+    }
+}
+
+impl SemanticCore {
+    pub fn from_event(event: &str, claim: &str, valence: f32) -> Self {
+        let entities = extract_entities(event);
+        let actions = extract_actions(event);
+        Self {
+            claim: claim.to_string(),
+            entities,
+            actions,
+            polarity: valence.clamp(-1.0, 1.0),
+            confidence: 0.55,
+        }
+    }
+}
+
+fn extract_entities(event: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for raw in event.split_whitespace() {
+        let w = raw.trim_matches(|c: char| !c.is_alphanumeric());
+        if w.len() < 2 {
+            continue;
+        }
+        let low = w.to_lowercase();
+        let pronoun = matches!(low.as_str(), "i" | "me" | "she" | "he" | "they" | "we" | "him" | "her");
+        let named = w.chars().next().map(|c| c.is_uppercase()).unwrap_or(false);
+        if pronoun || named {
+            if !out.iter().any(|e: &String| e.eq_ignore_ascii_case(w)) {
+                out.push(w.to_string());
+            }
+        }
+    }
+    out.truncate(8);
+    out
+}
+
+fn extract_actions(event: &str) -> Vec<String> {
+    const VERBS: &[&str] = &[
+        "left", "said", "walked", "abandoned", "told", "asked", "stayed", "opened", "closed",
+        "went", "came", "took", "gave", "kept", "broke", "loved", "hated", "waited", "lied",
+    ];
+    let mut out = Vec::new();
+    for raw in event.split_whitespace() {
+        let w = raw.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase();
+        if VERBS.contains(&w.as_str()) || (w.len() > 4 && w.ends_with("ed")) {
+            if !out.contains(&w) {
+                out.push(w);
+            }
+        }
+    }
+    out.truncate(6);
+    out
+}
+
+/// What is still checkable. Distinct from the belief core, which may be revised.
+#[derive(Clone, Debug)]
+pub struct RealityAnchor {
+    pub observation_id: Option<String>,
+    pub claim: String,
+    pub verifiable: bool,
+}
+
+impl Default for RealityAnchor {
+    fn default() -> Self {
+        Self {
+            observation_id: None,
+            claim: String::new(),
+            verifiable: false,
+        }
+    }
+}
+
 /// What was concluded at encode. The verbatim observation stays in the archive.
 #[derive(Clone, Debug)]
 pub struct InterpretationStamp {
@@ -280,6 +458,10 @@ pub struct MemoryTrace {
     pub interpretation: InterpretationStamp,
     /// Genealogy of later transformations. Empty on old vaults.
     pub operations: Vec<MemoryOperation>,
+    /// Structured claim. The string `core` remains the lexical freeze.
+    pub semantic: SemanticCore,
+    /// Verifiable claim frozen at encode. Reinterpretation does not rewrite it.
+    pub reality: RealityAnchor,
 }
 
 impl MemoryTrace {

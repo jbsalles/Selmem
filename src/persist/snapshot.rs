@@ -52,6 +52,12 @@ pub fn assemble_trace(
         valence,
         confidence,
     };
+    let semantic = crate::core::model::SemanticCore::from_event(&gist, &core, valence);
+    let reality = crate::core::model::RealityAnchor {
+        observation_id: observation_id.clone(),
+        claim: core.clone(),
+        verifiable: !core.is_empty(),
+    };
     MemoryTrace {
         id,
         gist,
@@ -84,6 +90,8 @@ pub fn assemble_trace(
         observation_id,
         interpretation,
         operations: Vec::new(),
+        semantic,
+        reality,
     }
 }
 

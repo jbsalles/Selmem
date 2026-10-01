@@ -103,7 +103,7 @@ pub fn dispatch(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
                 mem.profile.reconsolidation_eta = v.clamp(0.0, 1.0);
             }
             if let Some(v) = json_f32(body, "time_scale") {
-                crate::core::model::set_clock_scale(v.round() as u32);
+                mem.clock.set_scale(v.round() as u32);
             }
             if let Some(v) = json_bool(body, "cut_reconsolidate") {
                 mem.cut.reconsolidate = v;
@@ -337,7 +337,7 @@ pub fn dispatch(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
             let (sitting, _) = mem.keep_sitting();
             mem.clear_talk();
             let hours = crate::core::model::clock_scale() as f32;
-            crate::core::model::advance_hours(hours);
+            mem.advance_hours(hours);
             let report = mem.sleep();
             mem.fade_sitting();
             for t in &snap {

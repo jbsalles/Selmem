@@ -230,8 +230,16 @@ fn encode_one(
             confidence: 1.0,
         },
         operations: Vec::new(),
+        semantic: crate::core::model::SemanticCore::default(),
+        reality: crate::core::model::RealityAnchor::default(),
     };
     trace.interpretation.statement = trace.gist.clone();
+    trace.semantic = crate::core::model::SemanticCore::from_event(input.event, &trace.core, input.valence);
+    trace.reality = crate::core::model::RealityAnchor {
+        observation_id: trace.observation_id.clone(),
+        claim: trace.core.clone(),
+        verifiable: true,
+    };
     trace.record_operation(crate::core::model::MemoryOperation {
         kind: "encode".into(),
         at: trace.created_at,

@@ -53,6 +53,18 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile, veto: bool) -> u32 
             if !similar {
                 continue;
             }
+            let decision = {
+                let a = store.traces.get(&keep);
+                let b = store.traces.get(other);
+                match (a, b) {
+                    (Some(a), Some(b)) => merge_decision(a, b),
+                    _ => MergeDecision::refuse(),
+                }
+            };
+            if !decision.mergeable {
+                store.merges_refused = store.merges_refused.saturating_add(1);
+                continue;
+            }
             if veto && merge_vetoed(store, &keep, other) {
                 store.merges_refused = store.merges_refused.saturating_add(1);
                 continue;
@@ -119,6 +131,47 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile, veto: bool) -> u32 
         }
     }
     merged
+}
+
+#[derive(Clone, Debug)]
+pub struct MergeDecision {
+    pub semantic_similarity: f32,
+    pub temporal_distance: f32,
+    pub affective_difference: f32,
+    pub axiom_conflict: bool,
+    pub anchor_conflict: bool,
+    pub mergeable: bool,
+}
+
+impl MergeDecision {
+    fn refuse() -> Self {
+        Self {
+            semantic_similarity: 0.0,
+            temporal_distance: 0.0,
+            affective_difference: 1.0,
+            axiom_conflict: false,
+            anchor_conflict: false,
+            mergeable: false,
+        }
+    }
+}
+
+fn merge_decision(a: &crate::core::model::MemoryTrace, b: &crate::core::model::MemoryTrace) -> MergeDecision {
+    let semantic_similarity = lexical_similarity(&a.gist, &b.gist);
+    let temporal_distance = (a.created_at as f32 - b.created_at as f32).abs() / 3600.0;
+    let affective_difference = (a.valence - b.valence).abs().max((a.disgust - b.disgust).abs());
+    let anchor_conflict = (a.anchor - b.anchor).abs() >= 0.45 && a.anchor.max(b.anchor) >= 0.80;
+    let axiom_conflict = a.valence * b.valence < 0.0 && affective_difference >= 0.45;
+    let far_and_different = temporal_distance > 24.0 * 30.0 && affective_difference >= 0.30;
+    let mergeable = affective_difference < 0.55 && !anchor_conflict && !axiom_conflict && !far_and_different;
+    MergeDecision {
+        semantic_similarity,
+        temporal_distance,
+        affective_difference,
+        axiom_conflict,
+        anchor_conflict,
+        mergeable,
+    }
 }
 
 fn merge_vetoed(store: &MemoryStore, keep: &str, other: &str) -> bool {

@@ -3,8 +3,41 @@ use crate::encode::scoring::token_set;
 
 pub const EMBED_DIM: usize = 96;
 
+#[derive(Clone, Debug)]
+pub enum EmbeddingResult {
+    External(Vec<f32>),
+    Fallback(Vec<f32>),
+}
+
+#[derive(Clone, Debug)]
+pub struct EmbedLog {
+    pub backend: String,
+    pub fallback_used: bool,
+    pub error: Option<String>,
+    pub calls: u32,
+}
+
+impl Default for EmbedLog {
+    fn default() -> Self {
+        Self {
+            backend: "hash".into(),
+            fallback_used: false,
+            error: None,
+            calls: 0,
+        }
+    }
+}
+
 pub trait Embedder: Send + Sync {
-    fn embed(&self, text: &str) -> Vec<f32>;
+    fn embed(&self, text: &str) -> Vec<f32> {
+        match self.embed_result(text) {
+            EmbeddingResult::External(v) | EmbeddingResult::Fallback(v) => v,
+        }
+    }
+    fn embed_result(&self, text: &str) -> EmbeddingResult;
+    fn embed_log(&self) -> EmbedLog {
+        EmbedLog::default()
+    }
 }
 
 #[derive(Default, Clone)]
@@ -14,6 +47,7 @@ pub struct HttpEmbedder {
     pub url: String,
     pub model: String,
     pub api_key: Option<String>,
+    log: std::sync::Mutex<EmbedLog>,
     fallback: HashEmbedder,
 }
 
@@ -22,9 +56,14 @@ impl HttpEmbedder {
         if !(endpoint.starts_with("http://") || endpoint.starts_with("https://")) {
             return None;
         }
+        let model = model.into();
         Some(Self {
             url: endpoint.to_string(),
-            model: model.into(),
+            log: std::sync::Mutex::new(EmbedLog {
+                backend: model.clone(),
+                ..EmbedLog::default()
+            }),
+            model,
             api_key,
             fallback: HashEmbedder,
         })
@@ -32,21 +71,53 @@ impl HttpEmbedder {
 }
 
 impl Embedder for HttpEmbedder {
-    fn embed(&self, text: &str) -> Vec<f32> {
+    fn embed_result(&self, text: &str) -> EmbeddingResult {
         let body = format!(
             "{{\"model\":\"{}\",\"input\":\"{}\"}}",
             json_esc(&self.model),
             json_esc(text)
         );
-        match post_json(&self.url, self.api_key.as_deref(), &body) {
-            Ok(raw) => extract_json_array_f32(&raw, "embedding").unwrap_or_else(|| self.fallback.embed(text)),
-            Err(_) => self.fallback.embed(text),
+        if let Ok(mut log) = self.log.lock() {
+            log.calls = log.calls.saturating_add(1);
         }
+        match post_json(&self.url, self.api_key.as_deref(), &body) {
+            Ok(raw) => match extract_json_array_f32(&raw, "embedding") {
+                Some(v) if !v.is_empty() => EmbeddingResult::External(v),
+                _ => self.fell_back(text, "unreadable embedding"),
+            },
+            Err(e) => self.fell_back(text, &e),
+        }
+    }
+
+    fn embed_log(&self) -> EmbedLog {
+        self.log.lock().map(|g| g.clone()).unwrap_or_default()
+    }
+}
+
+impl HttpEmbedder {
+    fn fell_back(&self, text: &str, err: &str) -> EmbeddingResult {
+        if let Ok(mut log) = self.log.lock() {
+            log.fallback_used = true;
+            log.backend = "hash".into();
+            log.error = Some(err.to_string());
+        }
+        eprintln!("selmem embed fallback: {err}");
+        EmbeddingResult::Fallback(self.fallback.embed(text))
     }
 }
 
 impl Embedder for HashEmbedder {
+    fn embed_result(&self, text: &str) -> EmbeddingResult {
+        EmbeddingResult::External(self.embed_hash(text))
+    }
+
     fn embed(&self, text: &str) -> Vec<f32> {
+        self.embed_hash(text)
+    }
+}
+
+impl HashEmbedder {
+    fn embed_hash(&self, text: &str) -> Vec<f32> {
         let mut v = vec![0.0f32; EMBED_DIM];
         let lower = text.to_lowercase();
         let chars: Vec<char> = lower.chars().filter(|c| c.is_alphanumeric()).collect();

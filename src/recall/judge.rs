@@ -39,6 +39,23 @@ impl DetachKind {
 pub struct CoreJudgement {
     pub kind: DetachKind,
     pub overlap: f32,
+    pub event_match: f32,
+    pub claim_match: f32,
+    pub causal_match: f32,
+    pub entity_match: f32,
+    pub polarity_match: f32,
+    pub novelty: f32,
+}
+
+impl CoreJudgement {
+    /// event + claim + polarity + causal. Not a second truth source.
+    pub fn grounding(&self) -> f32 {
+        (0.30 * self.event_match
+            + 0.30 * self.claim_match
+            + 0.20 * self.polarity_match
+            + 0.20 * self.causal_match)
+            .clamp(0.0, 1.0)
+    }
 }
 
 const CAUSE: &[&str] = &[
@@ -79,42 +96,33 @@ pub fn overlap_with_core(generated: &str, core: &str) -> f32 {
 
 pub fn judge_against_core(generated: &str, core: &str) -> CoreJudgement {
     if core.trim().is_empty() {
-        return CoreJudgement {
-            kind: DetachKind::Hold,
-            overlap: 1.0,
-        };
+        return finish(DetachKind::Hold, 1.0, generated, core);
     }
     let overlap = overlap_with_core(generated, core);
     if generated.trim().eq_ignore_ascii_case(core.trim()) {
-        return CoreJudgement {
-            kind: DetachKind::Hold,
-            overlap: 1.0,
-        };
+        return finish(DetachKind::Hold, 1.0, generated, core);
     }
 
     let g = pad(generated);
     let c = pad(core);
 
     if contradicts(&g, &c) {
-        return CoreJudgement {
-            kind: DetachKind::Contradict,
-            overlap,
-        };
+        return finish(DetachKind::Contradict, overlap, generated, core);
     }
-    if extra_cause(&g, &c) {
-        return CoreJudgement {
-            kind: DetachKind::Elaborate,
-            overlap,
-        };
+    if extra_cause(&g, &c) || causal_mismatch(&g, &c) {
+        return finish(DetachKind::Elaborate, overlap, generated, core);
     }
     if extra_frame(&g, &c) {
         // Same event + new affect frame → color. Low overlap is another scene.
-        let kind = if overlap >= 0.18 {
+        let mut kind = if overlap >= 0.18 {
             DetachKind::Reframe
         } else {
             DetachKind::Depart
         };
-        return CoreJudgement { kind, overlap };
+        if kind == DetachKind::Depart && same_departure(generated, core) {
+            kind = DetachKind::Reframe;
+        }
+        return finish(kind, overlap, generated, core);
     }
 
     let gt = token_set(generated);
@@ -122,24 +130,82 @@ pub fn judge_against_core(generated: &str, core: &str) -> CoreJudgement {
     let extra = gt.iter().filter(|t| ct.binary_search(t).is_err()).count();
     let missing = ct.iter().filter(|t| gt.binary_search(t).is_err()).count();
     if extra == 0 && missing > 0 {
-        return CoreJudgement {
-            kind: DetachKind::Compress,
-            overlap,
-        };
+        return finish(DetachKind::Compress, overlap, generated, core);
     }
     if extra == 0 && missing == 0 {
-        return CoreJudgement {
-            kind: DetachKind::Hold,
-            overlap,
-        };
+        return finish(DetachKind::Hold, overlap, generated, core);
     }
 
-    let kind = if overlap >= 0.18 {
+    let mut kind = if overlap >= 0.18 {
         DetachKind::Hold
     } else {
         DetachKind::Depart
     };
-    CoreJudgement { kind, overlap }
+    if kind == DetachKind::Depart && same_departure(generated, core) {
+        kind = DetachKind::Reframe;
+    }
+    finish(kind, overlap, generated, core)
+}
+
+fn finish(kind: DetachKind, overlap: f32, generated: &str, core: &str) -> CoreJudgement {
+    let entity_match = entity_overlap(generated, core);
+    let causal_match = if causal_mismatch(&pad(generated), &pad(core)) {
+        0.15
+    } else if extra_cause(&pad(generated), &pad(core)) {
+        0.35
+    } else {
+        1.0
+    };
+    let polarity_match = if contradicts(&pad(generated), &pad(core)) { 0.0 } else { 1.0 };
+    let novelty = (1.0 - overlap).clamp(0.0, 1.0);
+    CoreJudgement {
+        kind,
+        overlap,
+        event_match: overlap.max(entity_match * 0.8),
+        claim_match: overlap,
+        causal_match,
+        entity_match,
+        polarity_match,
+        novelty,
+    }
+}
+
+fn causal_mismatch(generated: &str, core: &str) -> bool {
+    let Some(g) = cause_clause(generated) else { return false };
+    let Some(c) = cause_clause(core) else { return false };
+    lexical_similarity(g, c) < 0.34
+}
+
+fn cause_clause(s: &str) -> Option<&str> {
+    let low = s.to_lowercase();
+    for m in CAUSE {
+        if let Some(i) = low.find(m) {
+            let rest = s[i + m.len()..].trim();
+            if rest.len() > 3 {
+                return Some(rest);
+            }
+        }
+    }
+    None
+}
+
+fn entity_overlap(a: &str, b: &str) -> f32 {
+    let ea = crate::core::model::SemanticCore::from_event(a, a, 0.0).entities;
+    let eb = crate::core::model::SemanticCore::from_event(b, b, 0.0).entities;
+    if ea.is_empty() || eb.is_empty() {
+        return 0.0;
+    }
+    let hit = ea.iter().filter(|e| eb.iter().any(|x| x.eq_ignore_ascii_case(e))).count();
+    hit as f32 / ea.len().max(eb.len()) as f32
+}
+
+fn same_departure(a: &str, b: &str) -> bool {
+    const LEAVE: &[&str] = &["left", "abandoned", "walked", "went", "departed", "quit", "away"];
+    let al = a.to_lowercase();
+    let bl = b.to_lowercase();
+    let a_leave = LEAVE.iter().any(|w| al.contains(w));
+    let b_leave = LEAVE.iter().any(|w| bl.contains(w));
+    a_leave && b_leave && entity_overlap(a, b) >= 0.34
 }
 
 /// Miss if the kind is unauthorized, or if the identity gate fails the cut.

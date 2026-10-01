@@ -256,6 +256,12 @@ fn write_trace(w: &mut impl Write, t: &MemoryTrace) -> io::Result<()> {
         write_blob(w, &op.source_trace_ids.join("\t"))?;
         write_blob(w, &op.source_axiom_ids.join("\t"))?;
     }
+    writeln!(w, "sem {} {}", t.semantic.polarity, t.semantic.confidence)?;
+    write_blob(w, &t.semantic.claim)?;
+    write_blob(w, &t.semantic.entities.join("\t"))?;
+    write_blob(w, &t.semantic.actions.join("\t"))?;
+    writeln!(w, "real {}", if t.reality.verifiable { 1 } else { 0 })?;
+    write_blob(w, &t.reality.claim)?;
     Ok(())
 }
 
@@ -382,6 +388,28 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
     if let Some(op) = trace.operations.iter().find(|o| o.kind == "encode") {
         trace.interpretation.statement = op.after.clone();
         trace.interpretation.confidence = op.confidence;
+    }
+    if next_line_starts_with(r, "sem ") {
+        let line = read_line(r).unwrap_or_default();
+        let hp: Vec<&str> = line.split_whitespace().collect();
+        let claim = read_blob(r).unwrap_or_default();
+        let entities = read_blob(r).unwrap_or_default();
+        let actions = read_blob(r).unwrap_or_default();
+        trace.semantic.polarity = hp.get(1).and_then(|s| s.parse().ok()).unwrap_or(trace.valence);
+        trace.semantic.confidence = hp.get(2).and_then(|s| s.parse().ok()).unwrap_or(0.55);
+        trace.semantic.claim = if claim.is_empty() { trace.core.clone() } else { claim };
+        trace.semantic.entities = if entities.is_empty() { Vec::new() } else { entities.split('\t').map(|s| s.to_string()).collect() };
+        trace.semantic.actions = if actions.is_empty() { Vec::new() } else { actions.split('\t').map(|s| s.to_string()).collect() };
+    }
+    if next_line_starts_with(r, "real ") {
+        let line = read_line(r).unwrap_or_default();
+        let verifiable = line.split_whitespace().nth(1).map(|s| s == "1").unwrap_or(false);
+        let claim = read_blob(r).unwrap_or_default();
+        trace.reality.verifiable = verifiable;
+        if !claim.is_empty() {
+            trace.reality.claim = claim;
+        }
+        trace.reality.observation_id = trace.observation_id.clone();
     }
     Ok(trace)
 }

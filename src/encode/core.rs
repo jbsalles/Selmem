@@ -55,5 +55,6 @@ pub fn maybe_set_core(
     };
     if let Some(t) = store.traces.get_mut(tid) {
         t.core = ok;
+        t.semantic.claim = t.core.clone();
     }
 }

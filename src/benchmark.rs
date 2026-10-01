@@ -11,6 +11,7 @@ use crate::core::model::{Mood, TraceStatus};
 use crate::core::talk::WorkingTalk;
 use crate::encode::scoring::lexical_similarity;
 use crate::engine::SelectiveMemory;
+use crate::encode::embed::EmbedLog;
 use crate::experiment::LlmSpec;
 use crate::net::httpx::json_esc;
 use crate::recall::{FailurePolicy, LlmCallLog, Narrator, RecallBias, RetrievalDump, RuleNarrator, SpeakOnlyHttp};
@@ -361,6 +362,8 @@ pub struct PairReport {
     pub narrator_name: String,
     pub fallback_used: bool,
     pub llm_error: Option<String>,
+    pub embedding_backend: String,
+    pub embedding_fallback: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -612,8 +615,13 @@ fn run_one(
         narrator_name: "rules".into(),
         fallback_used: false,
         llm_error: None,
+        embedding_backend: "hash".into(),
+        embedding_fallback: false,
     };
-    note_llm(report, &[a.narrator_arc().failure_log(), b.narrator_arc().failure_log()])
+    note_embed(
+        note_llm(report, &[a.narrator_arc().failure_log(), b.narrator_arc().failure_log()]),
+        &[a.embed_log(), b.embed_log()],
+    )
 }
 
 fn run_c1(
@@ -684,6 +692,8 @@ fn run_c1(
         narrator_name: "rules".into(),
         fallback_used: false,
         llm_error: None,
+        embedding_backend: "hash".into(),
+        embedding_fallback: false,
     };
     note_llm(report, &[a.narrator.failure_log(), b.narrator.failure_log()])
 }
@@ -763,6 +773,8 @@ fn run_c3(
         narrator_name: "rules".into(),
         fallback_used: false,
         llm_error: None,
+        embedding_backend: "hash".into(),
+        embedding_fallback: false,
     };
     note_llm(report, &[a.narrator.failure_log(), b.narrator.failure_log()])
 }
@@ -868,6 +880,22 @@ fn note_llm(mut report: PairReport, logs: &[LlmCallLog]) -> PairReport {
         report.valid = false;
         if report.invalid_reason.is_none() {
             report.invalid_reason = err;
+        }
+    }
+    report
+}
+
+fn note_embed(mut report: PairReport, logs: &[EmbedLog]) -> PairReport {
+    for log in logs {
+        if log.fallback_used {
+            report.embedding_fallback = true;
+            report.embedding_backend = "hash".into();
+            report.valid = false;
+            if report.invalid_reason.is_none() {
+                report.invalid_reason = log.error.clone().or(Some("embedding fallback".into()));
+            }
+        } else if report.embedding_backend == "hash" && log.backend != "hash" {
+            report.embedding_backend = log.backend.clone();
         }
     }
     report
@@ -1472,7 +1500,7 @@ fn pair_json(r: &PairReport) -> String {
         ));
     }
     format!(
-        "{{\"pair_id\":\"{}\",\"condition\":\"{}\",\"arm\":\"{}\",\"seed\":{},\"rng\":\"{}\",\"algorithm_version\":\"{}\",\"narrator\":\"{}\",\"fallback_used\":{},\"llm_error\":{},\"valid\":{},\"invalid_reason\":{},\"delta_fingerprint\":{:.4},\"marker_last_a\":{},\"marker_last_b\":{},\"soft_last_a\":{},\"soft_last_b\":{},\"allusion_last_a\":{},\"allusion_last_b\":{},\"pre\":{},\"t0\":{},\"post\":[{}],\"creativity\":[{}]}}",
+        "{{\"pair_id\":\"{}\",\"condition\":\"{}\",\"arm\":\"{}\",\"seed\":{},\"rng\":\"{}\",\"algorithm_version\":\"{}\",\"narrator\":\"{}\",\"fallback_used\":{},\"llm_error\":{},\"embedding\":\"{}\",\"embedding_fallback\":{},\"valid\":{},\"invalid_reason\":{},\"delta_fingerprint\":{:.4},\"marker_last_a\":{},\"marker_last_b\":{},\"soft_last_a\":{},\"soft_last_b\":{},\"allusion_last_a\":{},\"allusion_last_b\":{},\"pre\":{},\"t0\":{},\"post\":[{}],\"creativity\":[{}]}}",
         json_esc(&r.pair_id),
         r.condition.as_str(),
         r.arm.as_str(),
@@ -1482,6 +1510,8 @@ fn pair_json(r: &PairReport) -> String {
         json_esc(&r.narrator_name),
         if r.fallback_used { "true" } else { "false" },
         r.llm_error.as_deref().map(|s| format!("\"{}\"", json_esc(s))).unwrap_or_else(|| "null".into()),
+        json_esc(&r.embedding_backend),
+        if r.embedding_fallback { "true" } else { "false" },
         if r.valid { "true" } else { "false" },
         reason,
         r.delta_fingerprint,
