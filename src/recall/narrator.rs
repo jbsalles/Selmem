@@ -143,32 +143,105 @@ impl Narrator for RuleNarrator {
         if traces.len() < 2 {
             return None;
         }
-        let mut counts: Vec<(String, usize)> = Vec::new();
-        for t in traces {
-            if let Some(s) = &t.schema {
-                if let Some(slot) = counts.iter_mut().find(|(k, _)| k == s) {
-                    slot.1 += 1;
-                } else {
-                    counts.push((s.clone(), 1));
-                }
+        Some(compress_belief(traces))
+    }
+}
+
+/// A belief is what returned, not an order and not a copy of an hour.
+fn compress_belief(traces: &[&MemoryTrace]) -> String {
+    let mut schemas: Vec<(String, usize)> = Vec::new();
+    for t in traces {
+        if let Some(s) = &t.schema {
+            if let Some(slot) = schemas.iter_mut().find(|(k, _)| k == s) {
+                slot.1 += 1;
+            } else {
+                schemas.push((s.clone(), 1));
             }
         }
-        let dominant = counts
-            .into_iter()
-            .max_by_key(|(_, n)| *n)
-            .map(|(s, _)| s)
-            .unwrap_or_else(|| "self".into());
-        let mean_v: f32 = traces.iter().map(|t| t.valence).sum::<f32>() / traces.len() as f32;
-        let copy = crate::lexicon::rule();
-        let tmpl = if mean_v < -0.2 {
-            &copy.axiom_neg
-        } else if mean_v > 0.2 {
-            &copy.axiom_pos
-        } else {
-            &copy.axiom_mid
-        };
-        Some(tmpl.replace("{schema}", &dominant))
     }
+    let schema = schemas
+        .into_iter()
+        .max_by_key(|(_, n)| *n)
+        .map(|(s, _)| s)
+        .unwrap_or_else(|| "unnamed".into());
+    let mut acts: Vec<(String, usize)> = Vec::new();
+    for t in traces {
+        let mut seen = Vec::new();
+        for a in &t.semantic.actions {
+            let w = a.to_lowercase();
+            if !seen.contains(&w) {
+                seen.push(w);
+            }
+        }
+        for w in seen {
+            if let Some(slot) = acts.iter_mut().find(|(k, _)| k == &w) {
+                slot.1 += 1;
+            } else {
+                acts.push((w, 1));
+            }
+        }
+    }
+    let pairs = relation_pairs(traces);
+    if pairs.is_empty() {
+        format!("The same stake returned {} times under {}.", traces.len(), schema)
+    } else {
+        format!(
+            "The same stake returned {} times under {}: {}.",
+            traces.len(),
+            schema,
+            pairs.join("; ")
+        )
+    }
+}
+
+fn relation_pairs(traces: &[&MemoryTrace]) -> Vec<String> {
+    // Loss acts, including irregulars the -ed scanner misses. Delivery is not the stake.
+    const STAKE: &[&str] = &[
+        "cancelled", "canceled", "withdrew", "withdrawn", "vanished", "shifted",
+        "removed", "lost", "taken",
+    ];
+    let mut out = Vec::new();
+    for t in traces {
+        let words: Vec<String> = t.core.split_whitespace().map(|w| {
+            w.trim_matches(|c: char| !c.is_alphanumeric()).to_string()
+        }).filter(|w| !w.is_empty()).collect();
+        let lows: Vec<String> = words.iter().map(|w| w.to_lowercase()).collect();
+        for (i, act) in lows.iter().enumerate() {
+            if !STAKE.contains(&act.as_str()) {
+                continue;
+            }
+            let after = ((i + 1)..words.len()).find_map(|j| {
+                let w = &words[j];
+                if w.len() > 3 && !is_glue(w) { Some(w.to_lowercase()) } else { None }
+            });
+            let before = (0..i).rev().find_map(|j| {
+                let w = &words[j];
+                if w.len() > 3 && !is_glue(w) { Some(w.to_lowercase()) } else { None }
+            });
+            // "withdrew the mandate" takes the object after. "project was cancelled" takes it before.
+            let pair = match (after, before) {
+                (Some(o), _) if matches!(act.as_str(), "withdrew" | "withdrawn" | "removed" | "taken") => {
+                    format!("{act} {o}")
+                }
+                (_, Some(o)) => format!("{o} {act}"),
+                (Some(o), _) => format!("{act} {o}"),
+                _ => act.clone(),
+            };
+            if !out.contains(&pair) {
+                out.push(pair);
+            }
+            if out.len() == 3 {
+                return out;
+            }
+        }
+    }
+    out
+}
+
+fn is_glue(w: &str) -> bool {
+    matches!(w.to_lowercase().as_str(),
+        "that" | "this" | "with" | "from" | "after" | "before" | "into" | "your" | "their"
+        | "been" | "were" | "was" | "have" | "has" | "had" | "them" | "they" | "what")
 }
 
 

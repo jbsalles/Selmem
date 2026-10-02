@@ -33,7 +33,11 @@ fn curl_post(url: &str, api_key: Option<&str>, body: &str) -> Result<String, Str
         url,
     ]);
     cmd.arg("--data-binary").arg(body);
-    cmd.stdin(std::process::Stdio::piped());
+    // wait_with_output only reads handles piped before spawn. Inherited stdout
+    // is why the body showed on the terminal and the parser saw 0 bytes.
+    cmd.stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
     let mut child = cmd.spawn().map_err(|e| e.to_string())?;
     if let Some(stdin) = child.stdin.as_mut() {
         if let Some(k) = api_key {
@@ -42,11 +46,21 @@ fn curl_post(url: &str, api_key: Option<&str>, body: &str) -> Result<String, Str
         }
     }
     let out = child.wait_with_output().map_err(|e| e.to_string())?;
-    if !out.status.success() {
-        return Err(String::from_utf8_lossy(&out.stderr).into());
+    let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
+    let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+    if !out.status.success() && !stdout.contains("__SELMEM_HTTP__:") {
+        return Err(if stderr.is_empty() { stdout } else { stderr });
     }
-    let raw = String::from_utf8(out.stdout).map_err(|e| e.to_string())?;
-    split_http_status(&raw)
+    let raw = if stdout.contains("__SELMEM_HTTP__:") {
+        stdout
+    } else {
+        format!("{stdout}{stderr}")
+    };
+    let mut body = split_http_status(&raw)?;
+    if !body.contains("choices") && stderr.contains("choices") {
+        body.push_str(&stderr);
+    }
+    Ok(body)
 }
 
 fn raw_http_post(url: &str, api_key: Option<&str>, body: &str) -> Result<String, String> {
@@ -94,14 +108,14 @@ fn raw_http_post(url: &str, api_key: Option<&str>, body: &str) -> Result<String,
 }
 
 fn split_http_status(raw: &str) -> Result<String, String> {
-    const MARK: &str = "\n__SELMEM_HTTP__:";
+    const MARK: &str = "__SELMEM_HTTP__:";
     if let Some(i) = raw.rfind(MARK) {
-        let body = &raw[..i];
+        let body = raw[..i].trim_end_matches(['\n', '\r']).to_string();
         let code: u16 = raw[i + MARK.len()..].trim().parse().unwrap_or(0);
-        if !(200..300).contains(&code) {
+        if code != 0 && !(200..300).contains(&code) {
             return Err(format!("HTTP {code}: {}", body.chars().take(180).collect::<String>()));
         }
-        return Ok(body.to_string());
+        return Ok(body);
     }
     Ok(raw.to_string())
 }

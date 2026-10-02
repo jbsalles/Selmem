@@ -99,3 +99,12 @@ Offline contract (no API):
 ```bash
 ./run.sh test --test benchmark
 ```
+
+## Wash (2026-10-03)
+
+`selmem-wash-llm.json` is the Grok-4.3 cell, seeds 1–3, temp 0. Three injustice hours then a new offer. A refuses 3/3, B accepts, the hour is not spoken. once, neutral, nosleep, noladder accept. Method and the failed mouths: REPORT.md §16.
+
+```bash
+SELMEM_LLM=https://api.x.ai/v1/chat/completions SELMEM_MODEL=grok-4.3 SELMEM_TEMP=0 \
+  ./run.sh run --example wash
+```

@@ -88,11 +88,21 @@ impl HttpNarrator {
         }
         extract_json_string(&raw, "content")
             .filter(|s| !s.trim().is_empty())
+            .or_else(|| loose_content(&raw))
             .ok_or_else(|| {
-                let clip: String = raw.chars().take(240).collect();
-                format!("unreadable LLM reply: {clip}")
+                let clip: String = raw.chars().take(180).collect();
+                format!("unreadable LLM reply ({} bytes): {clip}", raw.len())
             })
     }
+}
+
+fn loose_content(raw: &str) -> Option<String> {
+    let key = "\"content\":\"";
+    let i = raw.find(key)?;
+    let start = i + key.len() - 1;
+    crate::net::httpx::parse_json_string(&raw[start..])
+        .map(|(s, _)| s)
+        .filter(|s| !s.trim().is_empty())
 }
 
 /// GPT-5/6 and the o-series reject `max_tokens`. Grok / Ollama still want it.

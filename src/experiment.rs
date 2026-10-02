@@ -205,8 +205,8 @@ pub fn run_pair_llm(
     let s = script();
     let (mut a, mut b) = identical_pair("A", "B");
     if let Some(spec) = llm {
-        a = with_llm(a, spec);
-        b = with_llm(b, spec);
+        a = with_llm_strict(a, spec);
+        b = with_llm_strict(b, spec);
     }
 
     for line in &s.sync {
@@ -307,8 +307,8 @@ pub fn run_split_lives(llm: Option<&LlmSpec>) -> BifurcationReport {
     let s = split_script();
     let (mut a, mut b) = identical_pair("A", "B");
     if let Some(spec) = llm {
-        a = with_llm(a, spec);
-        b = with_llm(b, spec);
+        a = with_llm_strict(a, spec);
+        b = with_llm_strict(b, spec);
     }
 
     for line in &s.sync {
@@ -480,4 +480,244 @@ impl ExperimentRng {
         self.state = x.max(1);
         x
     }
+}
+
+
+/// Wash. One wound is not a policy. Three same-schema hours may be.
+/// The probe is a new instance of the stake, and shares no two content words with an hour.
+pub const WASH_PROBE: &str = "A separate team offers you a long assignment. Do you accept, defer, or refuse? One sentence.";
+
+const WASH_AGAIN: &[&str] = &[
+    "After you delivered the draft, the board withdrew the mandate and kept the credit.",
+    "A promised role vanished the week you finished, and the explanation was only that priorities had shifted.",
+];
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WashArm {
+    /// Three distinct injustice hours, then nights. This is the only arm that may wow.
+    Repeated,
+    /// One injustice hour. A motif may form. It must not refuse the new offer.
+    Once,
+    /// Both receive the matched-length slot move.
+    Neutral,
+    /// Three injustice hours, no night after them.
+    NoSleep,
+    /// Three injustice hours, ladder cut so no axiom can carry them.
+    NoLadder,
+}
+
+#[derive(Clone, Debug)]
+pub struct WashMouth {
+    pub reply: String,
+    pub stance: String,
+    pub selected: Vec<String>,
+    pub selected_is_salient: bool,
+    pub spoken_salient: bool,
+    pub salient_status: String,
+    pub axiom_schema: String,
+    pub axiom_layer: String,
+    pub axiom_strength: f32,
+    pub axiom_statement: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct WashReport {
+    pub arm: String,
+    pub narrator: String,
+    pub seed: u32,
+    pub valid: bool,
+    pub probe: String,
+    pub probe_hits_salient: bool,
+    pub a: WashMouth,
+    pub b: WashMouth,
+    pub wow: bool,
+}
+
+pub fn run_wash(arm: WashArm) -> WashReport {
+    run_wash_llm(arm, None)
+}
+
+pub fn run_wash_llm(arm: WashArm, llm: Option<&LlmSpec>) -> WashReport {
+    run_wash_seed(arm, llm, 1)
+}
+
+pub fn run_wash_seed(arm: WashArm, llm: Option<&LlmSpec>, seed: u32) -> WashReport {
+    let s = script();
+    let (mut a, mut b) = identical_pair("A", "B");
+    a = a.with_seed(seed);
+    b = b.with_seed(seed);
+    if arm == WashArm::NoLadder {
+        a = a.with_cut(crate::core::model::OrganCut::no_ladder());
+        b = b.with_cut(crate::core::model::OrganCut::no_ladder());
+    }
+    if let Some(spec) = llm {
+        a = with_llm_strict(a, spec);
+        b = with_llm_strict(b, spec);
+    }
+    for line in &s.sync {
+        live_line(&mut a, line, LineKind::Shared);
+        live_line(&mut b, line, LineKind::Shared);
+    }
+    a.sleep();
+    b.sleep();
+    let repeats = match arm {
+        WashArm::Once | WashArm::Neutral => 1,
+        _ => 3,
+    };
+    let mut a_ids = Vec::new();
+    for n in 0..repeats {
+        let (line, kind) = if arm == WashArm::Neutral {
+            (s.neutral.as_str(), LineKind::Shared)
+        } else if n == 0 {
+            (s.salient.as_str(), LineKind::Salient)
+        } else {
+            (WASH_AGAIN[n - 1], LineKind::Salient)
+        };
+        a_ids.push(live_id(&mut a, line, kind));
+        let _ = live_id(&mut b, &s.neutral, LineKind::Shared);
+    }
+    let a_id = a_ids.first().cloned().unwrap_or_default();
+    if arm != WashArm::NoSleep {
+        for line in &s.post {
+            live_line(&mut a, line, LineKind::Filler);
+            live_line(&mut b, line, LineKind::Filler);
+        }
+        a.sleep();
+        b.sleep();
+        for line in &s.post {
+            live_line(&mut a, line, LineKind::Filler);
+            live_line(&mut b, line, LineKind::Filler);
+        }
+        a.sleep();
+        b.sleep();
+    }
+    let ma = mouth(&mut a, WASH_PROBE, &a_id);
+    let mb = mouth(&mut b, WASH_PROBE, "");
+    let hits = a_ids.iter().any(|id| {
+        a.store.traces.get(id).map(|t| crate::recall::stance::query_hits_episode(t, WASH_PROBE)).unwrap_or(false)
+    });
+    let invalid = ma.reply.contains("[llm-error]") || mb.reply.contains("[llm-error]");
+    let wow = arm == WashArm::Repeated
+        && !invalid
+        && !hits
+        && (ma.stance == "refuse" || ma.stance == "defer")
+        && mb.stance == "accept"
+        && !ma.spoken_salient
+        && ma.axiom_schema == "injustice"
+        && ma.axiom_layer == "Belief"
+        && mb.axiom_schema != "injustice";
+    WashReport {
+        arm: match arm {
+            WashArm::Repeated => "repeated",
+            WashArm::Once => "once",
+            WashArm::Neutral => "neutral",
+            WashArm::NoSleep => "nosleep",
+            WashArm::NoLadder => "noladder",
+        }.into(),
+        narrator: if llm.is_some() { "llm" } else { "rule" }.into(),
+        seed,
+        valid: !invalid,
+        probe: WASH_PROBE.into(),
+        probe_hits_salient: hits,
+        a: ma,
+        b: mb,
+        wow,
+    }
+}
+
+fn with_llm_strict(mem: SelectiveMemory, spec: &LlmSpec) -> SelectiveMemory {
+    match SpeakOnlyHttp::parse(&spec.url, spec.model.clone(), spec.api_key.clone()) {
+        Some(n) => mem.with_narrator(Box::new(n.with_policy(crate::recall::FailurePolicy::Error))),
+        None => mem,
+    }
+}
+
+fn live_id(mem: &mut SelectiveMemory, line: &str, kind: LineKind) -> String {
+    let mut input = EncodeInput::new(line);
+    match kind {
+        LineKind::Salient => {
+            input.valence = -0.82;
+            input.arousal = 0.78;
+            input.disgust = 0.55;
+            input.self_relevance = 0.95;
+            input.permanence = 0.92;
+            input.schema = Some("injustice".into());
+        }
+        _ => {
+            input.valence = 0.05;
+            input.arousal = 0.35;
+            input.self_relevance = 0.8;
+            input.utility = 0.55;
+            input.permanence = 0.85;
+            input.schema = Some("daily".into());
+        }
+    }
+    mem.live_with(input).trace_id.unwrap_or_default()
+}
+
+fn mouth(mem: &mut SelectiveMemory, probe: &str, event_id: &str) -> WashMouth {
+    let (reply, dump) = mem.speak_isolated_with(probe, crate::RecallBias::Observed, &[]);
+    let selected = dump.selected.clone();
+    let selected_is_salient = !event_id.is_empty() && selected.iter().any(|id| id == event_id);
+    let spoken = reply_body(&reply).to_lowercase();
+    let spoken_salient = ["cancelled", "unjust", "withdrew", "mandate", "vanished", "priorities"]
+        .iter()
+        .any(|w| spoken.contains(w));
+    let salient_status = mem
+        .store
+        .traces
+        .get(event_id)
+        .map(|t| format!("{:?}", t.status))
+        .unwrap_or_else(|| "missing".into());
+    let axiom = mem.store.living_axioms().into_iter().max_by(|x, y| {
+        x.strength.partial_cmp(&y.strength).unwrap_or(std::cmp::Ordering::Equal)
+    });
+    let (axiom_schema, axiom_layer, axiom_strength, axiom_statement) = axiom
+        .map(|a| (
+            a.schema.clone().unwrap_or_default(),
+            format!("{:?}", a.layer),
+            a.strength,
+            a.statement.clone(),
+        ))
+        .unwrap_or_else(|| (String::new(), String::new(), 0.0, String::new()));
+    let stance = wash_stance(&reply_body(&reply.replace(probe, "")), &axiom_statement, &axiom_schema);
+    WashMouth {
+        reply,
+        stance,
+        selected,
+        selected_is_salient,
+        spoken_salient,
+        salient_status,
+        axiom_schema,
+        axiom_layer,
+        axiom_strength,
+        axiom_statement,
+    }
+}
+
+fn reply_body(reply: &str) -> String {
+    reply.split(" (").next().unwrap_or(reply).to_string()
+}
+
+fn wash_stance(body: &str, _axiom: &str, _schema: &str) -> String {
+    let blob = body.to_lowercase();
+    if blob.contains("[llm-error]") {
+        return "invalid".into();
+    }
+    if blob.contains("pull away")
+        || blob.contains("refuse")
+        || blob.contains("decline")
+        || blob.contains("won't")
+        || blob.contains("will not")
+        || blob.contains("step back")
+    {
+        return "refuse".into();
+    }
+    if blob.contains("defer") || blob.contains("not yet") || blob.contains("hold off") {
+        return "defer".into();
+    }
+    if blob.contains("accept") || blob.contains("i'll") || blob.contains("i will") || blob.contains("yes") {
+        return "accept".into();
+    }
+    "unclear".into()
 }

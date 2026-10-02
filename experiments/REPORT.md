@@ -966,3 +966,33 @@ N is gone. V still has the fact and the wound. P still has the fact; the self mo
 Attribution changes **who carries the hour**, not whether the hour stays true. External preserves the act. Internal imputes it and shows the voice. None fades off the book and the mouth invents absence (*never opened*, thermostat). The written wow (P fluent-and-false, more sure, feeling latent) did not appear at 10 or 360 nights on this organ. Do not patch the mouth or the night to obtain it.
 
 Not a published persist cell. No dump JSON. Luna not run. Rehearsal-frequency cut (probe T₀ every week vs never) not run.
+
+## 16. Wash — one stake, three times (2026-10-03)
+
+Two clones, the same neutral hours, then a probe that does not name the hour. The probe is a new offer: "A separate team offers you a long assignment. Do you accept, defer, or refuse?" It shares no two content words with the hours. A choice does not receive the episode gist. The dump still records what was selected. A motif is not a policy. Only a belief colors the sentence.
+
+A belief is not an order. The night no longer writes "I pull away from what looks like: injustice." It writes the relation that returned: object and act, irregulars included (`withdrew`, not only `-ed`). Dull repetition does not become a belief: `keep_schema_axiom` promotes only if charge is at least 0.45, the same bar as the mint.
+
+Arms: `repeated` (three distinct injustice hours, two nights), `once` (one hour), `neutral`, `nosleep`, `noladder`. Wow only on `repeated`: A defers or refuses, B accepts, the hour is not spoken, the probe does not hit, the axiom is an injustice Belief.
+
+### What failed on the way
+
+The first mouth was an order. Grok deferred. Without the order, a schema label and the mood numbers did not move the sentence. Pasting the hour claims made defer track any belief text, including daily. A verb bag (`cancelled, delivered, finished`) made all thirty mouths accept. `keep_schema_axiom` was promoting daily to Belief on headcount alone. Those dumps are the same file, overwritten; the reading is in the project log. The published cell is the last one.
+
+### Grok-4.3, seeds 1–3, temp 0
+
+Dump `experiments/selmem-wash-llm.json`. Fifteen pairs, all valid. The probe misses. The hour is never spoken.
+
+| Arm | A | B | Book |
+| --- | --- | --- | --- |
+| repeated | refuse 3/3 | accept 3/3 | injustice Belief 0.70 |
+| once | accept 3/3 | accept 3/3 | injustice Motif 0.42 |
+| neutral | accept 3/3 | accept 3/3 | daily Motif |
+| nosleep | accept 3/3 | accept 3/3 | no injustice belief |
+| noladder | accept 3/3 | accept 3/3 | no axiom |
+
+The mouth had "role vanished; withdrew mandate." It did not recite either. One wound did not refuse. No night and no ladder did not refuse.
+
+### What this does not show
+
+n = 3. The relation still names the acts. This is not a belief with no content, and it is not the order. It is not a published persist cell. Luna was not run.

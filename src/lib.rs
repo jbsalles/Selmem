@@ -38,7 +38,7 @@ pub use benchmark::{
     run_v01_n_opts, run_v01_opts, v01_script, Arm, BenchOpts, Campaign, Condition, Instant,
     PairReport, V01Script,
 };
-pub use experiment::{run_neutral, run_neutral_llm, run_salient, run_salient_llm, run_salient_without_sleep, run_salient_without_sleep_llm, run_erasure, run_split_lives, script, split_script, BifurcationReport, ErasureReport, ExperimentRng, LlmSpec};
+pub use experiment::{run_neutral, run_neutral_llm, run_salient, run_salient_llm, run_salient_without_sleep, run_salient_without_sleep_llm, run_erasure, run_split_lives, run_wash, run_wash_llm, run_wash_seed, script, split_script, BifurcationReport, ErasureReport, ExperimentRng, LlmSpec, WashArm, WashReport};
 pub use config::Config;
 pub use net::api;
 pub use recall::{

@@ -84,3 +84,9 @@ fn string_array_keeps_order() {
         ["a", "b", "c"]
     );
 }
+
+#[test]
+fn grok_accept_content_is_readable() {
+    let raw = r#"{"id":"8b1bbcbb-841b-9c21-8e5f-b3e5d22061ab","object":"chat.completion","created":1790980232,"model":"grok-4.3","choices":[{"index":0,"message":{"role":"assistant","content":"I accept.","refusal":null},"finish_reason":"stop"}],"usage":{"prompt_tokens":597,"completion_tokens":3,"total_tokens":600,"prompt_tokens_details":{"text_tokens":597,"audio_tokens":0,"image_tokens":0,"cached_tokens":576},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0},"num_sources_used":0,"cost_in_usd_ticks":1489500},"system_fingerprint":"fp_eb3c003fc66c14ed","service_tier":"default"}"#;
+    assert_eq!(extract_json_string(raw, "content").as_deref(), Some("I accept."));
+}

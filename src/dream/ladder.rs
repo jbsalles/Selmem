@@ -73,7 +73,9 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
 
     let mut created = Vec::new();
     for (schema, ids) in evidence {
-        if ids.len() < 2 {
+        let charge = schema_charge(store, &ids);
+        // Count still mints a dull motif. Charge lets one wound mint without a second copy.
+        if ids.len() < 2 && charge < 0.28 {
             continue;
         }
         let Some(live_ids) = living.get(&schema) else {
@@ -103,7 +105,7 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
             let flipped = prev_v * preview_v < 0.0
                 || (prev_v.abs() < 0.15 && preview_v.abs() >= 0.30);
             if prev_strength >= 0.36 || !flipped {
-                keep_schema_axiom(store, prev_id, &support, live_ids.len());
+                keep_schema_axiom(store, prev_id, &support, live_ids.len(), charge);
                 continue;
             }
             // Weak living axiom, opposite sense: mint a replacement below.
@@ -116,30 +118,20 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
             Some(s) if !s.trim().is_empty() => s,
             _ => match crate::recall::narrator::RuleNarrator.distill_axiom(&traces) {
                 Some(s) => s,
-                None => continue,
+                None => charge_statement(&schema, preview_v),
             },
         };
         if existing.iter().any(|s| s == &statement) {
             continue;
         }
-        let n = live_ids.len().max(ids.len().min(2)) as f32;
-        let mean_v = traces.iter().map(|t| t.valence).sum::<f32>() / n.max(1.0);
-        let layer = if live_ids.len() >= 3 {
+        let mean_v = weighted_valence(store, &support);
+        // One wound is a motif. A belief needs the same schema several times.
+        let layer = if live_ids.len() >= 3 && charge >= 0.45 {
             AxiomLayer::Belief
         } else {
             AxiomLayer::Motif
         };
-        let strength = match layer {
-            AxiomLayer::Belief => (0.40 + 0.04 * (n - 3.0)).clamp(
-                AxiomLayer::Belief.strength_floor(),
-                AxiomLayer::Belief.strength_cap(),
-            ),
-            AxiomLayer::Motif => (0.28 + 0.04 * (n - 2.0)).clamp(
-                AxiomLayer::Motif.strength_floor(),
-                AxiomLayer::Motif.strength_cap(),
-            ),
-            AxiomLayer::Trait => 0.55,
-        };
+        let strength = (0.22 + charge).clamp(layer.strength_floor(), layer.strength_cap());
         let axiom = IdentityAxiom {
             id: new_id("ax"),
             statement,
@@ -171,6 +163,7 @@ fn keep_schema_axiom(
     prev_id: &str,
     support: &[String],
     live_n: usize,
+    charge: f32,
 ) {
     let Some(ax) = store.axioms.get_mut(prev_id) else {
         return;
@@ -180,7 +173,8 @@ fn keep_schema_axiom(
             ax.support_trace_ids.push(id.clone());
         }
     }
-    if live_n >= 3 && ax.layer == AxiomLayer::Motif {
+    // Three dull hours are not a belief. The mint path already requires charge.
+    if live_n >= 3 && charge >= 0.45 && ax.layer == AxiomLayer::Motif {
         ax.layer = AxiomLayer::Belief;
         ax.strength = ax.strength.max(AxiomLayer::Belief.strength_floor());
     }
@@ -262,4 +256,37 @@ fn extend_support(store: &MemoryStore, ids: &mut Vec<String>) {
         }
     }
     ids.extend(extra);
+}
+
+fn hour_charge(t: &crate::core::model::MemoryTrace) -> f32 {
+    let raw = t.valence.abs() * t.arousal.max(0.05) * t.self_relevance.max(0.05);
+    if t.permanence < 0.40 {
+        raw * 0.25
+    } else {
+        raw
+    }
+}
+
+fn schema_charge(store: &MemoryStore, ids: &[String]) -> f32 {
+    ids.iter()
+        .filter_map(|id| store.traces.get(id))
+        .map(hour_charge)
+        .sum()
+}
+
+fn weighted_valence(store: &MemoryStore, ids: &[String]) -> f32 {
+    let mut w = 0.0;
+    let mut acc = 0.0;
+    for id in ids {
+        let Some(t) = store.traces.get(id) else { continue };
+        let c = hour_charge(t).max(0.02);
+        w += c;
+        acc += c * t.valence;
+    }
+    if w <= 0.0 { 0.0 } else { acc / w }
+}
+
+fn charge_statement(schema: &str, _valence: f32) -> String {
+    // A single charged hour is a motif, not a law. The policy wording is for a belief.
+    crate::lexicon::rule().axiom_mid.replace("{schema}", schema)
 }

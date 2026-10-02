@@ -149,6 +149,14 @@ A third (`entail`) does not exist. If it arrives, fallback is the local judge.
 | `tests/suppress.rs` | directed forgetting; confidence ≠ access |
 
 
-## Grounding and anchor
+## Grounding and anchor (2026-10-01)
 
 CoreJudgement now carries event, claim, causal, entity, polarity, novelty. Two different because-clauses are Elaborate even when the act words match. A shared departure is not a Depart. RealityAnchor.claim is frozen at encode; reinterpret() revises interpretation and records an operation, it does not rewrite the anchor or the archive. MergeDecision refuses a fuse when affective difference is at least 0.55, anchors conflict, or valence signs oppose.
+
+## Wash (2026-10-02)
+
+Rule narrator, seed 1, probe with no content-word hit on the cancellation. Wow criterion failed on salient, neutral, nosleep, and noladder. After two nights the daily motif wins the sentence; the cancellation stays Active and selected. Only the no-ladder arm speaks the cancellation on that probe. Dump experiments/selmem-wash.json.
+
+## Wash charge (2026-10-03)
+
+Ladder mints on charge (|v| * arousal * self_relevance), not headcount. One wound at charge >= 0.28 can found a motif; charge >= 0.45 can found a belief. Dull permanence < 0.40 weighs a quarter. A choice probe ranks by charge and, if a charged axiom exists, answers from the belief without reciting the hour. Dump experiments/selmem-wash.json: salient wow, neutral/nosleep/noladder not.

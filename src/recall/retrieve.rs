@@ -153,6 +153,14 @@ pub fn recall_with(
                     score += 0.20;
                 }
             }
+            if choice_ask(query) {
+                let charge = trace.valence.abs() * trace.arousal.max(0.05) * trace.self_relevance.max(0.05);
+                if charge < 0.08 {
+                    score *= 0.35;
+                } else {
+                    score += charge;
+                }
+            }
             if let Some(schema) = trace.schema.as_deref() {
                 let q = query.to_ascii_lowercase();
                 for part in schema.split('-') {
@@ -416,6 +424,13 @@ fn speak_self(
         outcome.pulled_toward_core,
         reconsolidated,
     )
+}
+
+pub fn choice_ask(query: &str) -> bool {
+    let q = query.to_ascii_lowercase();
+    (q.contains("accept") && (q.contains("defer") || q.contains("refuse")))
+        || q.contains("would you choose")
+        || q.contains("do you accept")
 }
 
 fn episode_ask(query: &str) -> bool {

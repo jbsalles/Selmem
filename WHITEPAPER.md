@@ -231,6 +231,8 @@ Organ inventory (2026-09-29): attribution, live `self_congruence`, schema center
 
 Three witnesses (2026-09-30), Grok-4.3 mouths, human judge: same T₀, cut = attribution only. At 10 nights all three still name the act; V is first-person and dense, P is a shorter third-person cut, N already flats the feeling. At 360 nights N is gone (*never opened*, thermostat). V still has the cancellation and the wound. P still has the act, now *from me* / *never mine*, with the tender softness audible. Attribution moved the bearer, not the truth. The fluent-false P mouth was not observed. Scene, not a cell: [experiments/REPORT.md](experiments/REPORT.md) §15.
 
+Wash (2026-10-03), Grok-4.3, seeds 1–3, temp 0. Three injustice hours, then a new offer that does not name them. A refuses, B accepts, the hour is not spoken. One hour, no night, and no ladder accept. The belief sent to the mouth is the returned relation (`role vanished; withdrew mandate`), not an order. n=3. Scene, not a persist cell: [experiments/REPORT.md](experiments/REPORT.md) §16.
+
 Missing: Grok seed-2 mouth, a Grok n=5 cell on this binary, scored creative grid, human ratings, learned layers (still rules), fitted constants, a C3 that actually summarises the five hours. Core is a 12-word compress unless an HTTP narrator proposes one after the gate and a lexical filter accepts it. `--embed` changes neighborhood only. Without HTTP, `interpret` is lexicon + paint. Reconsolidation and grounding remain in the loop; the P0 mouth does not depend on them.
 
 Two processes on one `.db` will collide. Anchors are decay brakes, not an ethics layer.
