@@ -7,7 +7,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let cfg = Config::get();
     let path = cfg.resolve_or(flag(&args, "--path"), "path", "claire.db");
-    let name = cfg.resolve_or(flag(&args, "--name"), "name", "Claire");
+    let name = cfg.resolve_or(flag(&args, "--name"), "name", "");
     let kind = cfg.resolve_or(flag(&args, "--profile"), "profile", "tender");
     let key = cfg.resolve(flag(&args, "--api-key"), "api_key");
 

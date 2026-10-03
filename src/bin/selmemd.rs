@@ -10,7 +10,7 @@ fn main() {
     let cfg = Config::get();
     let bind = cfg.resolve_or(flag(&args, "--bind"), "bind", "127.0.0.1:7420");
     let path = cfg.resolve_or(flag(&args, "--path"), "path", "entity.db");
-    let name = cfg.resolve_or(flag(&args, "--name"), "name", "Claire");
+    let name = cfg.resolve_or(flag(&args, "--name"), "name", "");
     let kind = cfg.resolve_or(flag(&args, "--profile"), "profile", "tender");
     let key = cfg.resolve(flag(&args, "--api-key"), "api_key");
     let embed_url = cfg.resolve(flag(&args, "--embed"), "embed");

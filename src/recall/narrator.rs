@@ -195,21 +195,15 @@ fn compress_belief(traces: &[&MemoryTrace]) -> String {
 }
 
 fn relation_pairs(traces: &[&MemoryTrace]) -> Vec<String> {
-    // Loss acts, including irregulars the -ed scanner misses. Delivery is not the stake.
-    const STAKE: &[&str] = &[
-        "cancelled", "canceled", "withdrew", "withdrawn", "vanished", "shifted",
-        "removed", "lost", "taken",
-    ];
+    // The act is whatever the hour already marked. No stake list.
     let mut out = Vec::new();
     for t in traces {
         let words: Vec<String> = t.core.split_whitespace().map(|w| {
             w.trim_matches(|c: char| !c.is_alphanumeric()).to_string()
         }).filter(|w| !w.is_empty()).collect();
         let lows: Vec<String> = words.iter().map(|w| w.to_lowercase()).collect();
-        for (i, act) in lows.iter().enumerate() {
-            if !STAKE.contains(&act.as_str()) {
-                continue;
-            }
+        for act in &t.semantic.actions {
+            let Some(i) = lows.iter().position(|w| w == act) else { continue };
             let after = ((i + 1)..words.len()).find_map(|j| {
                 let w = &words[j];
                 if w.len() > 3 && !is_glue(w) { Some(w.to_lowercase()) } else { None }
@@ -218,13 +212,9 @@ fn relation_pairs(traces: &[&MemoryTrace]) -> Vec<String> {
                 let w = &words[j];
                 if w.len() > 3 && !is_glue(w) { Some(w.to_lowercase()) } else { None }
             });
-            // "withdrew the mandate" takes the object after. "project was cancelled" takes it before.
             let pair = match (after, before) {
-                (Some(o), _) if matches!(act.as_str(), "withdrew" | "withdrawn" | "removed" | "taken") => {
-                    format!("{act} {o}")
-                }
-                (_, Some(o)) => format!("{o} {act}"),
                 (Some(o), _) => format!("{act} {o}"),
+                (_, Some(o)) => format!("{o} {act}"),
                 _ => act.clone(),
             };
             if !out.contains(&pair) {

@@ -672,17 +672,10 @@ impl SelectiveMemory {
                 .filter_map(|id| self.store.traces.get(id).and_then(|t| t.schema.clone()))
                 .collect();
             let drop_ax = matches!(bias, RecallBias::DropLineage);
-            // A choice is not reading comprehension of the hour. The dump still
-            // records what was selected. A motif is not a policy: only a belief
-            // or a trait may color the sentence.
-            let choice = crate::recall::retrieve::choice_ask(user);
             let axioms: Vec<String> = self
                 .who_am_i()
                 .into_iter()
                 .filter(|a| {
-                    if choice && matches!(a.layer, crate::core::model::AxiomLayer::Motif) {
-                        return false;
-                    }
                     if !drop_ax {
                         return true;
                     }
@@ -695,7 +688,7 @@ impl SelectiveMemory {
                 })
                 .map(|a| a.statement.clone())
                 .collect();
-            let memories: Vec<String> = if axioms_only || choice {
+            let memories: Vec<String> = if axioms_only {
                 Vec::new()
             } else {
                 recalled.into_iter().map(|r| r.narrative).collect()
@@ -845,3 +838,4 @@ fn is_sqlite(path: &Path) -> bool {
         Some("db") | Some("sqlite") | Some("sqlite3")
     )
 }
+
