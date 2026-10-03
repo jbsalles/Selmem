@@ -119,6 +119,24 @@ pub fn dispatch(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
         }
         ("GET", "/llm") => ok(llm_json(mem)),
         ("POST", "/llm") => {
+            if let Some(plug) = json_str(body, "plug") {
+                let plug = plug.trim();
+                if plug.is_empty() || plug == "rules" || json_bool(body, "clear").unwrap_or(false) {
+                    let _ = mem.set_llm("", "", None);
+                    return ok(llm_json(mem));
+                }
+                match crate::config::Config::get().mouth_named(plug, None, None, "gpt-4o-mini") {
+                    Ok(Some(mouth)) => {
+                        if let Err(e) = mem.set_plug(&mouth.plug, &mouth.url, &mouth.model, mouth.api_key)
+                        {
+                            return err(400, &e);
+                        }
+                    }
+                    Ok(None) => return err(400, "plug has no endpoint"),
+                    Err(e) => return err(400, &e),
+                }
+                return ok(llm_json(mem));
+            }
             let url = json_str(body, "url").unwrap_or_else(|| mem.llm.url.clone());
             let model = json_str(body, "model").unwrap_or_else(|| mem.llm.model.clone());
             let key = json_str(body, "api_key");
@@ -598,9 +616,30 @@ fn mask_key(key: &str) -> String {
 fn llm_json(mem: &SelectiveMemory) -> String {
     let attached = !mem.llm.url.is_empty();
     let key = mem.llm.key.as_deref().unwrap_or("");
+    let cfg = crate::config::Config::get();
+    let plugs: Vec<String> = cfg
+        .plugs()
+        .into_iter()
+        .map(|p| {
+            format!(
+                "{{\"name\":\"{}\",\"model\":\"{}\",\"url\":\"{}\",\"has_key\":{}}}",
+                json_esc(&p.plug),
+                json_esc(&p.model),
+                json_esc(&p.url),
+                if p.api_key.as_ref().map(|k| !k.is_empty()).unwrap_or(false) {
+                    "true"
+                } else {
+                    "false"
+                }
+            )
+        })
+        .collect();
+    let default = cfg.default_llm().unwrap_or_default();
     format!(
-        "{{\"ok\":true,\"attached\":{},\"url\":\"{}\",\"model\":\"{}\",\"has_key\":{},\"key_hint\":\"{}\"}}",
+        "{{\"ok\":true,\"attached\":{},\"plug\":\"{}\",\"default\":\"{}\",\"url\":\"{}\",\"model\":\"{}\",\"has_key\":{},\"key_hint\":\"{}\",\"plugs\":[{}]}}",
         if attached { "true" } else { "false" },
+        json_esc(&mem.llm.plug),
+        json_esc(&default),
         json_esc(&mem.llm.url),
         json_esc(&mem.llm.model),
         if mem.llm.key.as_ref().map(|k| !k.is_empty()).unwrap_or(false) {
@@ -609,6 +648,7 @@ fn llm_json(mem: &SelectiveMemory) -> String {
             "false"
         },
         json_esc(&if key.is_empty() { String::new() } else { mask_key(key) }),
+        plugs.join(","),
     )
 }
 

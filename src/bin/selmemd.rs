@@ -12,8 +12,6 @@ fn main() {
     let path = cfg.resolve_or(flag(&args, "--path"), "path", "entity.db");
     let name = cfg.resolve_or(flag(&args, "--name"), "name", "Claire");
     let kind = cfg.resolve_or(flag(&args, "--profile"), "profile", "tender");
-    let llm = cfg.resolve(flag(&args, "--llm"), "llm");
-    let model = cfg.resolve_or(flag(&args, "--model"), "model", "llama3");
     let key = cfg.resolve(flag(&args, "--api-key"), "api_key");
     let embed_url = cfg.resolve(flag(&args, "--embed"), "embed");
     let token = cfg.resolve(flag(&args, "--token"), "token");
@@ -42,9 +40,16 @@ fn main() {
     {
         mem.profile.narrator_firmness = v;
     }
-    if let Some(endpoint) = llm {
-        match mem.set_llm(&endpoint, &model, key.clone()) {
-            Ok(()) => eprintln!("HTTP narrator attached"),
+    let mouth = match cfg.mouth(flag(&args, "--llm"), flag(&args, "--model"), flag(&args, "--plug"), "llama3") {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+    };
+    if let Some(mouth) = mouth {
+        match mem.set_plug(&mouth.plug, &mouth.url, &mouth.model, mouth.api_key) {
+            Ok(()) => eprintln!("HTTP narrator attached  {} {}", mouth.plug, mouth.model),
             Err(e) => eprintln!("{e}; repli RuleNarrator"),
         }
     }

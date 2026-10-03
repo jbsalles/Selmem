@@ -2,6 +2,7 @@
 
 use crate::core::model::{Attribution, Channel};
 
+/// One hour offered to the gate. Defaults are a neutral Selfhood event.
 pub struct EncodeInput<'a> {
     pub event: &'a str,
     pub source: &'a str,

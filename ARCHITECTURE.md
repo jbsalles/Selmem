@@ -148,6 +148,13 @@ A third (`entail`) does not exist. If it arrives, fallback is the local judge.
 | `tests/confab.rs` | hole fill ≠ embellish; core frozen |
 | `tests/suppress.rs` | directed forgetting; confidence ≠ access |
 
+## Audit P0 (2026-10-01)
+
+Mouth routes (`/turn`, `/speak`) drop the organ lock before the narrator call and commit the reply after. Other POST routes take the organ out of the slot so a slow night does not pin the mutex. Benchmarks attach `FailurePolicy::Error`; a miss sets `fallback_used` / `llm_error` and invalidates the pair. `ExperimentRng` plus `with_seed` offsets the id stream and is written on the pair report. Each hour now has `observation_id` (archive), `interpretation` (encode-time conclusion), and `operations` (genealogy). Confabulation is origin `confabulation`, not event evidence.
+
+## Audit suite (2026-10-01)
+
+HttpEmbedder logs External vs Fallback. A benchmark pair with embedding_fallback is invalid. MemoryClock lives on the organ; detach_clock snapshots the process clock so two organs do not share a jump. Engine live/sleep/recall enter that clock. SemanticCore (claim, entities, actions, polarity) sits beside the lexical core and does not replace it. Confab still does not write the core, and its confidence is scaled by 0.62 so a fill is not strong evidence.
 
 ## Grounding and anchor (2026-10-01)
 

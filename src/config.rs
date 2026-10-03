@@ -46,9 +46,14 @@ impl Config {
 
     pub fn parse(raw: &str) -> Self {
         let mut values = HashMap::new();
+        let mut section = String::new();
         for line in raw.lines() {
             let line = line.trim();
             if line.is_empty() || line.starts_with('#') || line.starts_with("SELMEM1") {
+                continue;
+            }
+            if line.starts_with('[') && line.ends_with(']') && line.len() > 2 {
+                section = normalize_key(&line[1..line.len() - 1]);
                 continue;
             }
             let line = line.strip_prefix("export ").unwrap_or(line).trim();
@@ -59,6 +64,11 @@ impl Config {
             if key.is_empty() {
                 continue;
             }
+            let key = if section.is_empty() {
+                key
+            } else {
+                format!("{section}.{key}")
+            };
             let val = unquote(v.trim());
             if !val.is_empty() {
                 values.insert(key, val);
@@ -116,11 +126,125 @@ impl Config {
     pub fn http_timeout(&self) -> String {
         self.resolve_or(None, "http_timeout", "60")
     }
+
+    /// Mouth endpoint. `llm=` wins over a named plug. `model=` wins over the plug default.
+    /// No plug and no `llm` means RuleNarrator (`Ok(None)`).
+    /// A named plug reads `[grok]` / `[gpt]` first, then the built-in URL.
+    pub fn mouth(
+        &self,
+        cli_llm: Option<String>,
+        cli_model: Option<String>,
+        cli_plug: Option<String>,
+        fallback_model: &str,
+    ) -> Result<Option<Mouth>, String> {
+        let plug_name = if cli_plug.as_ref().is_some_and(|s| !s.is_empty()) {
+            cli_plug
+        } else {
+            self.resolve(None, "default_llm")
+                .or_else(|| self.resolve(None, "plug"))
+        };
+        if let Some(name) = plug_name.as_deref() {
+            if !matches!(name, "rules" | "none" | "off") {
+                return self.mouth_named(name, cli_llm, cli_model, fallback_model);
+            }
+        }
+        let url = self.resolve(cli_llm, "llm");
+        let Some(url) = url else {
+            return Ok(None);
+        };
+        let model = self
+            .resolve(cli_model, "model")
+            .unwrap_or_else(|| fallback_model.to_string());
+        Ok(Some(Mouth {
+            plug: String::new(),
+            url,
+            model,
+            api_key: self.api_key(),
+        }))
+    }
+
+    pub fn mouth_named(
+        &self,
+        name: &str,
+        cli_llm: Option<String>,
+        cli_model: Option<String>,
+        fallback_model: &str,
+    ) -> Result<Option<Mouth>, String> {
+        let name = normalize_key(name);
+        let builtin = expand_plug(&name);
+        if builtin.is_none() && self.file(&format!("{name}.llm")).is_none() {
+            return Err(format!("unknown plug '{name}' (grok, gpt)"));
+        }
+        let url = cli_llm
+            .filter(|s| !s.is_empty())
+            .or_else(|| self.file(&format!("{name}.llm")).map(str::to_string))
+            .or_else(|| builtin.map(|(url, _)| url.to_string()));
+        let Some(url) = url else {
+            return Ok(None);
+        };
+        let model = cli_model
+            .filter(|s| !s.is_empty())
+            .or_else(|| self.file(&format!("{name}.model")).map(str::to_string))
+            .or_else(|| builtin.map(|(_, model)| model.to_string()))
+            .unwrap_or_else(|| fallback_model.to_string());
+        let api_key = self
+            .file(&format!("{name}.api_key"))
+            .map(str::to_string)
+            .or_else(|| self.api_key());
+        Ok(Some(Mouth {
+            plug: name,
+            url,
+            model,
+            api_key,
+        }))
+    }
+
+    /// Plugs the file defines, plus grok and gpt when a built-in exists.
+    pub fn plugs(&self) -> Vec<Mouth> {
+        let mut names = vec!["grok".to_string(), "gpt".to_string()];
+        let mut extra: Vec<String> = self
+            .values
+            .keys()
+            .filter_map(|k| k.split_once('.').map(|(n, _)| n.to_string()))
+            .filter(|n| !names.contains(n))
+            .collect();
+        extra.sort();
+        extra.dedup();
+        names.extend(extra);
+        names
+            .into_iter()
+            .filter_map(|n| self.mouth_named(&n, None, None, "gpt-4o-mini").ok().flatten())
+            .collect()
+    }
+
+    pub fn default_llm(&self) -> Option<String> {
+        self.resolve(None, "default_llm")
+            .or_else(|| self.resolve(None, "plug"))
+    }
+}
+
+/// One configured mouth. The key stays on the process.
+#[derive(Clone, Debug)]
+pub struct Mouth {
+    pub plug: String,
+    pub url: String,
+    pub model: String,
+    pub api_key: Option<String>,
+}
+
+/// Named mouth. `grok` is xAI. `gpt` is OpenAI. A raw `llm=` URL still overrides this.
+pub fn expand_plug(name: &str) -> Option<(&'static str, &'static str)> {
+    match name.trim().to_ascii_lowercase().as_str() {
+        "grok" | "xai" => Some(("https://api.x.ai/v1/chat/completions", "grok-4.3")),
+        "gpt" | "openai" => Some(("https://api.openai.com/v1/chat/completions", "gpt-4o-mini")),
+        _ => None,
+    }
 }
 
 fn normalize_key(raw: &str) -> String {
     let k = raw.trim().trim_start_matches("SELMEM_").to_ascii_lowercase();
     match k.as_str() {
+        "defaultllm" | "default_llm" => "default_llm".into(),
         "key" | "apikey" => "api_key".into(),
         "timeout" => "http_timeout".into(),
         "embedmodel" | "embed_model" => "embed_model".into(),

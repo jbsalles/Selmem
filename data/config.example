@@ -3,10 +3,22 @@
 #
 #   cp data/config.example .selmem
 #   ./run.sh run --release --bin selmemd
+#
+# Both mouths live here. defaultLlm is what the daemon attaches.
+# The UI select switches between these blocks. Keys stay in this file.
 
+defaultLlm=grok
+
+[grok]
 llm=https://api.x.ai/v1/chat/completions
 model=grok-4.3
-# api_key=
+api_key=
+
+[gpt]
+llm=https://api.openai.com/v1/chat/completions
+model=gpt-4o-mini
+api_key=
+
 reasoning=none
 temp=0
 http_timeout=60

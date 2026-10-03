@@ -157,11 +157,15 @@
     </fieldset>
     <fieldset>
       <legend>LLM</legend>
-      <p class="hint">HTTP narrator for speak. Empty URL falls back to rules. Key stays on the process; not written to the vault.</p>
+      <p class="hint">Choose a mouth from .selmem. defaultLlm starts the daemon. The key stays on the process, not in the vault.</p>
+      <label class="field-lab" for="llm-plug">mouth</label>
+      <select id="llm-plug">
+        <option value="rules">rules</option>
+      </select>
       <label class="field-lab" for="llm-url">endpoint</label>
-      <input type="text" id="llm-url" placeholder="https://api.x.ai/v1/chat/completions" autocomplete="off">
+      <input type="text" id="llm-url" placeholder="https://api.x.ai/v1/chat/completions" autocomplete="off" readonly>
       <label class="field-lab" for="llm-model">model</label>
-      <input type="text" id="llm-model" placeholder="grok-4.3" autocomplete="off">
+      <input type="text" id="llm-model" placeholder="grok-4.3" autocomplete="off" readonly>
       <label class="field-lab" for="llm-key">api key</label>
       <input type="password" id="llm-key" placeholder="unchanged if left blank" autocomplete="off">
       <div class="row-btns">
@@ -343,6 +347,15 @@ function fillOptsFrom(p) {
 async function fillLlm() {
   try {
     const l = await api('GET', '/llm');
+    const sel = document.getElementById('llm-plug');
+    const plugs = l.plugs || [];
+    sel.innerHTML = '<option value="rules">rules</option>' + plugs.map(p =>
+      '<option value="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) +
+      (p.model ? ' · ' + escapeHtml(p.model) : '') +
+      (p.has_key ? '' : ' · no key') + '</option>'
+    ).join('');
+    sel.value = l.attached ? (l.plug || 'rules') : 'rules';
+    if (sel.value === '' ) sel.value = 'rules';
     document.getElementById('llm-url').value = l.url || '';
     document.getElementById('llm-model').value = l.model || '';
     const keyEl = document.getElementById('llm-key');
@@ -531,6 +544,21 @@ document.getElementById('f').onsubmit = async (e) => {
 document.getElementById('opt-name').addEventListener('change', () => saveOpts());
 document.getElementById('token').addEventListener('change', () => {
   localStorage.setItem('selmem_token', tokenEl.value.trim());
+});
+document.getElementById('llm-plug').addEventListener('change', async () => {
+  const plug = document.getElementById('llm-plug').value;
+  try {
+    const l = plug === 'rules'
+      ? await api('POST', '/llm', { clear: true })
+      : await api('POST', '/llm', { plug });
+    document.getElementById('llm-url').value = l.url || '';
+    document.getElementById('llm-model').value = l.model || '';
+    document.getElementById('llm-key').value = '';
+    document.getElementById('llm-key').placeholder = l.has_key ? (l.key_hint || '••••') + ' — leave blank to keep' : 'api key';
+    document.getElementById('opts-status').textContent = l.attached ? ('LLM · ' + (l.plug || l.model || '')) : 'rules';
+  } catch (e) {
+    document.getElementById('opts-status').textContent = e.message;
+  }
 });
 document.getElementById('llm-save').onclick = async () => {
   const url = document.getElementById('llm-url').value.trim();

@@ -78,7 +78,6 @@ Apple Silicon and Intel are both fine. Bind `127.0.0.1` or `0.0.0.0` as usual.
 
 ```bash
 ./run.sh test
-./run.sh run --release --example demo
 ./run.sh run --release --example compare
 ./run.sh run --release --example llm_night
 ./run.sh run --release --example bifurcation
@@ -132,7 +131,8 @@ Another file: `--config path` or `SELMEM_CONFIG`. Discovery otherwise: cwd `.sel
 
 | Key | Env | Default | Role |
 | --- | --- | --- | --- |
-| `llm` | `SELMEM_LLM` | unset | chat completions URL; unset = `RuleNarrator` |
+| `defaultLlm` | `SELMEM_DEFAULT_LLM` | unset | which block the daemon attaches: `grok` or `gpt` |
+| `llm` | `SELMEM_LLM` | unset | chat completions URL; unset and no plug = `RuleNarrator` |
 | `model` | `SELMEM_MODEL` | bin: `llama3`, benches: `gpt-4o-mini` | model id |
 | `api_key` | `SELMEM_API_KEY` | unset | `Authorization: Bearer` |
 | `reasoning` | `SELMEM_REASONING` | `none` | xAI `reasoning_effort` (`none`/`low`/… or `off` to omit) |

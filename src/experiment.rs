@@ -59,12 +59,18 @@ pub struct LlmSpec {
 impl LlmSpec {
     pub fn from_env() -> Option<Self> {
         let cfg = crate::config::Config::get();
-        let url = cfg.llm()?;
-        Some(Self {
-            url,
-            model: cfg.model("gpt-4o-mini"),
-            api_key: cfg.api_key(),
-        })
+        match cfg.mouth(None, None, None, "gpt-4o-mini") {
+            Ok(Some(mouth)) => Some(Self {
+                url: mouth.url,
+                model: mouth.model,
+                api_key: mouth.api_key,
+            }),
+            Ok(None) => None,
+            Err(e) => {
+                eprintln!("selmem: {e}");
+                None
+            }
+        }
     }
 }
 

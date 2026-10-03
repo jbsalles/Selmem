@@ -9,8 +9,6 @@ fn main() {
     let path = cfg.resolve_or(flag(&args, "--path"), "path", "claire.db");
     let name = cfg.resolve_or(flag(&args, "--name"), "name", "Claire");
     let kind = cfg.resolve_or(flag(&args, "--profile"), "profile", "tender");
-    let llm = cfg.resolve(flag(&args, "--llm"), "llm");
-    let model = cfg.resolve_or(flag(&args, "--model"), "model", "llama3");
     let key = cfg.resolve(flag(&args, "--api-key"), "api_key");
 
     let profile = if kind == "austere" {
@@ -19,8 +17,15 @@ fn main() {
         EntityProfile::tender(name)
     };
     let mut mem = SelectiveMemory::open(&path, profile).expect("memory");
-    if let Some(url) = llm {
-        if let Some(n) = HttpNarrator::parse(&url, model, key.clone()) {
+    let mouth = match cfg.mouth(flag(&args, "--llm"), flag(&args, "--model"), flag(&args, "--plug"), "llama3") {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+    };
+    if let Some(mouth) = mouth {
+        if let Some(n) = HttpNarrator::parse(&mouth.url, mouth.model, mouth.api_key.or(key.clone())) {
             mem = mem.with_narrator(Box::new(n));
             eprintln!("LLM voice attached");
         }

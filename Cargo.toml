@@ -4,7 +4,14 @@ version = "0.5.0"
 edition = "2021"
 description = "Selective reconstructive memory for LLM entities"
 license = "MIT"
+readme = "README.md"
+repository = "https://github.com/jbsalles/Selmem"
 rust-version = "1.75"
+keywords = ["memory", "llm", "agent", "sqlite"]
+categories = ["science"]
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [[example]]
 name = "two_entities"

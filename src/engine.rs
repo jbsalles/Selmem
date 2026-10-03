@@ -19,6 +19,7 @@ use crate::core::profile::EntityProfile;
 use crate::recall;
 use crate::core::store::MemoryStore;
 
+/// The organ. Encode, reconstruct, sleep. The vault is a dump, not the memory.
 pub struct SelectiveMemory {
     pub profile: EntityProfile,
     pub store: MemoryStore,
@@ -43,6 +44,8 @@ pub struct LlmBind {
     pub url: String,
     pub model: String,
     pub key: Option<String>,
+    /// Which named plug is attached. Empty when rules, or when a raw URL was set.
+    pub plug: String,
 }
 
 pub struct MouthDraft {
@@ -155,7 +158,21 @@ impl SelectiveMemory {
             url: url.to_string(),
             model: if model.is_empty() { "llama3".into() } else { model.into() },
             key,
+            plug: String::new(),
         };
+        Ok(())
+    }
+
+    /// Attach a named plug. The key comes from that plug's config, not the vault.
+    pub fn set_plug(
+        &mut self,
+        plug: &str,
+        url: &str,
+        model: &str,
+        key: Option<String>,
+    ) -> Result<(), String> {
+        self.set_llm(url, model, key)?;
+        self.llm.plug = plug.to_string();
         Ok(())
     }
 
