@@ -149,6 +149,7 @@ The book is not a cap. An hour may *leave* when it already does no work:
 
 - status `Latent` (scene gone)
 - `access < 0.10` and `anchor < 0.50` and `permanence < 0.80`
+- hazard still high (`hazard_scale >= 0.08`): a month-old survivor is not released by time
 - no living axiom lists it as support
 - not `Channel::World`
 
@@ -184,3 +185,16 @@ Not knobs. Fields with fixed cuts so the B witness and persist 5/1 can coexist.
 4. Until then: publish the knobs as knobs. Do not write “0.40 because Ebbinghaus.”
 
 The tests prove that *with these knobs* clones diverge and a world fact survives. They do not prove that 0.40 is the human gate.
+
+
+## Age, weight, anchor (2026-10-04)
+
+Three curves. No word list.
+
+Erasure hazard falls with survival: `1 / (1 + survival_days / 3)`. Day 0 is 1. A month is about a tenth. A year is almost none. Access decay uses that hazard. Weather and release skip an hour whose hazard has fallen under 0.08. Permanence at encode is not this. Survival is.
+
+Behavioral weight falls with time since last use: `1 / (1 + since_use_days / 21)`, floor 0.12. A year-old hour can stay in the book and barely color the sentence. A recall resets the use clock, not the birth date.
+
+Use needs a present anchor. The query touches the hours that already share a token with it. Their tokens form a cloud, each weighted by that hour's behavior weight, self-relevance, and access. A same-schema neighbor joins at half, weighted by its own age. An hour is ranked only if its tokens hit the cloud. An axiom enters the mouth only if its statement hits the same cloud. The hour's own Jaccard is not the gate.
+
+Tests: `tests/age.rs`.

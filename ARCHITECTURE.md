@@ -38,14 +38,14 @@ src/
     intake.rs               EncodeInput / EncodeDecision
     scoring.rs, affect.rs, embed.rs
   recall/
-    retrieve.rs             rank (embedding ∪ lexicon ∪ mood ∪ access); skip suppressed unless ForceMarked
+    retrieve.rs             rank (embedding ∪ lexicon ∪ mood ∪ access × context cloud); skip suppressed unless ForceMarked
     judge.rs                DetachKind — pure, no trace, no I/O
     pull.rs                 grip, strikes, apply_grounding, mix
     ground.rs               re-exports
     narrator.rs, http.rs
   dream/
     night.rs                orchestrator + NIGHT_PASSES
-    weather.rs              decay, unused disgust, status, latent
+    weather.rs              decay (hazard falls with survival), unused disgust, status, latent
     confab.rs               fill a collapsed gist from axiom / center
     centers.rs              one prototype per schema; Internal gravity
     rewrite.rs              neighbor retell; skip = attribution × conflict
@@ -147,6 +147,7 @@ A third (`entail`) does not exist. If it arrives, fallback is the local judge.
 | `tests/centers.rs` | prototype mint; Internal gravity; External stays |
 | `tests/confab.rs` | hole fill ≠ embellish; core frozen |
 | `tests/suppress.rs` | directed forgetting; confidence ≠ access |
+| `tests/age.rs` | hazard falls with survival; recency weight; context cloud |
 
 ## Audit P0 (2026-10-01)
 

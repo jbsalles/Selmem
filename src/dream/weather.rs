@@ -71,7 +71,7 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> WeatherReport {
             sculpted.push(ev);
         }
         let trace = store.traces.get_mut(id).unwrap();
-        if trace.permanence >= 0.8 {
+        if trace.permanence >= 0.8 || crate::encode::scoring::hazard_scale(trace) < 0.08 {
             continue;
         }
         if !trace.channel.verbatim()

@@ -687,6 +687,10 @@ impl SelectiveMemory {
                     )
                 })
                 .map(|a| a.statement.clone())
+                .filter(|s| {
+                    let cloud = crate::recall::retrieve::context_cloud_pub(&self.store, user);
+                    crate::recall::retrieve::statement_anchored(&cloud, s)
+                })
                 .collect();
             let memories: Vec<String> = if axioms_only {
                 Vec::new()

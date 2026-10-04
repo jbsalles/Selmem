@@ -118,6 +118,7 @@ pub fn recall_with(
 ) -> RecallOutcome {
     let query_embedding = embedder.embed(query);
     let live = write == RecallWrite::Live;
+    let cloud = context_cloud(store, query);
     let ids: Vec<String> = store.active_ids();
     let mut ranked: Vec<ScoredTrace> = ids
         .into_iter()
@@ -140,6 +141,12 @@ pub fn recall_with(
                 return None;
             }
             let mut score = recall_score_emb(trace, query, Some(&query_embedding), mood, profile);
+            let anchor = cloud_anchor(&cloud, trace);
+            if anchor <= 0.0 {
+                score = 0.0;
+            } else {
+                score *= anchor;
+            }
             // Frozen δ. If DropLineage stops flattening Grok D, this is too large.
             if !store.living_axiom_ids_for(&trace_id).is_empty() {
                 score += 0.12;
@@ -428,4 +435,74 @@ fn episode_ask(query: &str) -> bool {
         || q.contains("do you remember")
         || q.contains("raconte")
         || q.contains("ce jour")
+}
+
+/// Tokens of the hours the present already touches, weighted by age and relevance.
+/// A same-schema neighbor of a touched hour joins at half, still weighted by its own age.
+pub fn context_cloud_pub(store: &crate::core::store::MemoryStore, query: &str) -> std::collections::HashMap<String, f32> {
+    context_cloud(store, query)
+}
+
+fn context_cloud(store: &crate::core::store::MemoryStore, query: &str) -> std::collections::HashMap<String, f32> {
+    use crate::encode::scoring::{behavior_weight, lexical_similarity, token_set};
+    let mut weights: std::collections::HashMap<String, f32> = std::collections::HashMap::new();
+    let ids = store.active_ids();
+    let mut seeds: Vec<(String, f32)> = Vec::new();
+    for id in &ids {
+        let Some(t) = store.traces.get(id) else { continue };
+        let mut sim = lexical_similarity(query, &t.gist);
+        sim = sim.max(lexical_similarity(query, &t.core));
+        for cue in &t.cues {
+            sim = sim.max(lexical_similarity(query, cue));
+        }
+        if sim > 0.0 {
+            seeds.push((id.clone(), sim));
+        }
+    }
+    let add = |weights: &mut std::collections::HashMap<String, f32>, text: &str, w: f32| {
+        if w <= 0.0 { return; }
+        for tok in token_set(text) {
+            *weights.entry(tok).or_insert(0.0) += w;
+        }
+    };
+    for (id, sim) in &seeds {
+        let Some(t) = store.traces.get(id) else { continue };
+        let w = sim * behavior_weight(t) * t.self_relevance.max(0.05) * t.access.max(0.05);
+        add(&mut weights, &t.gist, w);
+        add(&mut weights, &t.core, w * 0.5);
+        let schema = t.schema.clone();
+        let Some(schema) = schema else { continue };
+        for other_id in &ids {
+            if other_id == id { continue; }
+            let Some(o) = store.traces.get(other_id) else { continue };
+            if o.schema.as_deref() != Some(schema.as_str()) { continue; }
+            let ow = 0.5 * behavior_weight(o) * o.self_relevance.max(0.05) * o.access.max(0.05);
+            add(&mut weights, &o.gist, ow);
+            add(&mut weights, &o.core, ow * 0.5);
+        }
+    }
+    weights
+}
+
+pub fn statement_anchored(cloud: &std::collections::HashMap<String, f32>, statement: &str) -> bool {
+    if cloud.is_empty() { return false; }
+    crate::encode::scoring::token_set(statement).iter().any(|t| cloud.contains_key(t))
+}
+
+fn cloud_anchor(cloud: &std::collections::HashMap<String, f32>, trace: &crate::core::model::MemoryTrace) -> f32 {
+    if cloud.is_empty() {
+        return 0.0;
+    }
+    let mass: f32 = cloud.values().sum();
+    if mass <= 0.0 {
+        return 0.0;
+    }
+    let mut hit = 0.0;
+    for tok in crate::encode::scoring::token_set(&trace.gist) {
+        hit += cloud.get(&tok).copied().unwrap_or(0.0);
+    }
+    for tok in crate::encode::scoring::token_set(&trace.core) {
+        hit += 0.5 * cloud.get(&tok).copied().unwrap_or(0.0);
+    }
+    (hit / mass).clamp(0.0, 1.0)
 }
