@@ -111,7 +111,8 @@ pub use experiment::{run_neutral, run_neutral_llm, run_salient, run_salient_llm,
 pub use config::Config;
 pub use net::api;
 pub use recall::{
-    FailurePolicy, HttpNarrator, LlmCallLog, Narrator, RecallBias, RecallWrite, RetrievalDump, RuleNarrator, SpeakOnlyHttp,
+    FailurePolicy, HttpNarrator, HttpScorer, LlmCallLog, Narrator, NullScorer, PropositionLabel,
+    PropositionScorer, RecallBias, RecallWrite, RetrievalDump, RuleNarrator, SpeakOnlyHttp,
 };
 pub use recall::stance::{
     charged_mood, isolated_stance, is_charged, query_hits_episode,

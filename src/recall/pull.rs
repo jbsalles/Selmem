@@ -1,51 +1,32 @@
-//! After the judge speaks: grip, strikes, and a possible pull toward the core.
-//!
-//! The sealed archive is never read. `mix_drifted_with_core` stays as it is
-//! (behaviour). Replacing it is a later PR.
+//! Pull a drifted sentence back toward the sealed claim. The kind is the scorer's label.
 
 use crate::core::model::{now_secs, DriftEvent, DriftKind, MemoryTrace, TraceStatus};
 use crate::core::profile::EntityProfile;
 use crate::recall::judge::{is_grounding_miss, judge_against_core, DetachKind};
+use crate::recall::PropositionScorer;
 
-/// What recall should speak after the grounding check.
 pub struct GroundingOutcome {
     pub spoken_text: String,
     pub pulled_toward_core: bool,
     pub overlap_with_core: f32,
 }
 
-pub fn semantic_core_of(trace: &MemoryTrace) -> String {
-    if !trace.core.trim().is_empty() {
-        return trace.core.clone();
-    }
-    trace.gist.clone()
+pub fn grip_on_trace(trace: &MemoryTrace, _profile: &EntityProfile) -> f32 {
+    (0.45 * trace.anchor + 0.35 * trace.fidelity + 0.20 * trace.permanence).clamp(0.0, 1.0)
 }
 
-/// Cold / myth / latent, or already slipping: no ceiling on distortion.
 pub fn is_slipping_away(trace: &MemoryTrace) -> bool {
-    matches!(
-        trace.status,
-        TraceStatus::Cold | TraceStatus::Myth | TraceStatus::Latent
-    ) || (trace.fidelity < 0.38
-        && trace.access < 0.28
-        && trace.permanence < 0.35
-        && trace.anchor < 0.40)
+    trace.fidelity < 0.20 || trace.status == TraceStatus::Latent
 }
 
-/// 0 = narrator lets this trace warp. 1 = narrator holds it tightly to the core.
-pub fn grip_on_trace(trace: &MemoryTrace, profile: &EntityProfile) -> f32 {
-    if is_slipping_away(trace) {
-        return 0.0;
+pub fn semantic_core_of(trace: &MemoryTrace) -> &str {
+    if trace.reality.claim.trim().is_empty() {
+        trace.core.as_str()
+    } else {
+        trace.reality.claim.as_str()
     }
-    let how_much_it_still_matters = (0.35 * trace.permanence
-        + 0.25 * trace.anchor
-        + 0.20 * trace.access
-        + 0.20 * trace.fidelity)
-        .clamp(0.0, 1.0);
-    (profile.narrator_firmness.clamp(0.0, 1.0) * how_much_it_still_matters).clamp(0.0, 1.0)
 }
 
-/// How many consecutive misses before a rewrite. `usize::MAX` = never.
 pub fn misses_before_rewrite(trace: &MemoryTrace, profile: &EntityProfile) -> usize {
     let grip = grip_on_trace(trace, profile);
     if grip < 0.12 {
@@ -60,17 +41,17 @@ pub fn should_force_core_rewrite(
     profile: &EntityProfile,
     generated: &str,
     core: &str,
+    scorer: &dyn PropositionScorer,
 ) -> bool {
     if is_slipping_away(trace) || grip_on_trace(trace, profile) < 0.12 {
         return false;
     }
-    let this_is_a_miss = is_grounding_miss(generated, core, profile.ground_min_overlap);
+    let claim = claim_of(trace, core);
+    let this_is_a_miss = is_grounding_miss(generated, &claim, scorer);
     let next_strike_count = (trace.detach_strikes as usize) + 1;
     this_is_a_miss && next_strike_count >= misses_before_rewrite(trace, profile)
 }
 
-/// Mix the drifted sentence with a core-facing rewrite.
-/// High `toward_core` keeps more of the rewrite.
 pub fn mix_drifted_with_core(drifted: &str, toward_core: &str, toward_core_amount: f32) -> String {
     let amount = toward_core_amount.clamp(0.0, 1.0);
     if amount < 0.18 || toward_core.trim().is_empty() {
@@ -102,13 +83,13 @@ pub fn recontextualize_rule(
     crate::dream::retell(core, profile, valence, disgust)
 }
 
-/// Count a miss, or rewrite the gist toward the core once the budget is spent.
 pub fn apply_grounding(
     trace: &mut MemoryTrace,
     profile: &EntityProfile,
     generated: &str,
     core: &str,
     narrator_rewrite: Option<String>,
+    scorer: &dyn PropositionScorer,
 ) -> GroundingOutcome {
     if trace.channel.verbatim() {
         let spoken = if generated.trim().is_empty() {
@@ -123,11 +104,10 @@ pub fn apply_grounding(
         };
     }
 
-    let judgement = judge_against_core(generated, core);
+    let claim = claim_of(trace, core);
+    let judgement = judge_against_core(generated, &claim, scorer);
     let overlap = judgement.overlap;
 
-    // Irony / punchline / other speech act on the same event: speak it,
-    // leave gist and detach_strikes alone.
     if judgement.kind == DetachKind::Reframe && overlap >= profile.ground_min_overlap {
         let already_colored = trace
             .drifts
@@ -150,7 +130,7 @@ pub fn apply_grounding(
         };
     }
 
-    if !is_grounding_miss(generated, core, profile.ground_min_overlap) {
+    if !is_grounding_miss(generated, &claim, scorer) {
         if trace.detach_strikes > 0 {
             trace.detach_strikes -= 1;
         }
@@ -212,5 +192,13 @@ pub fn apply_grounding(
         spoken_text: spoken,
         pulled_toward_core: true,
         overlap_with_core: overlap,
+    }
+}
+
+fn claim_of(trace: &MemoryTrace, core: &str) -> String {
+    if trace.reality.claim.trim().is_empty() {
+        core.to_string()
+    } else {
+        trace.reality.claim.clone()
     }
 }

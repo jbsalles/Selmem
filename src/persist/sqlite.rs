@@ -181,7 +181,17 @@ impl Drop for Stmt {
 
 
 
-pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemoryStore) -> io::Result<()> {
+pub fn save(
+    path: &Path,
+    profile: &EntityProfile,
+    mood: &Mood,
+    store: &MemoryStore,
+    clock_jump: u64,
+    clock_scale: u32,
+    clock_detached: bool,
+    clock_origin: u64,
+    cut: &crate::core::model::OrganCut,
+) -> io::Result<()> {
     if let Some(parent) = path.parent() {
         if !parent.as_os_str().is_empty() {
             std::fs::create_dir_all(parent)?;
@@ -261,6 +271,19 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
             ("last_deep", deep.as_str()),
             ("merges_refused", &store.merges_refused.to_string()),
             ("pending", &store.pending_night.join("\t")),
+            ("clock", &format!("{clock_jump} {clock_scale} {} {clock_origin}", if clock_detached { 1 } else { 0 })),
+            (
+                "cut",
+                &format!(
+                    "{} {} {} {} {} {}",
+                    if cut.reconsolidate { 1 } else { 0 },
+                    if cut.ground { 1 } else { 0 },
+                    if cut.ladder { 1 } else { 0 },
+                    if cut.reconstruct { 1 } else { 0 },
+                    if cut.util_to_strength { 1 } else { 0 },
+                    if cut.merge_support_veto { 1 } else { 0 },
+                ),
+            ),
         ] {
             st.bind_text(1, k)?;
             st.bind_text(2, v)?;
@@ -494,6 +517,8 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let mut last_deep_s = String::new();
     let mut refused_s = String::new();
     let mut pending_s = String::new();
+    let mut clock_s = String::new();
+    let mut cut_s = String::new();
     for row in meta {
         if row.len() < 2 {
             continue;
@@ -505,6 +530,8 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             "last_deep" => last_deep_s = row[1].clone(),
             "merges_refused" => refused_s = row[1].clone(),
             "pending" => pending_s = row[1].clone(),
+            "clock" => clock_s = row[1].clone(),
+            "cut" => cut_s = row[1].clone(),
             _ => {}
         }
     }
@@ -762,6 +789,23 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
         profile,
         mood,
         store,
+        clock_jump: clock_s.split_whitespace().nth(0).and_then(|s| s.parse().ok()).unwrap_or(0),
+        clock_scale: clock_s.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(24),
+        clock_detached: clock_s.split_whitespace().nth(2) == Some("1"),
+        clock_origin: clock_s.split_whitespace().nth(3).and_then(|s| s.parse().ok()).unwrap_or(0),
+        cut: {
+            let p: Vec<&str> = cut_s.split_whitespace().collect();
+            let mut cut = crate::core::model::OrganCut::full();
+            if p.len() >= 6 {
+                cut.reconsolidate = p[0] == "1";
+                cut.ground = p[1] == "1";
+                cut.ladder = p[2] == "1";
+                cut.reconstruct = p[3] == "1";
+                cut.util_to_strength = p[4] == "1";
+                cut.merge_support_veto = p[5] == "1";
+            }
+            cut
+        },
     })
 }
 

@@ -40,6 +40,8 @@ pub struct SelectiveMemory {
     mouth_epoch: u64,
     /// A mouth has opened and not yet closed. A second open is refused.
     mouth_held: bool,
+    /// Outside labeler. None means the organ does not invent a proposition.
+    scorer: Option<Box<dyn crate::recall::PropositionScorer>>,
 }
 
 /// Runtime LLM endpoint. Key stays on the process; GET only reports a mask.
@@ -80,6 +82,7 @@ impl SelectiveMemory {
             clock: MemoryClock::default(),
             mouth_epoch: 0,
             mouth_held: false,
+            scorer: None,
         }
     }
 
@@ -97,15 +100,25 @@ impl SelectiveMemory {
                 mood: snap.mood,
                 talk: WorkingTalk::default(),
                 path: Some(path),
-                cut: OrganCut::full(),
+                cut: snap.cut,
                 recall_tally: RecallTally::default(),
                 llm: LlmBind::default(),
                 narrator: Arc::new(RuleNarrator),
                 embedder: Box::new(HashEmbedder),
                 seed: 0,
-                clock: MemoryClock::default(),
+                clock: MemoryClock {
+                    origin_real: if snap.clock_origin == 0 {
+                        crate::core::model::now_secs()
+                    } else {
+                        snap.clock_origin
+                    },
+                    jump: snap.clock_jump,
+                    scale: snap.clock_scale.max(1),
+                    detached: snap.clock_detached,
+                },
                 mouth_epoch: 0,
                 mouth_held: false,
+                scorer: None,
             })
         } else {
             Ok(Self {
@@ -123,6 +136,7 @@ impl SelectiveMemory {
                 clock: MemoryClock::default(),
                 mouth_epoch: 0,
                 mouth_held: false,
+                scorer: None,
             })
         }
     }
@@ -206,9 +220,29 @@ impl SelectiveMemory {
             return Ok(());
         };
         if is_sqlite(path) {
-            crate::persist::sqlite::save(path, &self.profile, &self.mood, &self.store)
+            crate::persist::sqlite::save(
+                path,
+                &self.profile,
+                &self.mood,
+                &self.store,
+                self.clock.jump,
+                self.clock.scale,
+                self.clock.detached,
+                self.clock.origin_real,
+                &self.cut,
+            )
         } else {
-            persist::save(path, &self.profile, &self.mood, &self.store)
+            persist::save(
+                path,
+                &self.profile,
+                &self.mood,
+                &self.store,
+                self.clock.jump,
+                self.clock.scale,
+                self.clock.detached,
+                self.clock.origin_real,
+                &self.cut,
+            )
         }
     }
 
@@ -348,6 +382,7 @@ impl SelectiveMemory {
         marked: &[String],
     ) -> (Vec<RecalledMemory>, RetrievalDump) {
         let _clock = self.enter_clock();
+        let scorer = self.scorer.take();
         let out = recall::recall_with(
             &mut self.store,
             &self.profile,
@@ -359,7 +394,9 @@ impl SelectiveMemory {
             write,
             bias,
             marked,
+            scorer.as_deref().unwrap_or(&crate::recall::NullScorer),
         );
+        self.scorer = scorer;
         if write == RecallWrite::Live {
             self.recall_tally.n += out.memories.len() as u32;
             for r in &out.memories {
@@ -399,13 +436,19 @@ impl SelectiveMemory {
         let _clock = self.enter_clock();
         self.commit_talk();
         crate::persist::prune_orphaned_archives(&mut self.store);
-        dream::dream_budget(
+        let scorer = self.scorer.take();
+        let kind = crate::dream::evaluate_budget(&self.store, &self.profile).kind;
+        let report = dream::dream_kind(
             &mut self.store,
             &self.profile,
             self.narrator.as_ref(),
             self.embedder.as_ref(),
             self.cut,
-        )
+            kind,
+            scorer.as_deref().unwrap_or(&crate::recall::NullScorer),
+        );
+        self.scorer = scorer;
+        report
     }
 
     /// Full night regardless of budget. Lab path.
@@ -413,13 +456,18 @@ impl SelectiveMemory {
         let _clock = self.enter_clock();
         self.commit_talk();
         crate::persist::prune_orphaned_archives(&mut self.store);
-        dream::dream_cut(
+        let scorer = self.scorer.take();
+        let report = dream::dream_kind(
             &mut self.store,
             &self.profile,
             self.narrator.as_ref(),
             self.embedder.as_ref(),
             self.cut,
-        )
+            crate::dream::NightKind::Deep,
+            scorer.as_deref().unwrap_or(&crate::recall::NullScorer),
+        );
+        self.scorer = scorer;
+        report
     }
 
     pub fn lineage(&self, schema: &str) -> Vec<&IdentityAxiom> {
@@ -732,6 +780,40 @@ impl SelectiveMemory {
                 self.mouth_epoch
             },
         }
+    }
+
+    pub fn with_scorer(mut self, scorer: Box<dyn crate::recall::PropositionScorer>) -> Self {
+        self.scorer = Some(scorer);
+        self
+    }
+
+    /// Ask the outside scorer. Stores the label. Does not change gist, core, or claim.
+    pub fn score_against_claim(&mut self, trace_id: &str, sentence: &str) -> crate::recall::PropositionLabel {
+        let claim = self
+            .store
+            .traces
+            .get(trace_id)
+            .map(|t| t.reality.claim.clone())
+            .unwrap_or_default();
+        let label = match self.scorer.as_ref() {
+            Some(s) => s.score(&claim, sentence),
+            None => crate::recall::PropositionLabel::Unknown,
+        };
+        if let Some(t) = self.store.traces.get_mut(trace_id) {
+            let before = t.gist.clone();
+            t.record_operation(crate::core::model::MemoryOperation {
+                kind: "score".into(),
+                at: crate::core::model::now_secs(),
+                source_trace_ids: Vec::new(),
+                source_axiom_ids: Vec::new(),
+                source_center: None,
+                before,
+                after: label.token().into(),
+                confidence: t.confidence,
+                origin: crate::core::model::EvidenceOrigin::Reconstruction,
+            });
+        }
+        label
     }
 
     pub fn audit(&self, trace_id: &str) -> Option<&str> {

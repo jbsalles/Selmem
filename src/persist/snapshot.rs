@@ -5,7 +5,7 @@
 
 use crate::core::model::{
     ArchiveRecord, Attribution, AxiomLayer, Channel, DriftEvent, DriftKind, IdentityAxiom,
-    MemoryTrace, Mood, TraceStatus,
+    MemoryTrace, Mood, OrganCut, TraceStatus,
 };
 use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
@@ -14,6 +14,11 @@ pub struct Snapshot {
     pub profile: EntityProfile,
     pub mood: Mood,
     pub store: MemoryStore,
+    pub clock_jump: u64,
+    pub clock_scale: u32,
+    pub clock_detached: bool,
+    pub clock_origin: u64,
+    pub cut: OrganCut,
 }
 
 pub fn assemble_trace(

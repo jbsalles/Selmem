@@ -30,7 +30,24 @@ pub fn accept_core(proposed: &str, event: &str) -> Option<String> {
     if pr.iter().any(|w| !ev.iter().any(|e| e == w)) {
         return None;
     }
+    if polarity_flipped(event, &p) {
+        return None;
+    }
     Some(p)
+}
+
+/// Dropping or adding a negation is a different proposition. Word membership does not catch it.
+fn polarity_flipped(event: &str, proposed: &str) -> bool {
+    has_neg(event) != has_neg(proposed)
+}
+
+fn has_neg(s: &str) -> bool {
+    let low = format!(" {} ", s.to_lowercase());
+    const NEG: &[&str] = &[
+        " not ", " never ", " no ", " didn't ", " didnt ", " dont ", " don't ",
+        " cannot ", " can't ", " cant ", " won't ", " wont ", " without ",
+    ];
+    NEG.iter().any(|n| low.contains(n)) || low.contains("n't")
 }
 
 /// After a keep: narrator may propose a core. Multi-part pastes and talk hours skip.

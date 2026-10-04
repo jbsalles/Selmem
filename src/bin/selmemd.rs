@@ -113,6 +113,7 @@ fn handle_conn(
             let (path, query) = target.split_once('?').unwrap_or((target.as_str(), ""));
             let mut content_len = 0usize;
             let mut auth = String::new();
+            let mut audit_role = false;
             for line in lines {
                 let l = line.to_ascii_lowercase();
                 if let Some(v) = l.strip_prefix("content-length:") {
@@ -120,6 +121,9 @@ fn handle_conn(
                 }
                 if l.starts_with("authorization:") {
                     auth = line.split_once(':').map(|(_, v)| v.trim().to_string()).unwrap_or_default();
+                }
+                if l.starts_with("x-selmem-audit:") {
+                    audit_role = l.split_once(':').map(|(_, v)| v.trim() == "1").unwrap_or(false);
                 }
             }
             let content_len = content_len.min(1_000_000);
@@ -145,6 +149,10 @@ fn handle_conn(
                     write_http(&mut stream, 401, "{\"error\":\"unauthorized\"}")?;
                     return Ok(());
                 }
+            }
+            if path == "/audit" && !audit_role {
+                write_http(&mut stream, 403, "{\"error\":\"audit actor required\"}")?;
+                return Ok(());
             }
             let res = dispatch_unlocked(mem, &method, path, query, &body)?;
             write_http(&mut stream, res.status, &res.body)?;

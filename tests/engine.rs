@@ -177,7 +177,8 @@ fn sqlite_roundtrip() {
     assert_eq!(loaded.store.traces.len(), 1);
     let t = loaded.store.traces.values().next().unwrap();
     assert!(!t.embedding.is_empty());
-    assert_eq!(t.reality.claim, t.core);
+    assert_eq!(t.reality.claim, "You stayed in the rain.");
+    assert_ne!(t.reality.claim, t.semantic.claim);
     assert!(t.observation_id.is_some());
     assert!(t.operations.iter().any(|op| op.kind == "encode"));
     let _ = std::fs::remove_dir_all(&dir);

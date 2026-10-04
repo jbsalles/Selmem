@@ -16,7 +16,17 @@ use crate::persist::snapshot::{
 
 const MAGIC: &str = "SELMEM1";
 
-pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemoryStore) -> io::Result<()> {
+pub fn save(
+    path: &Path,
+    profile: &EntityProfile,
+    mood: &Mood,
+    store: &MemoryStore,
+    clock_jump: u64,
+    clock_scale: u32,
+    clock_detached: bool,
+    clock_origin: u64,
+    cut: &crate::core::model::OrganCut,
+) -> io::Result<()> {
     if let Some(parent) = path.parent() {
         if !parent.as_os_str().is_empty() {
             fs::create_dir_all(parent)?;
@@ -79,6 +89,21 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
         for id in &store.pending_night {
             writeln!(w, "pend {id}")?;
         }
+        writeln!(
+            w,
+            "clock {clock_jump} {clock_scale} {} {clock_origin}",
+            if clock_detached { 1 } else { 0 }
+        )?;
+        writeln!(
+            w,
+            "cut {} {} {} {} {} {}",
+            flag(cut.reconsolidate),
+            flag(cut.ground),
+            flag(cut.ladder),
+            flag(cut.reconstruct),
+            flag(cut.util_to_strength),
+            flag(cut.merge_support_veto),
+        )?;
     }
     fs::rename(tmp, path)?;
     Ok(())
@@ -180,13 +205,56 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
         Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {}
         Err(e) => return Err(e),
     }
+    let mut clock_jump = 0u64;
+    let mut clock_scale = 24u32;
+    let mut clock_detached = false;
+    let mut clock_origin = 0u64;
+    let mut cut = crate::core::model::OrganCut::full();
+    loop {
+        match read_line(&mut r) {
+            Ok(line) => {
+                if let Some(rest) = line.strip_prefix("clock ") {
+                    let p: Vec<&str> = rest.split_whitespace().collect();
+                    if p.len() >= 3 {
+                        clock_jump = p[0].parse().unwrap_or(0);
+                        clock_scale = p[1].parse().unwrap_or(24);
+                        clock_detached = p[2] == "1";
+                        if p.len() >= 4 {
+                            clock_origin = p[3].parse().unwrap_or(0);
+                        }
+                    }
+                } else if let Some(rest) = line.strip_prefix("cut ") {
+                    let p: Vec<&str> = rest.split_whitespace().collect();
+                    if p.len() >= 6 {
+                        cut.reconsolidate = p[0] == "1";
+                        cut.ground = p[1] == "1";
+                        cut.ladder = p[2] == "1";
+                        cut.reconstruct = p[3] == "1";
+                        cut.util_to_strength = p[4] == "1";
+                        cut.merge_support_veto = p[5] == "1";
+                    }
+                }
+            }
+            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => break,
+            Err(e) => return Err(e),
+        }
+    }
 
     crate::persist::bump_id_counter(&store);
     Ok(Snapshot {
         profile,
         mood,
         store,
+        clock_jump,
+        clock_scale,
+        clock_detached,
+        clock_origin,
+        cut,
     })
+}
+
+fn flag(on: bool) -> u8 {
+    if on { 1 } else { 0 }
 }
 
 fn write_profile(w: &mut impl Write, p: &EntityProfile) -> io::Result<()> {

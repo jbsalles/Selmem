@@ -18,6 +18,8 @@ pub struct EncodeInput<'a> {
     pub schema: Option<String>,
     pub channel: Channel,
     pub permanence: f32,
+    /// Which silent loop tinted this hour. Empty if none.
+    pub paint_from: Option<String>,
 }
 
 impl<'a> EncodeInput<'a> {
@@ -37,6 +39,7 @@ impl<'a> EncodeInput<'a> {
             schema: None,
             channel: Channel::Selfhood,
             permanence: 0.0,
+            paint_from: None,
         }
     }
 }

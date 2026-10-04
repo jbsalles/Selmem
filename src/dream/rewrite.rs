@@ -14,6 +14,7 @@ pub fn run(
     narrator: &dyn Narrator,
     embedder: &dyn Embedder,
     ground: bool,
+    scorer: &dyn crate::recall::PropositionScorer,
 ) -> u32 {
     let ids = store.active_ids();
     let mut rewritten = 0u32;
@@ -76,10 +77,13 @@ pub fn run(
         if text.trim().is_empty() || text == t.gist {
             continue;
         }
+        let claim = if t.reality.claim.trim().is_empty() {
+            t.core.clone()
+        } else {
+            t.reality.claim.clone()
+        };
         let core = t.core.clone();
-        if ground
-            && crate::recall::ground::is_grounding_miss(&text, &core, profile.ground_min_overlap)
-        {
+        if ground && crate::recall::ground::is_grounding_miss(&text, &claim, scorer) {
             let rewrite = narrator.recontextualize(t, &core, profile);
             let before = t.gist.clone();
             if let Some(tr) = store.traces.get_mut(&id) {
@@ -89,6 +93,7 @@ pub fn run(
                     &text,
                     &core,
                     Some(rewrite),
+                    scorer,
                 );
                 if outcome.pulled_toward_core && tr.gist != before {
                     record_rewrite(tr, &neighbors, before);

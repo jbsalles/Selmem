@@ -94,57 +94,24 @@ pub fn overlap_with_core(generated: &str, core: &str) -> f32 {
     lexical_similarity(generated, core)
 }
 
-pub fn judge_against_core(generated: &str, core: &str) -> CoreJudgement {
-    if core.trim().is_empty() {
-        return finish(DetachKind::Hold, 1.0, generated, core);
+pub fn judge_against_core(
+    generated: &str,
+    claim: &str,
+    scorer: &dyn crate::recall::PropositionScorer,
+) -> CoreJudgement {
+    if claim.trim().is_empty() {
+        return finish(DetachKind::Hold, 1.0, generated, claim);
     }
-    let overlap = overlap_with_core(generated, core);
-    if generated.trim().eq_ignore_ascii_case(core.trim()) {
-        return finish(DetachKind::Hold, 1.0, generated, core);
+    let overlap = overlap_with_core(generated, claim);
+    if generated.trim().eq_ignore_ascii_case(claim.trim()) {
+        return finish(DetachKind::Hold, 1.0, generated, claim);
     }
-
-    let g = pad(generated);
-    let c = pad(core);
-
-    if contradicts(&g, &c) {
-        return finish(DetachKind::Contradict, overlap, generated, core);
-    }
-    if extra_cause(&g, &c) || causal_mismatch(&g, &c) {
-        return finish(DetachKind::Elaborate, overlap, generated, core);
-    }
-    if extra_frame(&g, &c) {
-        // Same event + new affect frame → color. Low overlap is another scene.
-        let mut kind = if overlap >= 0.18 {
-            DetachKind::Reframe
-        } else {
-            DetachKind::Depart
-        };
-        if kind == DetachKind::Depart && same_departure(generated, core) {
-            kind = DetachKind::Reframe;
-        }
-        return finish(kind, overlap, generated, core);
-    }
-
-    let gt = token_set(generated);
-    let ct = token_set(core);
-    let extra = gt.iter().filter(|t| ct.binary_search(t).is_err()).count();
-    let missing = ct.iter().filter(|t| gt.binary_search(t).is_err()).count();
-    if extra == 0 && missing > 0 {
-        return finish(DetachKind::Compress, overlap, generated, core);
-    }
-    if extra == 0 && missing == 0 {
-        return finish(DetachKind::Hold, overlap, generated, core);
-    }
-
-    let mut kind = if overlap >= 0.18 {
-        DetachKind::Hold
-    } else {
-        DetachKind::Depart
+    let kind = match scorer.score(claim, generated) {
+        crate::recall::PropositionLabel::Entail => DetachKind::Hold,
+        crate::recall::PropositionLabel::Contradict => DetachKind::Contradict,
+        crate::recall::PropositionLabel::Unknown => DetachKind::Depart,
     };
-    if kind == DetachKind::Depart && same_departure(generated, core) {
-        kind = DetachKind::Reframe;
-    }
-    finish(kind, overlap, generated, core)
+    finish(kind, overlap, generated, claim)
 }
 
 fn finish(kind: DetachKind, overlap: f32, generated: &str, core: &str) -> CoreJudgement {
@@ -209,13 +176,13 @@ fn same_departure(a: &str, b: &str) -> bool {
 }
 
 /// Miss if the kind is unauthorized, or if the identity gate fails the cut.
-pub fn is_grounding_miss(generated: &str, core: &str, min_overlap: f32) -> bool {
-    let j = judge_against_core(generated, core);
-    match j.kind {
-        DetachKind::Hold => j.overlap < min_overlap,
-        DetachKind::Compress | DetachKind::Reframe => false,
-        _ => true,
-    }
+pub fn is_grounding_miss(
+    generated: &str,
+    claim: &str,
+    scorer: &dyn crate::recall::PropositionScorer,
+) -> bool {
+    let j = judge_against_core(generated, claim, scorer);
+    matches!(j.kind, DetachKind::Contradict)
 }
 
 fn pad(s: &str) -> String {
@@ -267,6 +234,5 @@ fn contradicts(generated: &str, core: &str) -> bool {
     if has_neg(generated) == has_neg(core) {
         return false;
     }
-    // Only a contradiction when both sides still talk about the same act.
     lexical_similarity(generated, core) >= 0.22
 }

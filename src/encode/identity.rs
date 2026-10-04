@@ -28,7 +28,7 @@ pub fn paint(store: &mut MemoryStore, mood: &Mood, input: &mut EncodeInput<'_>) 
         } * a.strength.max(0.15);
         let stmt = a.statement.to_lowercase();
         let schema = a.schema.as_deref().unwrap_or("");
-        let related = event_related(&event, schema, &stmt);
+        let related = schema_or_key(&event, schema, &stmt);
         if !related {
             continue;
         }
@@ -49,6 +49,7 @@ pub fn paint(store: &mut MemoryStore, mood: &Mood, input: &mut EncodeInput<'_>) 
         input.disgust = (input.disgust + pull_d / hits.max(1.0)).clamp(0.0, 1.0);
         input.self_relevance = (input.self_relevance + 0.15 * pull_s.min(1.0)).clamp(0.0, 1.0);
         input.goal_align = (input.goal_align + 0.2 * pull_s.min(1.0)).clamp(0.0, 1.0);
+        input.paint_from = Some("axiom".into());
         if input.schema.is_none() {
             input.schema = schema_hit;
         }
@@ -95,7 +96,7 @@ fn paint_latent(store: &mut MemoryStore, input: &mut EncodeInput<'_>) {
             continue;
         }
         let schema = t.schema.as_deref().unwrap_or("");
-        if !event_related(&event, schema, &t.core) && !event_related(&event, schema, &t.gist) {
+        if !schema_or_key(&event, schema, &t.core) && !schema_or_key(&event, schema, &t.gist) {
             continue;
         }
         let strong = schema_or_key(&event, schema, &t.core) || schema_or_key(&event, schema, &t.gist);
@@ -119,6 +120,7 @@ fn paint_latent(store: &mut MemoryStore, input: &mut EncodeInput<'_>) {
     if n > 0.0 {
         input.valence = (0.7 * input.valence + 0.3 * (pull_v / n)).clamp(-1.0, 1.0);
         input.disgust = (input.disgust + 0.25 * (pull_d / n)).clamp(0.0, 1.0);
+        input.paint_from = Some("latent".into());
     }
 }
 
@@ -132,12 +134,4 @@ fn schema_or_key(event: &str, schema: &str, statement: &str) -> bool {
         "honte", "shame",
     ];
     keys.iter().any(|k| event.contains(k) && (statement.contains(k) || schema.contains(k)))
-}
-
-fn event_related(event: &str, schema: &str, statement: &str) -> bool {
-    if schema_or_key(event, schema, statement) {
-        return true;
-    }
-    // Long-word overlap tints the next input. It does not rehearse, so it cannot revive.
-    statement.split_whitespace().any(|w| w.len() > 5 && event.contains(w))
 }

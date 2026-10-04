@@ -237,7 +237,7 @@ fn encode_one(
     trace.semantic = crate::core::model::SemanticCore::from_event(input.event, &trace.core, input.valence);
     trace.reality = crate::core::model::RealityAnchor {
         observation_id: trace.observation_id.clone(),
-        claim: trace.core.clone(),
+        claim: input.event.trim().to_string(),
         verifiable: true,
     };
     trace.record_operation(crate::core::model::MemoryOperation {
@@ -247,7 +247,11 @@ fn encode_one(
         source_axiom_ids: Vec::new(),
         source_center: None,
         before: String::new(),
-        after: trace.gist.clone(),
+        after: if let Some(src) = input.paint_from.as_deref() {
+            format!("paint:{src}")
+        } else {
+            trace.gist.clone()
+        },
         confidence: 1.0,
         origin: crate::core::model::EvidenceOrigin::Event,
     });

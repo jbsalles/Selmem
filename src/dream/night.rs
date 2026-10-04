@@ -82,7 +82,7 @@ pub fn dream_cut(
     embedder: &dyn Embedder,
     cut: OrganCut,
 ) -> DreamReport {
-    dream_kind(store, profile, narrator, embedder, cut, NightKind::Deep)
+    dream_kind(store, profile, narrator, embedder, cut, NightKind::Deep, &crate::recall::NullScorer)
 }
 
 pub fn dream_budget(
@@ -93,7 +93,7 @@ pub fn dream_budget(
     cut: OrganCut,
 ) -> DreamReport {
     let kind = evaluate_budget(store, profile).kind;
-    dream_kind(store, profile, narrator, embedder, cut, kind)
+    dream_kind(store, profile, narrator, embedder, cut, kind, &crate::recall::NullScorer)
 }
 
 pub fn dream_kind(
@@ -103,6 +103,7 @@ pub fn dream_kind(
     embedder: &dyn Embedder,
     cut: OrganCut,
     kind: NightKind,
+    scorer: &dyn crate::recall::PropositionScorer,
 ) -> DreamReport {
     let budget = evaluate_budget(store, profile);
     let previously_latent: std::collections::HashSet<String> = store
@@ -123,7 +124,7 @@ pub fn dream_kind(
         };
         crate::dream::centers::refresh(store);
         let pulled = crate::dream::centers::gravitate(store);
-        let rewritten = rewrite::run(store, profile, narrator, embedder, cut.ground) + pulled;
+        let rewritten = rewrite::run(store, profile, narrator, embedder, cut.ground, scorer) + pulled;
         let merged = merge::run(store, profile, embedder, cut.merge_support_veto);
         (rewritten, merged, axioms)
     } else {

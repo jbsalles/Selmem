@@ -100,6 +100,7 @@ pub fn recall_cut(
         RecallWrite::Live,
         RecallBias::Observed,
         &[],
+        &crate::recall::NullScorer,
     )
     .memories
 }
@@ -115,6 +116,7 @@ pub fn recall_with(
     write: RecallWrite,
     bias: RecallBias,
     marked: &[String],
+    scorer: &dyn crate::recall::PropositionScorer,
 ) -> RecallOutcome {
     let query_embedding = embedder.embed(query);
     let live = write == RecallWrite::Live;
@@ -207,7 +209,7 @@ pub fn recall_with(
             )
         } else {
             speak_self(
-                store, profile, narrator, query, mood, cut, write, trace_id,
+                store, profile, narrator, query, mood, cut, write, trace_id, scorer,
             )
         };
 
@@ -337,6 +339,7 @@ fn speak_self(
     cut: OrganCut,
     write: RecallWrite,
     trace_id: &str,
+    scorer: &dyn crate::recall::PropositionScorer,
 ) -> (String, String, f32, bool, bool) {
     let live = write == RecallWrite::Live;
     if !cut.reconstruct {
@@ -389,7 +392,13 @@ fn speak_self(
 
     let narrator_rewrite = {
         let trace = store.traces.get(trace_id).unwrap();
-        if crate::recall::ground::should_force_core_rewrite(trace, profile, &generated, &core) {
+        if crate::recall::ground::should_force_core_rewrite(
+            trace,
+            profile,
+            &generated,
+            &core,
+            scorer,
+        ) {
             Some(narrator.recontextualize(trace, &core, profile))
         } else {
             None
@@ -397,7 +406,14 @@ fn speak_self(
     };
     let outcome = {
         let trace = store.traces.get_mut(trace_id).unwrap();
-        crate::recall::ground::apply_grounding(trace, profile, &generated, &core, narrator_rewrite)
+        crate::recall::ground::apply_grounding(
+            trace,
+            profile,
+            &generated,
+            &core,
+            narrator_rewrite,
+            scorer,
+        )
     };
     let reconsolidated = if !outcome.pulled_toward_core && cut.reconsolidate {
         if let Some(trace) = store.traces.get_mut(trace_id) {
