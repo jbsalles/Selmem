@@ -7,7 +7,12 @@ use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
 use crate::encode::scoring::lexical_similarity;
 
-pub fn run(store: &mut MemoryStore, profile: &EntityProfile, veto: bool) -> u32 {
+pub fn run(
+    store: &mut MemoryStore,
+    profile: &EntityProfile,
+    embedder: &dyn crate::encode::embed::Embedder,
+    veto: bool,
+) -> u32 {
     let mut groups: HashMap<String, Vec<String>> = HashMap::new();
     for t in store.traces.values() {
         if t.channel != Channel::Selfhood {
@@ -71,12 +76,18 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile, veto: bool) -> u32 
             }
             let other_clone = store.traces.get(other).cloned();
             let Some(src) = other_clone else { continue };
+            let hour = src
+                .archive_id
+                .as_ref()
+                .and_then(|id| store.archives.get(id))
+                .map(|a| a.verbatim.clone())
+                .unwrap_or_default();
             let keep_charged = !store.living_axiom_ids_for(&keep).is_empty();
             if let Some(dst) = store.traces.get_mut(&keep) {
                 if !keep_charged {
                     dst.gist = fuse_gist(&dst.gist, &src.gist);
                 }
-                dst.core = fuse_core(&dst.core, &src.core);
+                dst.core = fuse_core(&dst.core, &src.core, &hour);
                 // Do not average a charged hour toward the sibling's dull valence.
                 dst.valence = if keep_charged {
                     dst.valence
@@ -115,6 +126,7 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile, veto: bool) -> u32 
                     confidence: dst.confidence,
                     origin: crate::core::model::EvidenceOrigin::Reconstruction,
                 });
+                dst.embedding = embedder.embed(&dst.gist);
                 dst.clamp();
             }
             if let Some(src_mut) = store.traces.get_mut(other) {
@@ -123,7 +135,11 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile, veto: bool) -> u32 
             store.link(&keep, other);
             for axiom in store.axioms.values_mut() {
                 let touches = axiom.support_trace_ids.iter().any(|id| id == other);
-                if touches && !axiom.support_trace_ids.iter().any(|id| id == &keep) {
+                if !touches {
+                    continue;
+                }
+                axiom.support_trace_ids.retain(|id| id != other);
+                if !axiom.support_trace_ids.iter().any(|id| id == &keep) {
                     axiom.support_trace_ids.push(keep.clone());
                 }
             }
@@ -213,33 +229,46 @@ fn merge_weight(trace: &crate::core::model::MemoryTrace) -> (i32, i32, i32, Stri
     )
 }
 
-fn fuse_core(keeper: &str, absorbed: &str) -> String {
+fn token_in(source: &str, word: &str) -> bool {
+    source.split_whitespace().any(|w| {
+        w.trim_matches(|c: char| !c.is_alphanumeric())
+            .eq_ignore_ascii_case(word)
+    })
+}
+
+fn fuse_core(keeper: &str, absorbed: &str, absorbed_hour: &str) -> String {
     let keeper = keeper.trim();
     let absorbed = absorbed.trim();
     if absorbed.is_empty() || keeper.contains(absorbed) {
         return keeper.to_string();
     }
-    if keeper.is_empty() || absorbed.contains(keeper) {
+    // An empty keeper has no origin hour to protect.
+    if keeper.is_empty() {
         return absorbed.to_string();
     }
-    // Keeper remains the semantic reference; distinctive words from the
-    // absorbed episode stay available for later grounding.
+    // Extra words must be in the absorbed hour, not only in a core that a
+    // previous fuse may already have widened. No archive: the absorbed core is the hour.
+    let hour = if absorbed_hour.trim().is_empty() {
+        absorbed
+    } else {
+        absorbed_hour
+    };
     let extra: Vec<&str> = absorbed
         .split_whitespace()
         .filter(|w| {
             let w = w.trim_matches(|c: char| !c.is_alphanumeric());
-            w.chars().count() > 2 && !keeper.to_lowercase().contains(&w.to_lowercase())
+            w.chars().count() > 2
+                && !token_in(keeper, w)
+                && token_in(hour, w)
         })
         .take(4)
         .collect();
     if extra.is_empty() {
-        keeper.to_string()
-    } else {
-        format!("{keeper} {}", extra.join(" "))
-            .chars()
-            .take(180)
-            .collect()
+        return keeper.to_string();
     }
+    let candidate = format!("{keeper} {}", extra.join(" "));
+    crate::encode::accept_core(&candidate, &format!("{keeper} {hour}"))
+        .unwrap_or_else(|| keeper.to_string())
 }
 
 fn fuse_gist(a: &str, b: &str) -> String {

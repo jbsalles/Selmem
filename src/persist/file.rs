@@ -74,6 +74,11 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
             Some(ts) => writeln!(w, "deep {ts}")?,
             None => writeln!(w, "deep -")?,
         }
+        writeln!(w, "refused {}", store.merges_refused)?;
+        writeln!(w, "pending {}", store.pending_night.len())?;
+        for id in &store.pending_night {
+            writeln!(w, "pend {id}")?;
+        }
     }
     fs::rename(tmp, path)?;
     Ok(())
@@ -151,6 +156,30 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
         Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {}
         Err(e) => return Err(e),
     }
+    match read_line(&mut r) {
+        Ok(line) => {
+            if let Some(rest) = line.strip_prefix("refused ") {
+                store.merges_refused = rest.trim().parse().unwrap_or(0);
+            }
+        }
+        Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {}
+        Err(e) => return Err(e),
+    }
+    match read_line(&mut r) {
+        Ok(line) => {
+            if let Some(rest) = line.strip_prefix("pending ") {
+                let n: usize = rest.trim().parse().unwrap_or(0);
+                for _ in 0..n {
+                    let pend = read_line(&mut r)?;
+                    if let Some(id) = pend.strip_prefix("pend ") {
+                        store.pending_night.push(id.to_string());
+                    }
+                }
+            }
+        }
+        Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {}
+        Err(e) => return Err(e),
+    }
 
     crate::persist::bump_id_counter(&store);
     Ok(Snapshot {
@@ -191,19 +220,19 @@ fn write_trace(w: &mut impl Write, t: &MemoryTrace) -> io::Result<()> {
         t.id,
         channel_token(t.channel),
         status_token(t.status),
-        t.valence,
-        t.arousal,
-        t.disgust,
-        t.self_relevance,
-        t.fidelity,
-        t.permanence,
+        t.valence.clamp(-1.0, 1.0),
+        t.arousal.clamp(0.0, 1.0),
+        t.disgust.clamp(0.0, 1.0),
+        t.self_relevance.clamp(0.0, 1.0),
+        t.fidelity.clamp(0.0, 1.0),
+        t.permanence.clamp(0.0, 1.0),
         t.rehearsals,
-        t.access,
+        t.access.clamp(0.0, 1.0),
         t.salience_at_encode,
         t.created_at,
         t.cues.len(),
-        t.self_congruence,
-        t.confidence,
+        t.self_congruence.clamp(0.0, 1.0),
+        t.confidence.clamp(0.0, 1.0),
         if t.suppressed { 1 } else { 0 }
     )?;
     writeln!(
@@ -237,7 +266,7 @@ fn write_trace(w: &mut impl Write, t: &MemoryTrace) -> io::Result<()> {
     }
     writeln!(w)?;
     write_blob(w, &t.core)?;
-    writeln!(w, "anchor {}", t.anchor)?;
+    writeln!(w, "anchor {}", t.anchor.clamp(0.0, 1.0))?;
     writeln!(w, "detach {}", t.detach_strikes)?;
     writeln!(w, "attr {}", t.attribution.token())?;
     writeln!(w, "ops {}", t.operations.len())?;
@@ -315,7 +344,18 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
     };
     let attribution = if next_line_starts_with(r, "attr ") {
         let line = read_line(r).unwrap_or_default();
-        Attribution::parse(line.strip_prefix("attr ").unwrap_or(""))
+        let token = line.strip_prefix("attr ").unwrap_or("").trim();
+        match token {
+            "none" | "external" | "internal" => Attribution::parse(token),
+            _ => return fail(format!("attr inconnu: {token}")),
+        }
+    } else if p.len() >= 17
+        || next_line_starts_with(r, "ops ")
+        || next_line_starts_with(r, "sem ")
+        || next_line_starts_with(r, "real ")
+    {
+        // Post-P1 file that omitted the line. None is a written legacy value, not a default.
+        return fail("attr manquant");
     } else {
         Attribution::None
     };
@@ -411,6 +451,17 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
         }
         trace.reality.observation_id = trace.observation_id.clone();
     }
+    if p.get(3) == Some(&"sealed") {
+        trace.drifts.push(assemble_drift(
+            crate::core::model::DriftKind::Fade,
+            trace.created_at,
+            "sealed token loaded as active".into(),
+            0.0,
+            0.0,
+            0.0,
+        ));
+    }
+    trace.clamp();
     Ok(trace)
 }
 

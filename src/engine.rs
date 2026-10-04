@@ -36,6 +36,10 @@ pub struct SelectiveMemory {
     pub seed: u32,
     pub clock: MemoryClock,
     embedder: Box<dyn Embedder>,
+    /// Latest mouth open. A stale close does not record the turn.
+    mouth_epoch: u64,
+    /// A mouth has opened and not yet closed. A second open is refused.
+    mouth_held: bool,
 }
 
 /// Runtime LLM endpoint. Key stays on the process; GET only reports a mask.
@@ -56,6 +60,7 @@ pub struct MouthDraft {
     pub talk: WorkingTalk,
     pub hold: bool,
     pub dump: RetrievalDump,
+    epoch: u64,
 }
 
 impl SelectiveMemory {
@@ -73,6 +78,8 @@ impl SelectiveMemory {
             embedder: Box::new(HashEmbedder),
             seed: 0,
             clock: MemoryClock::default(),
+            mouth_epoch: 0,
+            mouth_held: false,
         }
     }
 
@@ -97,6 +104,8 @@ impl SelectiveMemory {
                 embedder: Box::new(HashEmbedder),
                 seed: 0,
                 clock: MemoryClock::default(),
+                mouth_epoch: 0,
+                mouth_held: false,
             })
         } else {
             Ok(Self {
@@ -112,6 +121,8 @@ impl SelectiveMemory {
                 embedder: Box::new(HashEmbedder),
                 seed: 0,
                 clock: MemoryClock::default(),
+                mouth_epoch: 0,
+                mouth_held: false,
             })
         }
     }
@@ -580,11 +591,19 @@ impl SelectiveMemory {
         self.talk.refresh();
     }
 
+    pub fn mouth_held(&self) -> bool {
+        self.mouth_held
+    }
+
     pub fn open_mouth(&mut self, user: &str) -> MouthDraft {
         self.open_mouth_inner(user, true, RecallBias::Observed, &[], false)
     }
 
     pub fn close_mouth(&mut self, draft: &MouthDraft, reply: &str) {
+        if draft.epoch != self.mouth_epoch {
+            return;
+        }
+        self.mouth_held = false;
         if draft.hold {
             self.talk.record(&draft.user, reply);
         }
@@ -619,6 +638,7 @@ impl SelectiveMemory {
         axioms_only: bool,
     ) -> MouthDraft {
         let _clock = self.enter_clock();
+        self.mouth_held = true;
         if hold {
             self.talk.hear(user, None);
         }
@@ -707,6 +727,10 @@ impl SelectiveMemory {
             talk: talk.clone(),
             hold,
             dump,
+            epoch: {
+                self.mouth_epoch = self.mouth_epoch.saturating_add(1);
+                self.mouth_epoch
+            },
         }
     }
 

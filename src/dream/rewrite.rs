@@ -53,8 +53,9 @@ pub fn run(
                     && crate::encode::embed::cosine(&embedding, &o.embedding) >= profile.merge_similarity
             })
             .cloned()
-            .take(3)
             .collect();
+        neighbors.sort_by(|a, b| a.id.cmp(&b.id));
+        neighbors.truncate(3);
         if let Some(s) = schema.as_ref() {
             if let Some(c) = store.centers.get(s) {
                 if let Some(hub) = c
@@ -80,12 +81,25 @@ pub fn run(
             && crate::recall::ground::is_grounding_miss(&text, &core, profile.ground_min_overlap)
         {
             let rewrite = narrator.recontextualize(t, &core, profile);
+            let before = t.gist.clone();
             if let Some(tr) = store.traces.get_mut(&id) {
-                crate::recall::ground::apply_grounding(tr, profile, &text, &core, Some(rewrite));
+                let outcome = crate::recall::ground::apply_grounding(
+                    tr,
+                    profile,
+                    &text,
+                    &core,
+                    Some(rewrite),
+                );
+                if outcome.pulled_toward_core && tr.gist != before {
+                    record_rewrite(tr, &neighbors, before);
+                    rewritten += 1;
+                    budget -= 1;
+                }
             }
             continue;
         }
         if let Some(t) = store.traces.get_mut(&id) {
+            let before = t.gist.clone();
             t.gist = text.chars().take(280).collect();
             t.embedding = embedder.embed(&t.gist);
             t.drifts.push(DriftEvent {
@@ -97,6 +111,7 @@ pub fn run(
                 disgust_delta: 0.0,
             });
             t.fidelity = (t.fidelity - 0.02 * (1.0 - t.anchor)).max(0.15);
+            record_rewrite(t, &neighbors, before);
             t.recompute_confidence();
             t.clamp();
             rewritten += 1;
@@ -104,6 +119,20 @@ pub fn run(
         }
     }
     rewritten
+}
+
+fn record_rewrite(t: &mut MemoryTrace, neighbors: &[MemoryTrace], before: String) {
+    t.record_operation(crate::core::model::MemoryOperation {
+        kind: "rewrite".into(),
+        at: now_secs(),
+        source_trace_ids: neighbors.iter().map(|n| n.id.clone()).collect(),
+        source_axiom_ids: Vec::new(),
+        source_center: t.schema.clone(),
+        before,
+        after: t.gist.clone(),
+        confidence: t.confidence,
+        origin: crate::core::model::EvidenceOrigin::Reconstruction,
+    });
 }
 
 pub const CONFLICT_CONGRUENCE: f32 = 0.40;

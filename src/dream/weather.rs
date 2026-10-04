@@ -34,6 +34,10 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> WeatherReport {
                 trace.access = 1.0;
                 continue;
             }
+            // A survivor is not weathered. Status, fidelity and disgust stay.
+            if crate::encode::scoring::hazard_scale(trace) < 0.08 {
+                continue;
+            }
         }
         let (hold_gist, retell) = {
             let t = store.traces.get(id).unwrap();
@@ -71,7 +75,7 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> WeatherReport {
             sculpted.push(ev);
         }
         let trace = store.traces.get_mut(id).unwrap();
-        if trace.permanence >= 0.8 || crate::encode::scoring::hazard_scale(trace) < 0.08 {
+        if trace.permanence >= 0.8 {
             continue;
         }
         if !trace.channel.verbatim()

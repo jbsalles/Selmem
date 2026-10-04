@@ -118,15 +118,11 @@ pub fn recall_with(
 ) -> RecallOutcome {
     let query_embedding = embedder.embed(query);
     let live = write == RecallWrite::Live;
-    let cloud = context_cloud(store, query);
+    let cloud = context_cloud(store, query, &query_embedding);
     let ids: Vec<String> = store.active_ids();
     let mut ranked: Vec<ScoredTrace> = ids
         .into_iter()
         .filter_map(|trace_id| {
-            if live {
-                let trace = store.traces.get_mut(&trace_id)?;
-                refresh_access(trace, profile);
-            }
             let trace = store.traces.get(&trace_id)?;
             if trace.suppressed && !matches!(bias, RecallBias::ForceMarked) {
                 return None;
@@ -137,7 +133,8 @@ pub fn recall_with(
                 .and_then(|id| store.archives.get(id))
                 .map(|a| a.source == "talk")
                 .unwrap_or(false);
-            if talk && trace.access < 0.10 {
+            let access = crate::encode::scoring::access_value(trace, profile);
+            if talk && access < 0.10 {
                 return None;
             }
             let mut score = recall_score_emb(trace, query, Some(&query_embedding), mood, profile);
@@ -216,7 +213,7 @@ pub fn recall_with(
 
         if live {
             if let Some(trace) = store.traces.get_mut(trace_id) {
-                // Access clock only. Rehearsal is spoken utility, stamped in speak.
+                refresh_access(trace, profile);
                 trace.last_recalled_at = Some(now_secs());
             }
         }
@@ -440,10 +437,14 @@ fn episode_ask(query: &str) -> bool {
 /// Query seeds the cloud. Book links add hours: merge edges and axiom co-supports.
 /// A same-schema label does not. One shared token is not an anchor.
 pub fn context_cloud_pub(store: &crate::core::store::MemoryStore, query: &str) -> std::collections::HashMap<String, f32> {
-    context_cloud(store, query)
+    context_cloud(store, query, &[])
 }
 
-fn context_cloud(store: &crate::core::store::MemoryStore, query: &str) -> std::collections::HashMap<String, f32> {
+fn context_cloud(
+    store: &crate::core::store::MemoryStore,
+    query: &str,
+    query_emb: &[f32],
+) -> std::collections::HashMap<String, f32> {
     use crate::encode::scoring::{behavior_weight, lexical_similarity, token_set};
     let mut weights: std::collections::HashMap<String, f32> = std::collections::HashMap::new();
     let ids = store.active_ids();
@@ -460,6 +461,9 @@ fn context_cloud(store: &crate::core::store::MemoryStore, query: &str) -> std::c
         sim = sim.max(lexical_similarity(query, &t.core));
         for cue in &t.cues {
             sim = sim.max(lexical_similarity(query, cue));
+        }
+        if !query_emb.is_empty() && !t.embedding.is_empty() {
+            sim = sim.max(crate::encode::embed::cosine(query_emb, &t.embedding));
         }
         if sim <= 0.0 { continue; }
         seeds.push(id.clone());

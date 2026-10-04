@@ -114,8 +114,8 @@ pub fn dream_kind(
 
     singularite::apply_anchors(store);
     let w = weather::run(store, profile);
-    let _ = crate::dream::confab::run(store, profile);
     let (rewritten, merged, axioms) = if kind == NightKind::Deep {
+        let _ = crate::dream::confab::run(store, profile);
         let axioms = if cut.ladder {
             ladder::run(store, narrator)
         } else {
@@ -124,7 +124,7 @@ pub fn dream_kind(
         crate::dream::centers::refresh(store);
         let pulled = crate::dream::centers::gravitate(store);
         let rewritten = rewrite::run(store, profile, narrator, embedder, cut.ground) + pulled;
-        let merged = merge::run(store, profile, cut.merge_support_veto);
+        let merged = merge::run(store, profile, embedder, cut.merge_support_veto);
         (rewritten, merged, axioms)
     } else {
         (0, 0, Vec::new())

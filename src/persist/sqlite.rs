@@ -227,11 +227,25 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
     let _ = db.exec("ALTER TABLE archives ADD COLUMN released_from TEXT;");
     let _ = db.exec("ALTER TABLE archives ADD COLUMN released_at INTEGER;");
     let _ = db.exec("ALTER TABLE archives ADD COLUMN core TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN observation_id TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_claim TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_entities TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_actions TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_polarity REAL;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_confidence REAL;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN reality_claim TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN reality_verifiable INTEGER;");
+    let _ = db.exec(
+        "CREATE TABLE IF NOT EXISTS operations(
+           trace_id TEXT, kind TEXT, at INTEGER, confidence REAL, origin TEXT,
+           center TEXT, before TEXT, after TEXT, source_traces TEXT, source_axioms TEXT);",
+    );
     db.exec("BEGIN IMMEDIATE;")?;
     db.exec(
         "DELETE FROM meta; DELETE FROM archives; DELETE FROM traces;
          DELETE FROM cues; DELETE FROM drifts; DELETE FROM axioms;
-         DELETE FROM axiom_support; DELETE FROM edges; DELETE FROM centers;",
+         DELETE FROM axiom_support; DELETE FROM edges; DELETE FROM centers;
+         DELETE FROM operations;",
     )?;
 
     {
@@ -245,6 +259,8 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
             ("params", &profile_params_line(profile)),
             ("mood", &format!("{} {} {}", mood.valence, mood.arousal, mood.disgust)),
             ("last_deep", deep.as_str()),
+            ("merges_refused", &store.merges_refused.to_string()),
+            ("pending", &store.pending_night.join("\t")),
         ] {
             st.bind_text(1, k)?;
             st.bind_text(2, v)?;
@@ -270,8 +286,8 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
         }
     }
     let q_tr = db.prepare(
-        "INSERT INTO traces(id,gist,core,valence,arousal,disgust,self_relevance,schema,channel,archive_id,created,last_recalled,last_consolidated,fidelity,permanence,rehearsals,access,status,salience,embedding,anchor,detach_strikes,attribution,self_congruence,confidence,suppressed)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25,?26)",
+        "INSERT INTO traces(id,gist,core,valence,arousal,disgust,self_relevance,schema,channel,archive_id,created,last_recalled,last_consolidated,fidelity,permanence,rehearsals,access,status,salience,embedding,anchor,detach_strikes,attribution,self_congruence,confidence,suppressed,observation_id,semantic_claim,semantic_entities,semantic_actions,semantic_polarity,semantic_confidence,reality_claim,reality_verifiable)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29,?30,?31,?32,?33,?34)",
     )?;
     let q_cue = db.prepare("INSERT INTO cues(trace_id,cue) VALUES (?1,?2)")?;
     let q_dr = db.prepare(
@@ -281,10 +297,10 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
         q_tr.bind_text(1, &t.id)?;
         q_tr.bind_text(2, &t.gist)?;
         q_tr.bind_text(3, &t.core)?;
-        q_tr.bind_f64(4, t.valence as f64)?;
-        q_tr.bind_f64(5, t.arousal as f64)?;
-        q_tr.bind_f64(6, t.disgust as f64)?;
-        q_tr.bind_f64(7, t.self_relevance as f64)?;
+        q_tr.bind_f64(4, t.valence.clamp(-1.0, 1.0) as f64)?;
+        q_tr.bind_f64(5, t.arousal.clamp(0.0, 1.0) as f64)?;
+        q_tr.bind_f64(6, t.disgust.clamp(0.0, 1.0) as f64)?;
+        q_tr.bind_f64(7, t.self_relevance.clamp(0.0, 1.0) as f64)?;
         q_tr.bind_opt_text(8, t.schema.as_deref())?;
         q_tr.bind_text(9, channel_token(t.channel))?;
         q_tr.bind_opt_text(10, t.archive_id.as_deref())?;
@@ -297,19 +313,27 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
             Some(v) => q_tr.bind_i64(13, v as i64)?,
             None => q_tr.bind_null(13)?,
         }
-        q_tr.bind_f64(14, t.fidelity as f64)?;
-        q_tr.bind_f64(15, t.permanence as f64)?;
+        q_tr.bind_f64(14, t.fidelity.clamp(0.0, 1.0) as f64)?;
+        q_tr.bind_f64(15, t.permanence.clamp(0.0, 1.0) as f64)?;
         q_tr.bind_i64(16, t.rehearsals as i64)?;
-        q_tr.bind_f64(17, t.access as f64)?;
+        q_tr.bind_f64(17, t.access.clamp(0.0, 1.0) as f64)?;
         q_tr.bind_text(18, status_token(t.status))?;
         q_tr.bind_f64(19, t.salience_at_encode as f64)?;
         q_tr.bind_text(20, &pack_emb(&t.embedding))?;
-        q_tr.bind_f64(21, t.anchor as f64)?;
+        q_tr.bind_f64(21, t.anchor.clamp(0.0, 1.0) as f64)?;
         q_tr.bind_i64(22, t.detach_strikes as i64)?;
         q_tr.bind_text(23, t.attribution.token())?;
-        q_tr.bind_f64(24, t.self_congruence as f64)?;
-        q_tr.bind_f64(25, t.confidence as f64)?;
+        q_tr.bind_f64(24, t.self_congruence.clamp(0.0, 1.0) as f64)?;
+        q_tr.bind_f64(25, t.confidence.clamp(0.0, 1.0) as f64)?;
         q_tr.bind_i64(26, if t.suppressed { 1 } else { 0 })?;
+        q_tr.bind_opt_text(27, t.observation_id.as_deref())?;
+        q_tr.bind_text(28, &t.semantic.claim)?;
+        q_tr.bind_text(29, &t.semantic.entities.join("\t"))?;
+        q_tr.bind_text(30, &t.semantic.actions.join("\t"))?;
+        q_tr.bind_f64(31, t.semantic.polarity as f64)?;
+        q_tr.bind_f64(32, t.semantic.confidence as f64)?;
+        q_tr.bind_text(33, &t.reality.claim)?;
+        q_tr.bind_i64(34, if t.reality.verifiable { 1 } else { 0 })?;
         q_tr.step_done()?;
         for c in &t.cues {
             q_cue.bind_text(1, &t.id)?;
@@ -325,6 +349,22 @@ pub fn save(path: &Path, profile: &EntityProfile, mood: &Mood, store: &MemorySto
             q_dr.bind_f64(6, d.valence_delta as f64)?;
             q_dr.bind_f64(7, d.disgust_delta as f64)?;
             q_dr.step_done()?;
+        }
+        let q_op = db.prepare(
+            "INSERT INTO operations(trace_id,kind,at,confidence,origin,center,before,after,source_traces,source_axioms) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
+        )?;
+        for op in &t.operations {
+            q_op.bind_text(1, &t.id)?;
+            q_op.bind_text(2, &op.kind)?;
+            q_op.bind_i64(3, op.at as i64)?;
+            q_op.bind_f64(4, op.confidence as f64)?;
+            q_op.bind_text(5, op.origin.token())?;
+            q_op.bind_opt_text(6, op.source_center.as_deref())?;
+            q_op.bind_text(7, &op.before)?;
+            q_op.bind_text(8, &op.after)?;
+            q_op.bind_text(9, &op.source_trace_ids.join("\t"))?;
+            q_op.bind_text(10, &op.source_axiom_ids.join("\t"))?;
+            q_op.step_done()?;
         }
     }
     let q_ax = db.prepare(
@@ -429,16 +469,31 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let _ = db.exec("ALTER TABLE traces ADD COLUMN self_congruence REAL;");
     let _ = db.exec("ALTER TABLE traces ADD COLUMN confidence REAL;");
     let _ = db.exec("ALTER TABLE traces ADD COLUMN suppressed INTEGER;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN observation_id TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_claim TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_entities TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_actions TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_polarity REAL;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_confidence REAL;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN reality_claim TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN reality_verifiable INTEGER;");
     let _ = db.exec(
         "CREATE TABLE IF NOT EXISTS centers(
            schema TEXT PRIMARY KEY, core TEXT, valence REAL, weight REAL,
            hub_id TEXT, axiom_id TEXT);",
+    );
+    let _ = db.exec(
+        "CREATE TABLE IF NOT EXISTS operations(
+           trace_id TEXT, kind TEXT, at INTEGER, confidence REAL, origin TEXT,
+           center TEXT, before TEXT, after TEXT, source_traces TEXT, source_axioms TEXT);",
     );
     let meta = query(&db, "SELECT k,v FROM meta")?;
     let mut name = String::new();
     let mut params_s = String::new();
     let mut mood_s = String::new();
     let mut last_deep_s = String::new();
+    let mut refused_s = String::new();
+    let mut pending_s = String::new();
     for row in meta {
         if row.len() < 2 {
             continue;
@@ -448,6 +503,8 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             "params" => params_s = row[1].clone(),
             "mood" => mood_s = row[1].clone(),
             "last_deep" => last_deep_s = row[1].clone(),
+            "merges_refused" => refused_s = row[1].clone(),
+            "pending" => pending_s = row[1].clone(),
             _ => {}
         }
     }
@@ -456,6 +513,12 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let mut store = MemoryStore::new();
     if !last_deep_s.is_empty() && last_deep_s != "-" {
         store.last_deep_at = last_deep_s.parse().ok();
+    }
+    if !refused_s.is_empty() {
+        store.merges_refused = refused_s.parse().unwrap_or(0);
+    }
+    if !pending_s.is_empty() {
+        store.pending_night = pending_s.split('\t').filter(|s| !s.is_empty()).map(|s| s.to_string()).collect();
     }
 
     for row in query(
@@ -485,7 +548,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
 
     for row in query(
         &db,
-        "SELECT id,gist,core,valence,arousal,disgust,self_relevance,schema,channel,archive_id,created,last_recalled,last_consolidated,fidelity,permanence,rehearsals,access,status,salience,embedding,anchor,detach_strikes,attribution,self_congruence,confidence,suppressed FROM traces",
+        "SELECT id,gist,core,valence,arousal,disgust,self_relevance,schema,channel,archive_id,created,last_recalled,last_consolidated,fidelity,permanence,rehearsals,access,status,salience,embedding,anchor,detach_strikes,attribution,self_congruence,confidence,suppressed,observation_id,semantic_claim,semantic_entities,semantic_actions,semantic_polarity,semantic_confidence,reality_claim,reality_verifiable FROM traces",
     )? {
         if row.len() < 20 {
             continue;
@@ -516,13 +579,101 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             row.get(21).and_then(|s| s.parse().ok()).unwrap_or(0),
             Vec::new(),
             Vec::new(),
-            row.get(22)
-                .map(|s| Attribution::parse(s))
-                .unwrap_or(Attribution::None),
+            {
+                let raw = row.get(22).map(|s| s.as_str()).unwrap_or("");
+                let claim_present = row.get(32).map(|s| !s.is_empty()).unwrap_or(false);
+                if raw.is_empty() {
+                    if claim_present {
+                        return Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            "attr manquant",
+                        ));
+                    }
+                    Attribution::None
+                } else {
+                    match raw {
+                        "none" | "external" | "internal" => Attribution::parse(raw),
+                        _ => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("attr inconnu: {raw}"),
+                            ))
+                        }
+                    }
+                }
+            },
             row.get(24).and_then(|s| s.parse().ok()).unwrap_or(1.0),
             row.get(25).map(|s| s == "1").unwrap_or(false),
         );
+        let mut t = t;
+        if let Some(id) = row.get(26).and_then(|s| empty_none(s)) {
+            t.observation_id = Some(id.clone());
+            t.reality.observation_id = Some(id);
+        }
+        if let Some(claim) = row.get(27).and_then(|s| empty_none(s)) {
+            t.semantic.claim = claim;
+        }
+        if let Some(entities) = row.get(28).and_then(|s| empty_none(s)) {
+            t.semantic.entities = entities.split('\t').map(|s| s.to_string()).collect();
+        }
+        if let Some(actions) = row.get(29).and_then(|s| empty_none(s)) {
+            t.semantic.actions = actions.split('\t').map(|s| s.to_string()).collect();
+        }
+        if let Some(p) = row.get(30).and_then(|s| s.parse().ok()) {
+            t.semantic.polarity = p;
+        }
+        if let Some(c) = row.get(31).and_then(|s| s.parse().ok()) {
+            t.semantic.confidence = c;
+        }
+        if let Some(claim) = row.get(32).and_then(|s| empty_none(s)) {
+            t.reality.claim = claim;
+        }
+        if let Some(flag) = row.get(33) {
+            if !flag.is_empty() {
+                t.reality.verifiable = flag == "1";
+            }
+        }
+        if row.get(17).map(|s| s.as_str()) == Some("sealed") {
+            t.drifts.push(assemble_drift(
+                crate::core::model::DriftKind::Fade,
+                t.created_at,
+                "sealed token loaded as active".into(),
+                0.0,
+                0.0,
+                0.0,
+            ));
+        }
+        t.clamp();
         store.traces.insert(t.id.clone(), t);
+    }
+    for row in query(
+        &db,
+        "SELECT trace_id,kind,at,confidence,origin,center,before,after,source_traces,source_axioms FROM operations",
+    )? {
+        if row.len() < 10 {
+            continue;
+        }
+        if let Some(t) = store.traces.get_mut(&row[0]) {
+            t.operations.push(crate::core::model::MemoryOperation {
+                kind: row[1].clone(),
+                at: row[2].parse().unwrap_or(0),
+                confidence: row[3].parse().unwrap_or(1.0),
+                origin: crate::core::model::EvidenceOrigin::parse(&row[4]),
+                source_center: empty_none(&row[5]),
+                before: row[6].clone(),
+                after: row[7].clone(),
+                source_trace_ids: if row[8].is_empty() {
+                    Vec::new()
+                } else {
+                    row[8].split('\t').map(|s| s.to_string()).collect()
+                },
+                source_axiom_ids: if row[9].is_empty() {
+                    Vec::new()
+                } else {
+                    row[9].split('\t').map(|s| s.to_string()).collect()
+                },
+            });
+        }
     }
 
     for row in query(&db, "SELECT trace_id,cue FROM cues")? {

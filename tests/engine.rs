@@ -177,6 +177,34 @@ fn sqlite_roundtrip() {
     assert_eq!(loaded.store.traces.len(), 1);
     let t = loaded.store.traces.values().next().unwrap();
     assert!(!t.embedding.is_empty());
+    assert_eq!(t.reality.claim, t.core);
+    assert!(t.observation_id.is_some());
+    assert!(t.operations.iter().any(|op| op.kind == "encode"));
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn sqlite_roundtrip_keeps_a_claim_that_diverged() {
+    let dir = std::env::temp_dir().join(format!("selmem-sql-claim-{}", std::process::id()));
+    let _ = std::fs::create_dir_all(&dir);
+    let path = dir.join("claire.db");
+    let mut mem = SelectiveMemory::open(&path, EntityProfile::tender("Claire")).unwrap();
+    let mut ev = EncodeInput::new("You stayed in the rain.");
+    ev.valence = 0.7;
+    ev.self_relevance = 0.9;
+    let id = mem.live_with(ev).trace_id.expect("kept");
+    {
+        let t = mem.store.traces.get_mut(&id).unwrap();
+        t.semantic.claim = "I was left in the rain.".into();
+        t.reality.claim = "You stayed in the rain.".into();
+        t.valence = 1.7;
+    }
+    mem.save().unwrap();
+    let loaded = SelectiveMemory::open(&path, EntityProfile::tender("x")).unwrap();
+    let t = loaded.store.traces.values().next().unwrap();
+    assert_eq!(t.reality.claim, "You stayed in the rain.");
+    assert_eq!(t.semantic.claim, "I was left in the rain.");
+    assert!(t.valence <= 1.0, "load clamps, got {}", t.valence);
     let _ = std::fs::remove_dir_all(&dir);
 }
 

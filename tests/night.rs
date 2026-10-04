@@ -404,7 +404,7 @@ fn merge_keeps_axiom_backed_gist_and_valence() {
     });
     let before = mem.store.traces[&keep].gist.clone();
     let val = mem.store.traces[&keep].valence;
-    let n = selmem::dream::merge::run(&mut mem.store, &mem.profile, false);
+    let n = selmem::dream::merge::run(&mut mem.store, &mem.profile, &selmem::HashEmbedder, false);
     assert!(n >= 1, "similar office hours should merge");
     let after = &mem.store.traces[&keep];
     assert_eq!(after.gist, before, "axiom-backed gist must not fuse");

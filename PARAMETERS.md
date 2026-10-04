@@ -194,7 +194,7 @@ These are not one score. None is a word list.
 | Quantity | Clock | Formula | What it changes | What it does not change |
 |---|---|---|---|---|
 | `anchor` | encode, then axiom support | field on the trace | multiplies access decay down; high values skip some rewrite | does not decide if the hour may be spoken |
-| `hazard_scale` | `created_at` | `1 / (1 + survival_days / 3)` | multiplies the access-decay rate; weather and release skip the hour when this is under 0.08 | does not rank the hour for the current question |
+| `hazard_scale` | `created_at` | `1 / (1 + survival_days / 3)` | multiplies the access-decay rate; weather skips the hour before any write when this is under 0.08; release does the same | does not rank the hour for the current question |
 | `behavior_weight` | `last_recalled_at`, else `created_at` | `1 / (1 + since_use_days / 21)`, floor 0.12 | multiplies the recall score | does not protect the hour from release |
 | context cloud | this query, then book links | tokens of hours the query touches, plus axiom co-supports and edges that are not the same schema. Seed weight `sim × behavior_weight × self_relevance × access`; linked hours at half, without the query similarity. No schema pour | the recall score is multiplied by the weighted share of the hour's tokens in the cloud. No share, score 0. No half-cut. An axiom uses the same share | does not delete the hour; a shared schema label does not enter |
 

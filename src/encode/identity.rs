@@ -98,12 +98,15 @@ fn paint_latent(store: &mut MemoryStore, input: &mut EncodeInput<'_>) {
         if !event_related(&event, schema, &t.core) && !event_related(&event, schema, &t.gist) {
             continue;
         }
+        let strong = schema_or_key(&event, schema, &t.core) || schema_or_key(&event, schema, &t.gist);
         n += 1.0;
         pull_v += t.valence;
         pull_d += t.disgust;
-        touched.push(t.id.clone());
-        if input.schema.is_none() && !schema.is_empty() {
-            input.schema = Some(schema.to_string());
+        if strong {
+            touched.push(t.id.clone());
+            if input.schema.is_none() && !schema.is_empty() {
+                input.schema = Some(schema.to_string());
+            }
         }
     }
     for id in touched {
@@ -119,20 +122,22 @@ fn paint_latent(store: &mut MemoryStore, input: &mut EncodeInput<'_>) {
     }
 }
 
-fn event_related(event: &str, schema: &str, statement: &str) -> bool {
+fn schema_or_key(event: &str, schema: &str, statement: &str) -> bool {
     if !schema.is_empty() && event.contains(&schema.to_lowercase()) {
         return true;
     }
     let keys = [
-        "fidél", "loyal", "stayed", "stayed", "abandon", "parti", "left", "trahi", "betray",
+        "fidél", "loyal", "stayed", "abandon", "parti", "left", "trahi", "betray",
         "humili", "confian", "trust", "pluie", "rain", "aimer", "love", "peur", "fear",
         "honte", "shame",
     ];
-    for k in keys {
-        if (event.contains(k) || schema.contains(k)) && (statement.contains(k) || schema.contains(k))
-        {
-            return true;
-        }
+    keys.iter().any(|k| event.contains(k) && (statement.contains(k) || schema.contains(k)))
+}
+
+fn event_related(event: &str, schema: &str, statement: &str) -> bool {
+    if schema_or_key(event, schema, statement) {
+        return true;
     }
+    // Long-word overlap tints the next input. It does not rehearse, so it cannot revive.
     statement.split_whitespace().any(|w| w.len() > 5 && event.contains(w))
 }

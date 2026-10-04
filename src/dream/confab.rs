@@ -59,7 +59,7 @@ pub fn fill_if_hole(store: &mut MemoryStore, id: &str, profile: &EntityProfile) 
     if t.drifts.iter().any(|d| d.kind == DriftKind::Confabulate) {
         return false;
     }
-    let Some(fill) = filler(store, t, profile) else {
+    let Some((fill, source_ids, axiom_ids)) = filler(store, t, profile) else {
         return false;
     };
     if fill.trim().is_empty() || fill == t.gist {
@@ -83,8 +83,8 @@ pub fn fill_if_hole(store: &mut MemoryStore, id: &str, profile: &EntityProfile) 
         t.record_operation(crate::core::model::MemoryOperation {
             kind: "confab".into(),
             at: now_secs(),
-            source_trace_ids: vec![id.to_string()],
-            source_axiom_ids: Vec::new(),
+            source_trace_ids: source_ids,
+            source_axiom_ids: axiom_ids,
             source_center: t.schema.clone(),
             before,
             after: t.gist.clone(),
@@ -102,12 +102,19 @@ pub fn fill_if_hole(store: &mut MemoryStore, id: &str, profile: &EntityProfile) 
     false
 }
 
-fn filler(store: &MemoryStore, t: &MemoryTrace, profile: &EntityProfile) -> Option<String> {
+fn filler(store: &MemoryStore, t: &MemoryTrace, profile: &EntityProfile) -> Option<(String, Vec<String>, Vec<String>)> {
     let schema = t.schema.as_deref();
     let mut extra = String::new();
+    let mut source_ids = Vec::new();
+    let mut axiom_ids = Vec::new();
     if let Some(s) = schema {
         if let Some(c) = store.centers.get(s) {
             extra = first_new_clause(&c.core, &t.core);
+            if !extra.is_empty() {
+                if let Some(hub) = &c.hub_id {
+                    source_ids.push(hub.clone());
+                }
+            }
         }
         if extra.is_empty() {
             if let Some(a) = store
@@ -116,6 +123,10 @@ fn filler(store: &MemoryStore, t: &MemoryTrace, profile: &EntityProfile) -> Opti
                 .find(|a| a.schema.as_deref() == Some(s))
             {
                 extra = first_new_clause(&a.statement, &t.core);
+                if !extra.is_empty() {
+                    axiom_ids.push(a.id.clone());
+                    source_ids.extend(a.support_trace_ids.iter().cloned());
+                }
             }
         }
     }
@@ -124,7 +135,7 @@ fn filler(store: &MemoryStore, t: &MemoryTrace, profile: &EntityProfile) -> Opti
         return None;
     }
     let base = t.core.trim().trim_end_matches('.');
-    Some(format!("{base}. {extra}"))
+    Some((format!("{base}. {extra}"), source_ids, axiom_ids))
 }
 
 fn first_new_clause(src: &str, core: &str) -> String {

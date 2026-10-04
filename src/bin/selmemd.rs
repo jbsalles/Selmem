@@ -122,6 +122,7 @@ fn handle_conn(
                     auth = line.split_once(':').map(|(_, v)| v.trim().to_string()).unwrap_or_default();
                 }
             }
+            let content_len = content_len.min(1_000_000);
             let body_start = pos + 4;
             while data.len() < body_start + content_len {
                 let n = stream.read(&mut buf)?;
@@ -137,7 +138,9 @@ fn handle_conn(
             }
             if let Some(tok) = token {
                 let allowed = path == "/health" || method == "OPTIONS";
-                let ok_auth = auth == format!("Bearer {tok}");
+                let ok_auth = auth.len() > 7
+                    && auth[..7].eq_ignore_ascii_case("bearer ")
+                    && auth[7..].trim() == tok;
                 if !allowed && !ok_auth {
                     write_http(&mut stream, 401, "{\"error\":\"unauthorized\"}")?;
                     return Ok(());
@@ -178,6 +181,9 @@ fn dispatch_unlocked(
             let Some(g) = slot.as_mut() else {
                 return Ok(busy());
             };
+            if g.mouth_held() {
+                return Ok(busy());
+            }
             let draft = g.open_mouth(&text);
             let narrator = g.narrator_arc();
             (draft, narrator)
@@ -199,9 +205,13 @@ fn dispatch_unlocked(
             let mut slot = mem.lock().map_err(|_| {
                 std::io::Error::new(std::io::ErrorKind::Other, "memory locked")
             })?;
-            let Some(organ) = slot.take() else {
+            let Some(organ) = slot.as_mut() else {
                 return Ok(busy());
             };
+            if organ.mouth_held() {
+                return Ok(busy());
+            }
+            let organ = slot.take().unwrap();
             organ
         };
         let res = api::dispatch(&mut organ, method, path, query, body);

@@ -54,7 +54,7 @@ fn sqlite_roundtrip_keeps_external() {
 }
 
 #[test]
-fn old_witness_vault_loads_as_none() {
+fn old_witness_vault_loads() {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("experiments/witness/witness-a.selmem");
     if !path.is_file() {
@@ -63,7 +63,18 @@ fn old_witness_vault_loads_as_none() {
     let loaded = SelectiveMemory::open(path.to_str().unwrap(), EntityProfile::tender("A"))
         .expect("existing witness vault must still load");
     assert!(!loaded.store.traces.is_empty());
-    assert!(loaded.store.traces.values().all(|t| t.attribution == Attribution::None));
+    let external = loaded
+        .store
+        .traces
+        .values()
+        .filter(|t| t.attribution == Attribution::External)
+        .count();
+    assert_eq!(external, 1, "seed A pins one External hour");
+    assert!(loaded
+        .store
+        .traces
+        .values()
+        .all(|t| t.attribution == Attribution::None || t.attribution == Attribution::External));
 }
 
 #[test]
