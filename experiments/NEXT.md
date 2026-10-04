@@ -20,7 +20,7 @@ Three columns, one script (12 dull + 5 same-schema + 8 shared posts, k = 8).
 
 Invariant we refuse to break: book 5/1, C1 eviction, Δfp stable across pairs.
 
-Paraphrase hole, kept 2026-10-04: the organ does not treat « turned it down » as « refused ». A probe that repeats the hour's words can be read as the book. A probe that changes the words needs the outside witness (`PropositionScorer`, temperature 0, claim + sentence, no write). `unknown` is not a memory result. Do not close this with a synonym list.
+Paraphrase hole, kept 2026-10-04: the organ does not treat « turned it down » as « refused ». No scorer is a different regime from an attached one: `NullScorer` names itself `null`, and `unknown` is `Unjudged` (no strike, no reconsolidation, no rewrite). The dump carries `scorer.name()`. A probe that repeats the hour's words can be read as the book. A probe that changes the words needs the outside scorer (`scorer=` or `--scorer`, temperature 0, claim + sentence, no write). The label is a measure, not an operation. `unknown` is not a memory result. Do not close this with a synonym list.
 
 ---
 

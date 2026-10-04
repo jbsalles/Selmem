@@ -83,6 +83,10 @@ pub fn run(
             t.reality.claim.clone()
         };
         let core = t.core.clone();
+        let judged = crate::recall::judge_against_core(&text, &claim, scorer);
+        if judged.kind == crate::recall::DetachKind::Unjudged {
+            continue;
+        }
         if ground && crate::recall::ground::is_grounding_miss(&text, &claim, scorer) {
             let rewrite = narrator.recontextualize(t, &core, profile);
             let before = t.gist.clone();

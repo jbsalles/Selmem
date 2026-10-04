@@ -45,6 +45,8 @@ pub struct RetrievalDump {
     pub selected: Vec<String>,
     pub pulled: u32,
     pub reconsolidated: u32,
+    /// Name from the scorer. `null` when none is attached.
+    pub scorer: String,
 }
 
 impl RetrievalDump {
@@ -243,6 +245,7 @@ pub fn recall_with(
             selected: chosen_ids,
             pulled: pulled_n,
             reconsolidated: recon_n,
+            scorer: scorer.name().to_string(),
         },
     }
 }
@@ -415,7 +418,7 @@ fn speak_self(
             scorer,
         )
     };
-    let reconsolidated = if !outcome.pulled_toward_core && cut.reconsolidate {
+    let reconsolidated = if !outcome.pulled_toward_core && !outcome.unjudged && cut.reconsolidate {
         if let Some(trace) = store.traces.get_mut(trace_id) {
             apply_reconsolidation(trace, &outcome.spoken_text, profile, mood.valence);
         }

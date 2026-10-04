@@ -21,6 +21,8 @@ pub enum DetachKind {
     Contradict,
     /// Not the same event (identity gate).
     Depart,
+    /// The witness did not decide. Not a departure, not a pass.
+    Unjudged,
 }
 
 impl DetachKind {
@@ -106,11 +108,15 @@ pub fn judge_against_core(
     if generated.trim().eq_ignore_ascii_case(claim.trim()) {
         return finish(DetachKind::Hold, 1.0, generated, claim);
     }
-    let kind = match scorer.score(claim, generated) {
+    let mut kind = match scorer.score(claim, generated) {
         crate::recall::PropositionLabel::Entail => DetachKind::Hold,
         crate::recall::PropositionLabel::Contradict => DetachKind::Contradict,
-        crate::recall::PropositionLabel::Unknown => DetachKind::Depart,
+        crate::recall::PropositionLabel::Unknown => DetachKind::Unjudged,
     };
+    // Second level. The witness does not see causes. An added because-clause is not a Hold.
+    if kind == DetachKind::Hold && extra_cause(&pad(generated), &pad(claim)) {
+        kind = DetachKind::Elaborate;
+    }
     finish(kind, overlap, generated, claim)
 }
 
@@ -182,7 +188,7 @@ pub fn is_grounding_miss(
     scorer: &dyn crate::recall::PropositionScorer,
 ) -> bool {
     let j = judge_against_core(generated, claim, scorer);
-    matches!(j.kind, DetachKind::Contradict)
+    matches!(j.kind, DetachKind::Contradict | DetachKind::Elaborate)
 }
 
 fn pad(s: &str) -> String {

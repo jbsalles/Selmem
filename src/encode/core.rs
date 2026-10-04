@@ -36,9 +36,23 @@ pub fn accept_core(proposed: &str, event: &str) -> Option<String> {
     Some(p)
 }
 
-/// Dropping or adding a negation is a different proposition. Word membership does not catch it.
+/// Global negation, plus a scoped one: "not WORD" in the hour must not come back as bare WORD.
 fn polarity_flipped(event: &str, proposed: &str) -> bool {
-    has_neg(event) != has_neg(proposed)
+    if has_neg(event) != has_neg(proposed) {
+        return true;
+    }
+    let ev = event.to_lowercase();
+    let pr = proposed.to_lowercase();
+    for w in content_tokens(&ev) {
+        let marked = format!("not {w}");
+        let bare = pr.split(|c: char| c == ',' || c == ';').any(|clause| {
+            clause.contains(&w) && !clause.contains("not ") && !clause.contains("n't")
+        });
+        if ev.contains(&marked) && bare {
+            return true;
+        }
+    }
+    false
 }
 
 fn has_neg(s: &str) -> bool {

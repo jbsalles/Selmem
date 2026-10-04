@@ -53,6 +53,16 @@ fn main() {
             Err(e) => eprintln!("{e}; repli RuleNarrator"),
         }
     }
+    if let Some(url) = flag(&args, "--scorer").or(cfg.resolve(None, "scorer")) {
+        let model = cfg.resolve_or(flag(&args, "--scorer-model"), "scorer_model", "llama3");
+        let key = cfg.resolve(None, "scorer_key").or(key.clone());
+        if let Some(s) = selmem::HttpScorer::parse(&url, model, key) {
+            mem = mem.with_scorer(Box::new(s));
+            eprintln!("scorer attached  {url}");
+        }
+    } else {
+        eprintln!("scorer absent");
+    }
     if let Some(url) = embed_url {
         let emodel = cfg.resolve_or(flag(&args, "--embed-model"), "embed_model", "text-embedding-3-small");
         if let Some(e) = HttpEmbedder::parse(&url, emodel, key.clone()) {

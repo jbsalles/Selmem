@@ -52,11 +52,12 @@ pub fn dispatch(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
     }
     match (method, path) {
         ("GET", "/health") => ok(format!(
-            "{{\"ok\":true,\"name\":\"{}\",\"traces\":{},\"archives\":{},\"axioms\":{}}}",
+            "{{\"ok\":true,\"name\":\"{}\",\"traces\":{},\"archives\":{},\"axioms\":{},\"scorer\":\"{}\"}}",
             json_esc(&mem.profile.name),
             mem.store.traces.len(),
             mem.store.archives.len(),
-            mem.store.axioms.len()
+            mem.store.axioms.len(),
+            json_esc(&mem.scorer_name())
         )),
         ("GET", "/profile") => ok(profile_json(mem)),
         ("POST", "/profile") => {

@@ -31,6 +31,7 @@ impl PropositionLabel {
 /// Frozen labeler. No store, no archive, no write.
 pub trait PropositionScorer: Send + Sync {
     fn score(&self, claim: &str, sentence: &str) -> PropositionLabel;
+    fn name(&self) -> &str;
 }
 
 /// The organ does not invent a proposition. Absent scorer is unknown.
@@ -39,6 +40,9 @@ pub struct NullScorer;
 impl PropositionScorer for NullScorer {
     fn score(&self, _claim: &str, _sentence: &str) -> PropositionLabel {
         PropositionLabel::Unknown
+    }
+    fn name(&self) -> &str {
+        "null"
     }
 }
 
@@ -77,6 +81,13 @@ impl PropositionScorer for HttpScorer {
             Err(_) => return PropositionLabel::Unknown,
         };
         let text = extract_json_string(&raw, "content").unwrap_or_default();
+        if text.contains(claim) || text.contains(sentence) {
+            return PropositionLabel::Unknown;
+        }
         PropositionLabel::parse(&text)
+    }
+
+    fn name(&self) -> &str {
+        &self.model
     }
 }

@@ -782,6 +782,10 @@ impl SelectiveMemory {
         }
     }
 
+    pub fn scorer_name(&self) -> String {
+        self.scorer.as_ref().map(|s| s.name().to_string()).unwrap_or_else(|| "null".into())
+    }
+
     pub fn with_scorer(mut self, scorer: Box<dyn crate::recall::PropositionScorer>) -> Self {
         self.scorer = Some(scorer);
         self
@@ -799,19 +803,9 @@ impl SelectiveMemory {
             Some(s) => s.score(&claim, sentence),
             None => crate::recall::PropositionLabel::Unknown,
         };
-        if let Some(t) = self.store.traces.get_mut(trace_id) {
-            let before = t.gist.clone();
-            t.record_operation(crate::core::model::MemoryOperation {
-                kind: "score".into(),
-                at: crate::core::model::now_secs(),
-                source_trace_ids: Vec::new(),
-                source_axiom_ids: Vec::new(),
-                source_center: None,
-                before,
-                after: label.token().into(),
-                confidence: t.confidence,
-                origin: crate::core::model::EvidenceOrigin::Reconstruction,
-            });
+        if let Some(t) = self.store.traces.get(trace_id) {
+            let _ = t;
+            self.store.measures.push((trace_id.to_string(), label.token().into()));
         }
         label
     }

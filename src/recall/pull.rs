@@ -9,6 +9,8 @@ pub struct GroundingOutcome {
     pub spoken_text: String,
     pub pulled_toward_core: bool,
     pub overlap_with_core: f32,
+    /// Witness abstained. No strike, no pull, no reconsolidation.
+    pub unjudged: bool,
 }
 
 pub fn grip_on_trace(trace: &MemoryTrace, _profile: &EntityProfile) -> f32 {
@@ -101,12 +103,22 @@ pub fn apply_grounding(
             spoken_text: spoken,
             pulled_toward_core: false,
             overlap_with_core: 1.0,
+            unjudged: false,
         };
     }
 
     let claim = claim_of(trace, core);
     let judgement = judge_against_core(generated, &claim, scorer);
     let overlap = judgement.overlap;
+
+    if judgement.kind == DetachKind::Unjudged {
+        return GroundingOutcome {
+            spoken_text: generated.to_string(),
+            pulled_toward_core: false,
+            overlap_with_core: overlap,
+            unjudged: true,
+        };
+    }
 
     if judgement.kind == DetachKind::Reframe && overlap >= profile.ground_min_overlap {
         let already_colored = trace
@@ -127,6 +139,7 @@ pub fn apply_grounding(
             spoken_text: generated.to_string(),
             pulled_toward_core: false,
             overlap_with_core: overlap,
+            unjudged: false,
         };
     }
 
@@ -138,6 +151,7 @@ pub fn apply_grounding(
             spoken_text: generated.to_string(),
             pulled_toward_core: false,
             overlap_with_core: overlap,
+            unjudged: false,
         };
     }
 
@@ -147,6 +161,7 @@ pub fn apply_grounding(
             spoken_text: generated.to_string(),
             pulled_toward_core: false,
             overlap_with_core: overlap,
+            unjudged: false,
         };
     }
 
@@ -157,6 +172,7 @@ pub fn apply_grounding(
             spoken_text: generated.to_string(),
             pulled_toward_core: false,
             overlap_with_core: overlap,
+            unjudged: false,
         };
     }
 
@@ -171,6 +187,7 @@ pub fn apply_grounding(
             spoken_text: generated.to_string(),
             pulled_toward_core: false,
             overlap_with_core: overlap,
+            unjudged: false,
         };
     }
 
@@ -192,6 +209,7 @@ pub fn apply_grounding(
         spoken_text: spoken,
         pulled_toward_core: true,
         overlap_with_core: overlap,
+        unjudged: false,
     }
 }
 

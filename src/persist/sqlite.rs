@@ -284,6 +284,15 @@ pub fn save(
                     if cut.merge_support_veto { 1 } else { 0 },
                 ),
             ),
+            (
+                "measures",
+                &store
+                    .measures
+                    .iter()
+                    .map(|(id, label)| format!("{id} {label}"))
+                    .collect::<Vec<_>>()
+                    .join("\t"),
+            ),
         ] {
             st.bind_text(1, k)?;
             st.bind_text(2, v)?;
@@ -519,6 +528,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let mut pending_s = String::new();
     let mut clock_s = String::new();
     let mut cut_s = String::new();
+    let mut measures_s = String::new();
     for row in meta {
         if row.len() < 2 {
             continue;
@@ -532,6 +542,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             "pending" => pending_s = row[1].clone(),
             "clock" => clock_s = row[1].clone(),
             "cut" => cut_s = row[1].clone(),
+            "measures" => measures_s = row[1].clone(),
             _ => {}
         }
     }
@@ -546,6 +557,14 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     }
     if !pending_s.is_empty() {
         store.pending_night = pending_s.split('\t').filter(|s| !s.is_empty()).map(|s| s.to_string()).collect();
+    }
+    if !measures_s.is_empty() {
+        for row in measures_s.split('\t') {
+            let mut p = row.split_whitespace();
+            if let (Some(id), Some(label)) = (p.next(), p.next()) {
+                store.measures.push((id.to_string(), label.to_string()));
+            }
+        }
     }
 
     for row in query(

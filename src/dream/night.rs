@@ -64,6 +64,7 @@ pub struct DreamReport {
     pub kind: NightKind,
     pub new_hours: u32,
     pub charge: f32,
+    pub scorer: String,
 }
 
 pub fn dream(
@@ -151,5 +152,6 @@ pub fn dream_kind(
         kind,
         new_hours: budget.new_hours,
         charge: budget.charge,
+        scorer: scorer.name().to_string(),
     }
 }

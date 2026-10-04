@@ -15,6 +15,8 @@ pub struct MemoryStore {
     /// Selfhood hours not yet through a deep night. Survives same-second benches.
     pub pending_night: Vec<String>,
     pub centers: HashMap<String, SchemaCenter>,
+    /// Witness labels. Not memory operations. A measurement is not a transformation.
+    pub measures: Vec<(String, String)>,
 }
 
 impl MemoryStore {

@@ -104,6 +104,10 @@ pub fn save(
             flag(cut.util_to_strength),
             flag(cut.merge_support_veto),
         )?;
+        writeln!(w, "measures {}", store.measures.len())?;
+        for (id, label) in &store.measures {
+            writeln!(w, "measure {id} {label}")?;
+        }
     }
     fs::rename(tmp, path)?;
     Ok(())
@@ -221,6 +225,17 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
                         clock_detached = p[2] == "1";
                         if p.len() >= 4 {
                             clock_origin = p[3].parse().unwrap_or(0);
+                        }
+                    }
+                } else if let Some(rest) = line.strip_prefix("measures ") {
+                    let n: usize = rest.trim().parse().unwrap_or(0);
+                    for _ in 0..n {
+                        let row = read_line(&mut r)?;
+                        let mut p = row.split_whitespace();
+                        if p.next() == Some("measure") {
+                            if let (Some(id), Some(label)) = (p.next(), p.next()) {
+                                store.measures.push((id.to_string(), label.to_string()));
+                            }
                         }
                     }
                 } else if let Some(rest) = line.strip_prefix("cut ") {
