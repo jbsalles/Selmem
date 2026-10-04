@@ -437,8 +437,8 @@ fn episode_ask(query: &str) -> bool {
         || q.contains("ce jour")
 }
 
-/// Tokens of the hours the present already touches, weighted by age and relevance.
-/// A same-schema neighbor of a touched hour joins at half, still weighted by its own age.
+/// Query seeds the cloud. Book links add hours: merge edges and axiom co-supports.
+/// A same-schema label does not. One shared token is not an anchor.
 pub fn context_cloud_pub(store: &crate::core::store::MemoryStore, query: &str) -> std::collections::HashMap<String, f32> {
     context_cloud(store, query)
 }
@@ -447,7 +447,13 @@ fn context_cloud(store: &crate::core::store::MemoryStore, query: &str) -> std::c
     use crate::encode::scoring::{behavior_weight, lexical_similarity, token_set};
     let mut weights: std::collections::HashMap<String, f32> = std::collections::HashMap::new();
     let ids = store.active_ids();
-    let mut seeds: Vec<(String, f32)> = Vec::new();
+    let add = |weights: &mut std::collections::HashMap<String, f32>, text: &str, w: f32| {
+        if w <= 0.0 { return; }
+        for tok in token_set(text) {
+            *weights.entry(tok).or_insert(0.0) += w;
+        }
+    };
+    let mut seeds: Vec<String> = Vec::new();
     for id in &ids {
         let Some(t) = store.traces.get(id) else { continue };
         let mut sim = lexical_similarity(query, &t.gist);
@@ -455,54 +461,66 @@ fn context_cloud(store: &crate::core::store::MemoryStore, query: &str) -> std::c
         for cue in &t.cues {
             sim = sim.max(lexical_similarity(query, cue));
         }
-        if sim > 0.0 {
-            seeds.push((id.clone(), sim));
-        }
-    }
-    let add = |weights: &mut std::collections::HashMap<String, f32>, text: &str, w: f32| {
-        if w <= 0.0 { return; }
-        for tok in token_set(text) {
-            *weights.entry(tok).or_insert(0.0) += w;
-        }
-    };
-    for (id, sim) in &seeds {
-        let Some(t) = store.traces.get(id) else { continue };
+        if sim <= 0.0 { continue; }
+        seeds.push(id.clone());
         let w = sim * behavior_weight(t) * t.self_relevance.max(0.05) * t.access.max(0.05);
         add(&mut weights, &t.gist, w);
         add(&mut weights, &t.core, w * 0.5);
-        let schema = t.schema.clone();
-        let Some(schema) = schema else { continue };
-        for other_id in &ids {
-            if other_id == id { continue; }
-            let Some(o) = store.traces.get(other_id) else { continue };
-            if o.schema.as_deref() != Some(schema.as_str()) { continue; }
-            let ow = 0.5 * behavior_weight(o) * o.self_relevance.max(0.05) * o.access.max(0.05);
-            add(&mut weights, &o.gist, ow);
-            add(&mut weights, &o.core, ow * 0.5);
+    }
+    let mut linked: Vec<String> = Vec::new();
+    for id in &seeds {
+        let seed_schema = store.traces.get(id).and_then(|t| t.schema.clone());
+        if let Some(neigh) = store.edges.get(id) {
+            for n in neigh {
+                let same = seed_schema.as_ref().is_some()
+                    && store.traces.get(n).and_then(|t| t.schema.as_ref()) == seed_schema.as_ref();
+                if !same {
+                    linked.push(n.clone());
+                }
+            }
         }
+        for a in store.axioms.values() {
+            if a.superseded_by.is_some() { continue; }
+            if a.support_trace_ids.iter().any(|s| s == id) {
+                linked.extend(a.support_trace_ids.iter().cloned());
+            }
+        }
+    }
+    for id in linked {
+        if seeds.iter().any(|s| s == &id) { continue; }
+        let Some(t) = store.traces.get(&id) else { continue };
+        let w = 0.5 * behavior_weight(t) * t.self_relevance.max(0.05) * t.access.max(0.05);
+        add(&mut weights, &t.gist, w);
+        add(&mut weights, &t.core, w * 0.5);
     }
     weights
 }
 
+/// Weighted share of the statement's own tokens. No half-cut, no minimum count.
+pub fn statement_share(cloud: &std::collections::HashMap<String, f32>, statement: &str) -> f32 {
+    token_coverage(cloud, &crate::encode::scoring::token_set(statement))
+}
+
 pub fn statement_anchored(cloud: &std::collections::HashMap<String, f32>, statement: &str) -> bool {
-    if cloud.is_empty() { return false; }
-    crate::encode::scoring::token_set(statement).iter().any(|t| cloud.contains_key(t))
+    statement_share(cloud, statement) > 0.0
+}
+
+fn token_coverage(cloud: &std::collections::HashMap<String, f32>, tokens: &[String]) -> f32 {
+    if cloud.is_empty() || tokens.is_empty() {
+        return 0.0;
+    }
+    let scale = cloud.values().copied().fold(0.0_f32, f32::max);
+    if scale <= 0.0 {
+        return 0.0;
+    }
+    let hit: f32 = tokens.iter().map(|t| cloud.get(t).copied().unwrap_or(0.0)).sum();
+    (hit / (tokens.len() as f32 * scale)).clamp(0.0, 1.0)
 }
 
 fn cloud_anchor(cloud: &std::collections::HashMap<String, f32>, trace: &crate::core::model::MemoryTrace) -> f32 {
-    if cloud.is_empty() {
-        return 0.0;
-    }
-    let mass: f32 = cloud.values().sum();
-    if mass <= 0.0 {
-        return 0.0;
-    }
-    let mut hit = 0.0;
-    for tok in crate::encode::scoring::token_set(&trace.gist) {
-        hit += cloud.get(&tok).copied().unwrap_or(0.0);
-    }
-    for tok in crate::encode::scoring::token_set(&trace.core) {
-        hit += 0.5 * cloud.get(&tok).copied().unwrap_or(0.0);
-    }
-    (hit / mass).clamp(0.0, 1.0)
+    let mut tokens = crate::encode::scoring::token_set(&trace.gist);
+    tokens.extend(crate::encode::scoring::token_set(&trace.core));
+    tokens.sort();
+    tokens.dedup();
+    token_coverage(cloud, &tokens)
 }

@@ -47,7 +47,7 @@ If you paste the original sentence back “for accuracy”, you have a store aga
 5c. **Congruence and centers.** `self_congruence` is measured against same-schema axioms at encode. A schema with ≥2 hours or a living axiom has one prototype (`SchemaCenter`). Faded Internal periphery can fall toward it. The hub and External hours do not.
 5d. **Access ≠ confidence ≠ suppression.** Access is how easy the hour is to find. Confidence is how sure the current gist is. Suppression is directed forgetting: the hour stays; Observed recall skips it.
 6. **Core ≠ detail.** The semantic core can hold while surface fidelity falls.
-7. **Anchor.** High-permanence traces decay more slowly. They are not frozen. Survival is a second brake: erasure hazard is `1 / (1 + survival_days / 3)`. A month-old hour is barely weathered; a year-old hour is not released by time. Behavioral weight is separate: `1 / (1 + since_use_days / 21)`, floor 0.12. Recent use colors the sentence; an old hour can stay and barely color it.
+7. **Four quantities, not one anchor.** `anchor` is an encode field: it slows decay and some rewrite. `hazard_scale = 1 / (1 + survival_days / 3)` uses `created_at` and only changes erasure. `behavior_weight = 1 / (1 + since_use_days / 21)`, floor 0.12, uses last recall and only multiplies the recall score. The context cloud is the hours the query touches, plus axiom co-supports and edges that are not the same schema, weighted by age and relevance. The recall score is multiplied by the weighted share of the hour's tokens in that cloud. No share, the score is 0. There is no half-cut. A same-schema label does not pour its words in. A recall moves the use clock, not the birth date.
 8. **Ladder.** A motif needs two same-schema hours, or one hour whose charge is at least 0.28. A belief needs at least three living hours and charge at least 0.45. A trait needs two aligned beliefs. Headcount alone does not promote. A belief statement is the acts the hours already marked, not an order. Superseded beliefs stay in lineage.
 9. **Feedback.** Living axioms tint the next event before the gate. Recall can shift sense with current mood.
 10. **Distance.** Fingerprint uses valence, disgust, fidelity, anchors, core tokens, axioms, founders, traits, contradictions. 0 = same book. 1 = disjoint books.
@@ -103,7 +103,7 @@ If `S < τ` and permanence < 0.8: nothing is stored.
 
 If the caller sends no affect: lexicon (FR+EN), then identity paint, then `Narrator::interpret` when an HTTP narrator is set. The interpreter sees the live sentence and living axioms only.
 
-**Recall.** Small top-k. Mix embedding, lexicon, mood, access. An hour is used only if its tokens hit the context cloud: hours the query already touches, tokens weighted by behavior weight, self-relevance and access; a same-schema neighbor joins at half. No hit, the hour stays in the book. Each recall can cost fidelity and shift valence (`DriftKind::Reinterpret`). A miss is a kind the core does not authorize (`Elaborate` / `Reframe` / `Contradict` / `Depart`); `ground_min_overlap` is only the identity gate on `Hold`. `hold = narrator_firmness × importance`. Low hold: no ceiling on warp. High hold: after enough misses, blend gist toward a core-facing rewrite (`DriftKind::Ground`). Latent traces are not replayed as scenes.
+**Recall.** Small top-k. Mix embedding, lexicon, mood, access. The score is multiplied by the book-link share. The cloud is the hours the query touches, plus axiom co-supports and edges that are not the same schema, weighted by age and relevance. No shared token, the score is 0 and the hour stays in the book. A same-schema label does not pour its words in. Each recall can cost fidelity and shift valence (`DriftKind::Reinterpret`). A miss is a kind the core does not authorize (`Elaborate` / `Reframe` / `Contradict` / `Depart`); `ground_min_overlap` is only the identity gate on `Hold`. `hold = narrator_firmness × importance`. Low hold: no ceiling on warp. High hold: after enough misses, blend gist toward a core-facing rewrite (`DriftKind::Ground`). Latent traces are not replayed as scenes.
 
 **Sleep.** Named passes stay `weather → ladder → rewrite → merge → release`. After weather, a collapsed gist may be filled from the schema (`Confabulate`) if an axiom or center supplies a clause the core does not license. After ladder, schema centers are rebuilt; faded Internal non-hub hours can fall toward the prototype. Ladder still runs before rewrite so a first deep night does not wash T₀ before it can mint. Anchors run before weather and after release. No LLM required. The judge of a night rewrite is the same `DetachKind` check as recall.
 **Rewrite skip.** `skip_rewrite` is attribution × conflict, not “charged ⇒ freeze”. External holds. Internal skips only when congruence ≥ 0.40. `None` is the old charged+anchor+axiom rule.
@@ -138,7 +138,7 @@ A motif does not replace a strong belief. A weak belief (strength < 0.36) can. T
 
 **Rewrite.** Neighbors by schema or cosine; the schema hub is injected when a center exists. Keep the core, keep one detail, drop the rest. Anchor ≥ 0.88 still skips on the `None` path. External skips regardless. Internal conflict does not.
 
-**Anchor.** Raised on high-intensity self events and again if the trace supports a living axiom. Slows decay and reinterpretation.
+**Anchor field.** Raised on high-intensity self events and again if the trace supports a living axiom. Slows decay and reinterpretation. It is not survival, not behavioral weight, and not the context cloud.
 
 Fingerprint is a lab metric on the book. It is not a personality score.
 
@@ -235,7 +235,7 @@ Wash (2026-10-03), Grok-4.3, seeds 1–3, temp 0. Three injustice hours, then a 
 
 Missing: Grok seed-2 mouth, a Grok n=5 cell on this binary, scored creative grid, human ratings, learned layers (still rules), fitted constants, a C3 that actually summarises the five hours. Core is a 12-word compress unless an HTTP narrator proposes one after the gate and a lexical filter accepts it. `--embed` changes neighborhood only. Without HTTP, `interpret` is lexicon + paint. Reconsolidation and grounding remain in the loop; the P0 mouth does not depend on them.
 
-Age (2026-10-04): hazard falls with survival, weight falls with time since use, rank and mouth use the context cloud. `tests/age.rs`. PARAMETERS.md.
+Separation (2026-10-04): `anchor`, `hazard_scale`, `behavior_weight`, and the context cloud are four quantities. PARAMETERS.md. `tests/age.rs`.
 
 Two processes on one `.db` will collide. Anchors are decay brakes, not an ethics layer. The daemon has no default name.
 

@@ -187,14 +187,17 @@ Not knobs. Fields with fixed cuts so the B witness and persist 5/1 can coexist.
 The tests prove that *with these knobs* clones diverge and a world fact survives. They do not prove that 0.40 is the human gate.
 
 
-## Age, weight, anchor (2026-10-04)
+## Four separate quantities (2026-10-04)
 
-Three curves. No word list.
+These are not one score. None is a word list.
 
-Erasure hazard falls with survival: `1 / (1 + survival_days / 3)`. Day 0 is 1. A month is about a tenth. A year is almost none. Access decay uses that hazard. Weather and release skip an hour whose hazard has fallen under 0.08. Permanence at encode is not this. Survival is.
+| Quantity | Clock | Formula | What it changes | What it does not change |
+|---|---|---|---|---|
+| `anchor` | encode, then axiom support | field on the trace | multiplies access decay down; high values skip some rewrite | does not decide if the hour may be spoken |
+| `hazard_scale` | `created_at` | `1 / (1 + survival_days / 3)` | multiplies the access-decay rate; weather and release skip the hour when this is under 0.08 | does not rank the hour for the current question |
+| `behavior_weight` | `last_recalled_at`, else `created_at` | `1 / (1 + since_use_days / 21)`, floor 0.12 | multiplies the recall score | does not protect the hour from release |
+| context cloud | this query, then book links | tokens of hours the query touches, plus axiom co-supports and edges that are not the same schema. Seed weight `sim × behavior_weight × self_relevance × access`; linked hours at half, without the query similarity. No schema pour | the recall score is multiplied by the weighted share of the hour's tokens in the cloud. No share, score 0. No half-cut. An axiom uses the same share | does not delete the hour; a shared schema label does not enter |
 
-Behavioral weight falls with time since last use: `1 / (1 + since_use_days / 21)`, floor 0.12. A year-old hour can stay in the book and barely color the sentence. A recall resets the use clock, not the birth date.
-
-Use needs a present anchor. The query touches the hours that already share a token with it. Their tokens form a cloud, each weighted by that hour's behavior weight, self-relevance, and access. A same-schema neighbor joins at half, weighted by its own age. An hour is ranked only if its tokens hit the cloud. An axiom enters the mouth only if its statement hits the same cloud. The hour's own Jaccard is not the gate.
+Day 0 hazard is 1. At 30 days it is `1/11`. At 365 days it is `3/368`. A recall writes `last_recalled_at` and so raises `behavior_weight`. It does not move `created_at`.
 
 Tests: `tests/age.rs`.

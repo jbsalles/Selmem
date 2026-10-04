@@ -183,7 +183,7 @@ Three witnesses (same T₀, attribution cut only): `./run.sh run --release --bin
 
 Locked grid is P4 (`--p4`, n = 5, seed 1, Grok and Luna): experiments/REPORT.md §11. Book 5/1 on every organ cell; C1 evicts. Grok mouth: official C2 = 0, soft 1/5, D ~0.75 vs C1 ~0.31; Drop kills Grok soft on full C2; Lineage drops Grok D to ~0.58. Luna book = Grok; Luna soft stays 5/5 under Drop and dies under Lineage; do not publish Luna D. P1 / Drop n=1 stay history (§8–§9). LoCoMo: experiments/EXTERNAL.md.
 
-Age (2026-10-04): erasure hazard falls with survival, behavioral weight falls with time since use, and a hour is spoken only if it hits the context cloud. PARAMETERS.md. Tests: `tests/age.rs`.
+Age (2026-10-04): erasure hazard falls with survival. Behavioral weight falls with time since use. Recall is multiplied by the book-link share: query seeds, axiom co-supports and non-schema edges, no schema pour. PARAMETERS.md. Tests: `tests/age.rs`.
 
 Wash (`examples/wash`, experiments/REPORT.md §16): three injustice hours, then a new offer. Grok-4.3 seeds 1–3: A refuses, B accepts, controls accept, hour not spoken. n=3. Not a persist cell.
 

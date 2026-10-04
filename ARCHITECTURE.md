@@ -147,7 +147,7 @@ A third (`entail`) does not exist. If it arrives, fallback is the local judge.
 | `tests/centers.rs` | prototype mint; Internal gravity; External stays |
 | `tests/confab.rs` | hole fill ≠ embellish; core frozen |
 | `tests/suppress.rs` | directed forgetting; confidence ≠ access |
-| `tests/age.rs` | hazard falls with survival; recency weight; context cloud |
+| `tests/age.rs` | hazard falls with survival; recency weight; book-link share |
 
 ## Audit P0 (2026-10-01)
 

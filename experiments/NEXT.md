@@ -179,4 +179,4 @@ Calendar is not a virtue. A failed gist audit ends the day.
 | 2026-09-26 | Wash + visibility in code: night order ladder-before-rewrite; rewrite skip axiom/anchor/2-charged; charged gist survives weather+sculpt; retrieve +0.12 on axiom support. |
 | 2026-09-26 | Isolated situated probes withhold axioms. Allusion list frozen then Grok n=5: C2 5/5, C1 0/5. Official P4 not replaced. |
 | 2026-10-03 | Wash cell: belief is the returned relation, not an order. Grok-4.3 seeds 1–3: repeated refuses 3/3, controls accept. n=3. Not a persist cell. |
-| 2026-10-04 | Age curves shipped. Hazard falls with survival. Weight falls with time since use. Mouth and rank use the context cloud, not the hour's own Jaccard. `tests/age.rs`. |
+| 2026-10-04 | Age curves shipped. Hazard falls with survival. Weight falls with time since use. Recall is multiplied by the book-link share. A schema label does not pour tokens. `tests/age.rs`. |

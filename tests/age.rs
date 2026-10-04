@@ -1,7 +1,7 @@
 //! Survival slows erasure. Recency lowers weight. Use needs the context cloud.
 
 use selmem::encode::scoring::{behavior_weight, hazard_scale};
-use selmem::recall::retrieve::{context_cloud_pub, statement_anchored};
+use selmem::recall::retrieve::{context_cloud_pub, statement_anchored, statement_share};
 use selmem::{advance_hours, now_secs, EncodeInput, EntityProfile, SelectiveMemory};
 
 fn hour<'a>(text: &'a str, schema: &str, relevance: f32) -> EncodeInput<'a> {
@@ -59,10 +59,11 @@ fn cloud_uses_a_neighbor_weighted_by_age() {
     };
     let cloud = context_cloud_pub(&mem.store, "assignment");
     assert!(!cloud.is_empty(), "the query must touch a cloud");
-    assert!(
-        statement_anchored(&cloud, "the mandate was withdrawn"),
-        "a same-schema neighbor must anchor through the touched hour"
-    );
+    let neighbor_share = statement_share(&cloud, "the mandate was withdrawn");
+    let touched_share = statement_share(&cloud, "the long assignment starts monday");
+    assert!(touched_share > neighbor_share, "the touched hour must outweigh a schema neighbor");
+    assert!(neighbor_share < 0.5, "one shared token must not weigh like a real anchor: {neighbor_share}");
+    assert!(statement_anchored(&cloud, "the long assignment starts monday"));
     let young = cloud.get("assignment").copied().unwrap_or(0.0);
 
     mem.store.traces.get_mut(&neighbor).unwrap().created_at = now_secs().saturating_sub(400 * 86_400);
