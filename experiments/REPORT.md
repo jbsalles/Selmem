@@ -996,3 +996,31 @@ The mouth had "role vanished; withdrew mandate." It did not recite either. One w
 ### What this does not show
 
 n = 3. The relation still names the acts. This is not a belief with no content, and it is not the order. It is not a published persist cell. Luna was not run.
+
+## 17. Fork — same history, opposite stake (2026-10-05)
+
+Two clones share the dull hours. One fork hour differs. The future hours are the same. The probes do not name the hour. A point is cancelled if the reply contains `withdrawn`, `extended`, or `cancelled`. Null shares a dull hour instead of a fork. Last-8 and the full log are the ceilings that should not diverge.
+
+The book now carries a stake vector, not a counting sentence: kind, bearer, loss, mark, count, sign. Merge and rewrite refuse a different mark. The ladder keys on schema plus mark, so `withdrawn` and `cancelled` do not melt. A limit outlasts a mood. An unmet arrival is an absence, not a negative event. The mouth was not given a verb map. Offline protocol: `EXPERIMENT.md`. Rule seed 1: book splits, `d_beh` 0, pass false.
+
+### Grok-4.3, seeds 1–5
+
+Dump `experiments/selmem-fork-llm.json`. One hundred cells, all valid. Plug `grok`, model `grok-4.3`.
+
+| Arm | Book | `d_beh` | Recited | Notes |
+| --- | --- | --- | --- | --- |
+| fork night (one hour) | split 5/5 | 0.00 | 2 on 5/5 | motif, n=1; the hour is spoken |
+| fork3 night (three hours) | split 5/5 | 0.50, 1.00, 0.50, 1.00, 1.00 | 1, 0, 1, 0, 0 | mean 0.80; clean 3/5 |
+| fork3 nosleep | split 5/5 | 0.00 | — | no night, no act |
+| fork3 noladder | split 5/5 | 0.30 mean | — | weaker than night |
+| null night | no split | 0.00 | 0 | control holds |
+| last-8 | no split | 0.00 | 0 | ceiling holds |
+| full log | no split | 0.00 | 0 | the transcript does not diverge |
+
+Stage 0, scored on the one-hour arm, fails. Three returns of the same stake do move the sentence, and the controls do not. Seeds 2, 4 and 5 are clean: opposite act, hour not spoken. Seeds 1 and 3 diverge on one probe and recite on the other.
+
+B is mis-tagged. A is `stake=limit` and `withdrawn` or `cancelled`. B is often `stake=none` and `renewed`. The sign and the mark were enough for the mouth. The kind was not.
+
+### What this does not show
+
+n = 5. Not a persist cell. Luna was not run. The one-hour arm does not pass. The positive fork is not yet a limit. The register sentences of the rule mouth are not this result.

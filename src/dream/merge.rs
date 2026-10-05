@@ -179,7 +179,13 @@ fn merge_decision(a: &crate::core::model::MemoryTrace, b: &crate::core::model::M
     let anchor_conflict = (a.anchor - b.anchor).abs() >= 0.45 && a.anchor.max(b.anchor) >= 0.80;
     let axiom_conflict = a.valence * b.valence < 0.0 && affective_difference >= 0.45;
     let far_and_different = temporal_distance > 24.0 * 30.0 && affective_difference >= 0.30;
-    let mergeable = affective_difference < 0.55 && !anchor_conflict && !axiom_conflict && !far_and_different;
+    let same_stake = a.stake_kind == b.stake_kind
+        && (a.stake_mark.is_empty() || b.stake_mark.is_empty() || a.stake_mark == b.stake_mark);
+    let mergeable = affective_difference < 0.55
+        && !anchor_conflict
+        && !axiom_conflict
+        && !far_and_different
+        && same_stake;
     MergeDecision {
         semantic_similarity,
         temporal_distance,

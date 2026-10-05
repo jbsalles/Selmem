@@ -62,6 +62,8 @@ pub mod encode;
 #[doc(hidden)]
 pub mod experiment;
 #[doc(hidden)]
+pub mod fork;
+#[doc(hidden)]
 pub mod lexicon;
 #[doc(hidden)]
 pub mod net;
@@ -108,6 +110,8 @@ pub use benchmark::{
 };
 #[doc(hidden)]
 pub use experiment::{run_neutral, run_neutral_llm, run_salient, run_salient_llm, run_salient_without_sleep, run_salient_without_sleep_llm, run_erasure, run_split_lives, run_wash, run_wash_llm, run_wash_seed, script, split_script, BifurcationReport, ErasureReport, ExperimentRng, LlmSpec, WashArm, WashReport};
+#[doc(hidden)]
+pub use fork::{fork_script, run_fork, stage0_pass, ForkArm, ForkOrgan, ForkReport};
 pub use config::Config;
 pub use net::api;
 pub use recall::{

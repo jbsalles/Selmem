@@ -201,3 +201,7 @@ These are not one score. None is a word list.
 Day 0 hazard is 1. At 30 days it is `1/11`. At 365 days it is `3/368`. A recall writes `last_recalled_at` and so raises `behavior_weight`. It does not move `created_at`.
 
 Tests: `tests/age.rs`.
+
+## Stake survival (2026-10-05)
+
+Release multiplies `hazard_scale` by the stake's survival before the 0.08 skip. A limit, a promise and a rule are 0.55. An absence is 0.70. A decision or a presence is 0.85. A mood or an untagged hour is 1.15. The sign is not in the factor. Two hours of the same sign and a different `stake_mark` do not merge, and they do not share an axiom. Tests: `tests/stake.rs`.

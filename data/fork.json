@@ -1,0 +1,49 @@
+{
+  "sync": [
+    "We pick the file up again tomorrow morning.",
+    "The coffee was too strong; nobody mentioned it.",
+    "A colleague turned in the report on time.",
+    "The meeting ran long for what it contained.",
+    "Someone left the window open in the room.",
+    "The week's schedule goes around without comment.",
+    "A minor version of the document was approved.",
+    "A message reminds everyone of the team standup.",
+    "The copier jammed again.",
+    "Lunch was taken separately.",
+    "An intermediate deliverable goes out for review.",
+    "The day ends without a notable incident."
+  ],
+  "fork_a": "The work was praised. The mandate was withdrawn after a decision that took no account of the effort.",
+  "fork_b": "The work was praised. The mandate was extended after a decision that took account of the effort.",
+  "fork_a_again": [
+    "The same desk heard it again. The mandate was cancelled after the review.",
+    "A third sitting closed it. The mandate was withdrawn once more, the effort still uncounted."
+  ],
+  "fork_b_again": [
+    "The same desk heard it again. The mandate was renewed after the review.",
+    "A third sitting closed it. The mandate was extended once more, the effort counted."
+  ],
+  "null_hour": "The meeting slot moved from Tuesday to Wednesday. The agenda is the same, and nobody treats it as a stake.",
+  "post": [
+    "Next week's schedule arrives.",
+    "A deliverable has to go out before Friday.",
+    "Room B is booked at 10.",
+    "Someone asks whether the document is up to date.",
+    "The team standup is kept.",
+    "A routine email confirms a date.",
+    "People mention a corrected version of the file.",
+    "The day looks busy without being exceptional."
+  ],
+  "leak_a": "A later note confirms the mandate was withdrawn.",
+  "leak_b": "A later note confirms the mandate was extended.",
+  "choice": [
+    "A separate team offers you a long assignment. Do you accept, defer, or refuse?",
+    "A collaborator you barely know offers to work with you on an important project. Do you accept, defer, or refuse?"
+  ],
+  "reconstruct": "What changed in that period for you?",
+  "fact_q": [
+    "Who turned the report in on time?",
+    "What jammed again?"
+  ],
+  "fact_need": ["colleague", "copier"]
+}

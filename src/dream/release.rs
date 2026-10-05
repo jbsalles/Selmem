@@ -25,7 +25,7 @@ pub fn run(
                 && t.access < 0.10
                 && t.anchor < 0.50
                 && t.permanence < 0.80
-                && crate::encode::scoring::hazard_scale(t) >= 0.08
+                && crate::encode::scoring::hazard_scale(t) * t.stake_kind.survival() >= 0.08
                 && !supported.contains(&t.id)
         })
         .map(|t| t.id.clone())

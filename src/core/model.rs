@@ -367,6 +367,7 @@ fn extract_actions(event: &str) -> Vec<String> {
     const VERBS: &[&str] = &[
         "left", "said", "walked", "abandoned", "told", "asked", "stayed", "opened", "closed",
         "went", "came", "took", "gave", "kept", "broke", "loved", "hated", "waited", "lied",
+        "withdrawn", "renewed",
     ];
     let mut out = Vec::new();
     for raw in event.split_whitespace() {
@@ -405,6 +406,211 @@ pub struct InterpretationStamp {
     pub statement: String,
     pub valence: f32,
     pub confidence: f32,
+}
+
+/// What is at stake. Distinct from the sign of the hour.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum StakeKind {
+    #[default]
+    None,
+    Decision,
+    Presence,
+    Rule,
+    Promise,
+    Limit,
+    Mood,
+    Absence,
+}
+
+impl StakeKind {
+    pub fn token(self) -> &'static str {
+        match self {
+            StakeKind::None => "none",
+            StakeKind::Decision => "decision",
+            StakeKind::Presence => "presence",
+            StakeKind::Rule => "rule",
+            StakeKind::Promise => "promise",
+            StakeKind::Limit => "limit",
+            StakeKind::Mood => "mood",
+            StakeKind::Absence => "absence",
+        }
+    }
+
+    pub fn parse(s: &str) -> Self {
+        match s {
+            "decision" => StakeKind::Decision,
+            "presence" => StakeKind::Presence,
+            "rule" => StakeKind::Rule,
+            "promise" => StakeKind::Promise,
+            "limit" => StakeKind::Limit,
+            "mood" => StakeKind::Mood,
+            "absence" => StakeKind::Absence,
+            _ => StakeKind::None,
+        }
+    }
+
+    /// A limit outlasts a mood. The sign is not the reason.
+    pub fn survival(self) -> f32 {
+        match self {
+            StakeKind::Limit | StakeKind::Promise | StakeKind::Rule => 0.55,
+            StakeKind::Absence => 0.70,
+            StakeKind::Decision | StakeKind::Presence => 0.85,
+            StakeKind::Mood | StakeKind::None => 1.15,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum Bearer {
+    #[default]
+    World,
+    Self_,
+    Other,
+}
+
+impl Bearer {
+    pub fn token(self) -> &'static str {
+        match self {
+            Bearer::World => "world",
+            Bearer::Self_ => "self",
+            Bearer::Other => "other",
+        }
+    }
+
+    pub fn parse(s: &str) -> Self {
+        match s {
+            "self" => Bearer::Self_,
+            "other" => Bearer::Other,
+            _ => Bearer::World,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum LossKind {
+    #[default]
+    None,
+    Status,
+    Access,
+    Coherence,
+    Time,
+}
+
+impl LossKind {
+    pub fn token(self) -> &'static str {
+        match self {
+            LossKind::None => "none",
+            LossKind::Status => "status",
+            LossKind::Access => "access",
+            LossKind::Coherence => "coherence",
+            LossKind::Time => "time",
+        }
+    }
+
+    pub fn parse(s: &str) -> Self {
+        match s {
+            "status" => LossKind::Status,
+            "access" => LossKind::Access,
+            "coherence" => LossKind::Coherence,
+            "time" => LossKind::Time,
+            _ => LossKind::None,
+        }
+    }
+}
+
+/// What did not happen. Not a negative event.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AbsenceKind {
+    Unmet,
+    Unanswered,
+    Missed,
+}
+
+impl AbsenceKind {
+    pub fn token(self) -> &'static str {
+        match self {
+            AbsenceKind::Unmet => "unmet",
+            AbsenceKind::Unanswered => "unanswered",
+            AbsenceKind::Missed => "missed",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "unmet" => Some(AbsenceKind::Unmet),
+            "unanswered" => Some(AbsenceKind::Unanswered),
+            "missed" => Some(AbsenceKind::Missed),
+            _ => None,
+        }
+    }
+}
+
+/// Stake read off the hour, before affect colors it.
+pub fn derive_stake(event: &str) -> (StakeKind, Bearer, LossKind, String, Option<AbsenceKind>) {
+    let low = event.to_lowercase();
+    let absence = if low.contains("no reply") || low.contains("unanswered") {
+        Some(AbsenceKind::Unanswered)
+    } else if low.contains("didn't come") || low.contains("did not come") || low.contains("missed") {
+        Some(AbsenceKind::Missed)
+    } else if low.contains("never arrived") || low.contains("unmet") {
+        Some(AbsenceKind::Unmet)
+    } else {
+        None
+    };
+    let kind = if absence.is_some() {
+        StakeKind::Absence
+    } else if low.contains("promise") || low.contains("vow") {
+        StakeKind::Promise
+    } else if low.contains("rule") || low.contains("must") {
+        StakeKind::Rule
+    } else if low.contains("limit") || low.contains("boundary") || low.contains("withdrawn") || low.contains("cancelled") {
+        StakeKind::Limit
+    } else if low.contains("decision") || low.contains("choose") {
+        StakeKind::Decision
+    } else if low.contains("present") || low.contains("stayed") {
+        StakeKind::Presence
+    } else if low.contains("felt") || low.contains("mood") {
+        StakeKind::Mood
+    } else {
+        StakeKind::None
+    };
+    let bearer = if low.contains(" i ") || low.starts_with("i ") {
+        Bearer::Self_
+    } else if low.contains("she ") || low.contains("he ") || low.contains("they ") {
+        Bearer::Other
+    } else {
+        Bearer::World
+    };
+    let loss = if kind == StakeKind::Limit {
+        LossKind::Status
+    } else if kind == StakeKind::Absence {
+        LossKind::Access
+    } else if kind == StakeKind::Promise || kind == StakeKind::Rule {
+        LossKind::Coherence
+    } else if kind == StakeKind::Presence {
+        LossKind::Time
+    } else {
+        LossKind::None
+    };
+    let mark = stake_mark(&low);
+    (kind, bearer, loss, mark, absence)
+}
+
+fn stake_mark(low: &str) -> String {
+    const SKIP: &[&str] = &[
+        "that", "this", "with", "from", "after", "before", "into", "your", "their", "been",
+        "were", "was", "have", "has", "had", "them", "they", "what", "the", "and", "for",
+    ];
+    let tokens: Vec<&str> = low
+        .split_whitespace()
+        .map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()))
+        .filter(|w| w.len() > 4 && !SKIP.contains(w))
+        .collect();
+    const PREFER: &[&str] = &["withdrawn", "cancelled", "extended", "renewed"];
+    if let Some(act) = tokens.iter().find(|w| PREFER.contains(w)) {
+        return (*act).to_string();
+    }
+    tokens.into_iter().max_by_key(|w| w.len()).unwrap_or("").to_string()
 }
 
 /// One lived episode. This is what the entity *uses*.
@@ -462,6 +668,11 @@ pub struct MemoryTrace {
     pub semantic: SemanticCore,
     /// Verifiable claim frozen at encode. Reinterpretation does not rewrite it.
     pub reality: RealityAnchor,
+    pub stake_kind: StakeKind,
+    pub bearer: Bearer,
+    pub loss_kind: LossKind,
+    pub stake_mark: String,
+    pub absence: Option<AbsenceKind>,
 }
 
 impl MemoryTrace {
@@ -527,6 +738,10 @@ pub struct IdentityAxiom {
     pub superseded_by: Option<String>,
     pub schema: Option<String>,
     pub layer: AxiomLayer,
+    pub stake_kind: StakeKind,
+    pub bearer: Bearer,
+    pub loss_kind: LossKind,
+    pub stake_mark: String,
 }
 
 /// Prototype of a schema. Peripheral hours of that schema fall toward it.

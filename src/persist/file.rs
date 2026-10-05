@@ -352,6 +352,15 @@ fn write_trace(w: &mut impl Write, t: &MemoryTrace) -> io::Result<()> {
     writeln!(w, "anchor {}", t.anchor.clamp(0.0, 1.0))?;
     writeln!(w, "detach {}", t.detach_strikes)?;
     writeln!(w, "attr {}", t.attribution.token())?;
+    writeln!(
+        w,
+        "stake {} {} {} {} {}",
+        t.stake_kind.token(),
+        t.bearer.token(),
+        t.loss_kind.token(),
+        if t.stake_mark.is_empty() { "-" } else { &t.stake_mark },
+        t.absence.map(|a| a.token()).unwrap_or("-")
+    )?;
     writeln!(w, "ops {}", t.operations.len())?;
     for op in &t.operations {
         writeln!(
@@ -442,6 +451,11 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
     } else {
         Attribution::None
     };
+    let stake_line = if next_line_starts_with(r, "stake ") {
+        Some(read_line(r)?)
+    } else {
+        None
+    };
     let self_congruence = if p.len() >= 16 {
         p[15].parse().unwrap_or(0.5)
     } else {
@@ -481,6 +495,25 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
         },
         p.get(17).map(|s| *s == "1").unwrap_or(false),
     );
+    if let Some(line) = stake_line {
+        let bits: Vec<&str> = line.split_whitespace().collect();
+        if bits.len() >= 5 {
+            trace.stake_kind = crate::core::model::StakeKind::parse(bits[1]);
+            trace.bearer = crate::core::model::Bearer::parse(bits[2]);
+            trace.loss_kind = crate::core::model::LossKind::parse(bits[3]);
+            if bits[4] != "-" {
+                trace.stake_mark = bits[4].to_string();
+            }
+            trace.absence = crate::core::model::AbsenceKind::parse(bits.get(5).copied().unwrap_or("-"));
+        }
+    } else {
+        let (k, b, l, m, a) = crate::core::model::derive_stake(&trace.gist);
+        trace.stake_kind = k;
+        trace.bearer = b;
+        trace.loss_kind = l;
+        trace.stake_mark = m;
+        trace.absence = a;
+    }
     if next_line_starts_with(r, "ops ") {
         let line = read_line(r).unwrap_or_default();
         let n: usize = line.strip_prefix("ops ").unwrap_or("0").trim().parse().unwrap_or(0);

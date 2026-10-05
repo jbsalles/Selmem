@@ -1,3 +1,4 @@
+pub mod reading;
 pub mod ground;
 pub mod http;
 pub mod judge;
@@ -13,6 +14,7 @@ pub use judge::{
 pub use pull::{apply_grounding, recontextualize_rule, GroundingOutcome};
 pub use http::{HttpNarrator, SpeakOnlyHttp};
 pub use narrator::{FailurePolicy, LlmCallLog, Narrator, RuleNarrator};
+pub use reading::{direction_score, register_marks, ReadingProfile};
 pub use score::{HttpScorer, NullScorer, PropositionLabel, PropositionScorer};
 pub use retrieve::{
     recall, recall_cut, recall_with, RecallBias, RecallOutcome, RecallWrite, RetrievalDump,

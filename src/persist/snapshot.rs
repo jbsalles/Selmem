@@ -4,8 +4,8 @@
 //! Layout of SELMEM1 and the SQL schema stay the backends' problem.
 
 use crate::core::model::{
-    ArchiveRecord, Attribution, AxiomLayer, Channel, DriftEvent, DriftKind, IdentityAxiom,
-    MemoryTrace, Mood, OrganCut, TraceStatus,
+    ArchiveRecord, Attribution, AxiomLayer, Bearer, Channel, DriftEvent, DriftKind, IdentityAxiom,
+    LossKind, MemoryTrace, Mood, OrganCut, StakeKind, TraceStatus,
 };
 use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
@@ -97,6 +97,11 @@ pub fn assemble_trace(
         operations: Vec::new(),
         semantic,
         reality,
+        stake_kind: StakeKind::None,
+        bearer: Bearer::World,
+        loss_kind: LossKind::None,
+        stake_mark: String::new(),
+        absence: None,
     }
 }
 
@@ -121,6 +126,10 @@ pub fn assemble_axiom(
         schema,
         layer,
         support_trace_ids,
+        stake_kind: crate::core::model::StakeKind::None,
+        bearer: crate::core::model::Bearer::World,
+        loss_kind: crate::core::model::LossKind::None,
+        stake_mark: String::new(),
     }
 }
 

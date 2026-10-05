@@ -334,8 +334,25 @@ impl Narrator for HttpNarrator {
         mood: &Mood,
         talk: &WorkingTalk,
     ) -> String {
+        self.reply_disposed(user, memories, axioms, mood, talk, "")
+    }
+
+    fn reply_disposed(
+        &self,
+        user: &str,
+        memories: &[String],
+        axioms: &[String],
+        mood: &Mood,
+        talk: &WorkingTalk,
+        profile: &str,
+    ) -> String {
         let mut ctx = String::new();
         ctx.push_str(&talk.render());
+        if !profile.is_empty() {
+            ctx.push_str("reading: ");
+            ctx.push_str(profile);
+            ctx.push('\n');
+        }
         for (i, m) in memories.iter().take(4).enumerate() {
             if i == 0 {
                 ctx.push_str("this hour: ");
@@ -350,18 +367,22 @@ impl Narrator for HttpNarrator {
             ctx.push_str(a);
             ctx.push('\n');
         }
-        let system = &crate::lexicon::prompts().reply;
+        let system = format!(
+            "{}\n{}",
+            crate::lexicon::prompts().reply,
+            crate::net::httpx::READING_CONSTRAINT
+        );
         let user_p = format!(
             "mood v={:.2} a={:.2} d={:.2}\n{ctx}\nhuman: {user}",
             mood.valence, mood.arousal, mood.disgust
         );
-        match self.chat(system, &user_p) {
+        match self.chat(&system, &user_p) {
             Ok(s) => s,
             Err(e) => {
                 eprintln!("selmem LLM reply failed: {e}");
                 let marker = self.miss(&e);
                 if marker.is_empty() {
-                    self.fallback.reply(user, memories, axioms, mood, talk)
+                    self.fallback.reply_disposed(user, memories, axioms, mood, talk, profile)
                 } else {
                     marker
                 }
@@ -422,7 +443,18 @@ impl Narrator for SpeakOnlyHttp {
         mood: &Mood,
         talk: &WorkingTalk,
     ) -> String {
-        self.http.reply(user, memories, axioms, mood, talk)
+        self.reply_disposed(user, memories, axioms, mood, talk, "")
+    }
+    fn reply_disposed(
+        &self,
+        user: &str,
+        memories: &[String],
+        axioms: &[String],
+        mood: &Mood,
+        talk: &WorkingTalk,
+        profile: &str,
+    ) -> String {
+        self.http.reply_disposed(user, memories, axioms, mood, talk, profile)
     }
 }
 

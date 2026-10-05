@@ -45,7 +45,7 @@ pub fn run(
             .filter(|o| o.id != id && o.channel == Channel::Selfhood)
             .filter(|o| {
                 if let (Some(a), Some(b)) = (schema.as_ref(), o.schema.as_ref()) {
-                    if a == b {
+                    if a == b && stake_near(store, &id, &o) {
                         return true;
                     }
                 }
@@ -205,4 +205,10 @@ fn skip_rewrite_legacy(store: &MemoryStore, t: &MemoryTrace) -> bool {
         })
         .count();
     charged_n >= 2
+}
+
+fn stake_near(store: &crate::core::store::MemoryStore, id: &str, other: &crate::core::model::MemoryTrace) -> bool {
+    let Some(t) = store.traces.get(id) else { return false };
+    t.stake_kind == other.stake_kind
+        && (t.stake_mark.is_empty() || other.stake_mark.is_empty() || t.stake_mark == other.stake_mark)
 }

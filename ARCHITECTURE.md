@@ -168,3 +168,7 @@ Rule narrator, seed 1, probe with no content-word hit on the cancellation. Wow c
 ## Wash charge (2026-10-03)
 
 Ladder mints on charge (|v| * arousal * self_relevance), not headcount. One wound at charge >= 0.28 can found a motif; charge >= 0.45 can found a belief. Dull permanence < 0.40 weighs a quarter. A choice probe ranks by charge and, if a charged axiom exists, answers from the belief without reciting the hour. Dump experiments/selmem-wash.json: salient wow, neutral/nosleep/noladder not.
+
+## Stake (2026-10-05)
+
+`stake_kind`, `bearer`, `loss_kind`, `stake_mark` and `absence` are encode fields, read before affect. Merge and rewrite refuse a different mark. The ladder keys schema plus mark. Release multiplies hazard by stake survival: a limit is 0.55, a mood is 1.15. An unmet arrival is an absence. The mouth is not mapped from the sign. Dump experiments/selmem-fork-llm.json. Report §17.

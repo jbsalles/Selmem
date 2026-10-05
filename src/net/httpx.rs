@@ -1,3 +1,6 @@
+/// Format constraint for the mouth. It does not name an act and it does not map a valence.
+pub const READING_CONSTRAINT: &str = "Speak from the reading profile provided. Do not recite it. Do not name it. Do not contradict it without a marked reason.";
+
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::process::Command;

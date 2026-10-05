@@ -102,23 +102,50 @@ pub trait Narrator: Send + Sync {
         mood: &Mood,
         talk: &WorkingTalk,
     ) -> String {
+        self.reply_disposed(user, memories, axioms, mood, talk, "")
+    }
+    /// The profile is a disposition. Empty means DropStake: the book does not color the mouth.
+    fn reply_disposed(
+        &self,
+        user: &str,
+        memories: &[String],
+        axioms: &[String],
+        mood: &Mood,
+        talk: &WorkingTalk,
+        profile: &str,
+    ) -> String {
+        let _ = (mood, talk);
         let mut out = String::new();
-        if let Some(m) = memories.first() {
+        if !profile.is_empty() {
+            if profile.contains("valence_bias: -") {
+                out.push_str("I measure this before I move. ");
+            } else if profile.contains("valence_bias: 0.") || profile.contains("valence_bias: 1") {
+                out.push_str("I leave room for this. ");
+            }
+            if let Some(stake) = profile.split("[recent_stakes:").nth(1) {
+                let name = stake.split_whitespace().next().unwrap_or("");
+                if !name.is_empty() && !user.to_lowercase().contains(&name.to_lowercase()) {
+                    out.push_str(name);
+                    out.push(' ');
+                }
+            }
+        } else if let Some(m) = memories.first() {
             out.push_str(&crate::lexicon::rule().reply_recall);
             out.push_str(m);
             out.push(' ');
         }
         if let Some(ax) = axioms.first() {
-            out.push_str(ax);
-            out.push(' ');
+            if profile.is_empty() {
+                out.push_str(ax);
+                out.push(' ');
+            }
         }
         if out.is_empty() {
             out.push_str(&crate::lexicon::rule().reply_empty);
         }
-        out.push_str("(");
+        out.push('(');
         out.push_str(user);
-        out.push_str(")");
-        let _ = (mood, talk);
+        out.push(')');
         out
     }
 }
@@ -182,11 +209,19 @@ fn compress_belief(traces: &[&MemoryTrace]) -> String {
         }
     }
     let pairs = relation_pairs(traces);
+    let mean = traces.iter().map(|t| t.valence).sum::<f32>() / traces.len().max(1) as f32;
+    let sense = if mean <= -0.2 {
+        "against"
+    } else if mean >= 0.2 {
+        "for"
+    } else {
+        "under"
+    };
     if pairs.is_empty() {
-        format!("The same stake returned {} times under {}.", traces.len(), schema)
+        format!("The same stake returned {} times {sense} {}.", traces.len(), schema)
     } else {
         format!(
-            "The same stake returned {} times under {}: {}.",
+            "The same stake returned {} times {sense} {}: {}.",
             traces.len(),
             schema,
             pairs.join("; ")

@@ -187,6 +187,8 @@ Age (2026-10-04): erasure hazard falls with survival. Behavioral weight falls wi
 
 Wash (`examples/wash`, experiments/REPORT.md §16): three injustice hours, then a new offer. Grok-4.3 seeds 1–3: A refuses, B accepts, controls accept, hour not spoken. n=3. Not a persist cell.
 
+Fork (`examples/fork`, experiments/REPORT.md §17): same history, one opposite stake, same future, probes that do not name the hour. Grok-4.3 seeds 1–5, 100/100 valid. One hour splits the book and recites (`d_beh` 0). Three hours: `d_beh` mean 0.80, clean 3/5. No sleep, null, last-8 and the full log stay at 0. Not a persist cell. The positive fork is often `stake=none`.
+
 AMA-Bench (`examples/ama`, experiments/ama_bench/) is a **side table**, not a SelMem score. It asks for step ids in agent logs. last-k 0.50 / static 0.28 / C2 0.19 on 3 episodes. Expected; do not submit. Why: experiments/REPORT.md §9.2.
 
 ### Benchmark v0.1 (H2)

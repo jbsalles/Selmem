@@ -232,6 +232,11 @@ fn encode_one(
         operations: Vec::new(),
         semantic: crate::core::model::SemanticCore::default(),
         reality: crate::core::model::RealityAnchor::default(),
+        stake_kind: crate::core::model::StakeKind::None,
+        bearer: crate::core::model::Bearer::World,
+        loss_kind: crate::core::model::LossKind::None,
+        stake_mark: String::new(),
+        absence: None,
     };
     trace.interpretation.statement = trace.gist.clone();
     trace.semantic = crate::core::model::SemanticCore::from_event(input.event, &trace.core, input.valence);
@@ -240,6 +245,12 @@ fn encode_one(
         claim: input.event.trim().to_string(),
         verifiable: true,
     };
+    let (kind, bearer, loss, mark, absence) = crate::core::model::derive_stake(input.event);
+    trace.stake_kind = kind;
+    trace.bearer = bearer;
+    trace.loss_kind = loss;
+    trace.stake_mark = mark;
+    trace.absence = absence;
     trace.record_operation(crate::core::model::MemoryOperation {
         kind: "encode".into(),
         at: trace.created_at,

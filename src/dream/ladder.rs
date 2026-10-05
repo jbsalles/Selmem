@@ -48,10 +48,11 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
         if t.channel.verbatim() {
             continue;
         }
-        let s = t
-            .schema
-            .clone()
-            .unwrap_or_else(|| "self".into());
+        let s = format!(
+            "{}:{}",
+            t.schema.clone().unwrap_or_else(|| "self".into()),
+            t.stake_mark
+        );
         match t.status {
             // Merged siblings stay Myth; they still count as episodes.
             TraceStatus::Active | TraceStatus::Cold => {
@@ -114,13 +115,9 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
             .iter()
             .filter_map(|id| store.traces.get(id))
             .collect();
-        let statement = match narrator.distill_axiom(&traces) {
-            Some(s) if !s.trim().is_empty() => s,
-            _ => match crate::recall::narrator::RuleNarrator.distill_axiom(&traces) {
-                Some(s) => s,
-                None => charge_statement(&schema, preview_v),
-            },
-        };
+        let (schema, mark) = schema.split_once(':').map(|(s, m)| (s.to_string(), m.to_string())).unwrap_or((schema, String::new()));
+        let preview_v = weighted_valence(store, &support);
+        let statement = stake_axiom(&schema, &mark, &traces, preview_v);
         if existing.iter().any(|s| s == &statement) {
             continue;
         }
@@ -140,8 +137,12 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
             strength,
             created_at: now_secs(),
             superseded_by: None,
-            schema: Some(schema),
+            schema: Some(schema.clone()),
             layer,
+            stake_kind: traces.first().map(|t| t.stake_kind).unwrap_or_default(),
+            bearer: traces.first().map(|t| t.bearer).unwrap_or_default(),
+            loss_kind: traces.first().map(|t| t.loss_kind).unwrap_or_default(),
+            stake_mark: mark.clone(),
         };
         if let Some((ref prev_id, prev_strength, prev_v)) = prev {
             let flipped = prev_v * preview_v < 0.0
@@ -220,13 +221,7 @@ fn promote_traits(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
             .iter()
             .filter_map(|id| store.traces.get(id))
             .collect();
-        let statement = narrator.distill_axiom(&traces).unwrap_or_else(|| {
-            if label == "trust" {
-                "I attach slowly, but I stay.".into()
-            } else {
-                "I pull away when someone vanishes without warning.".into()
-            }
-        });
+        let statement = stake_axiom(label, "", &traces, 0.0);
         let mean_v = bucket.iter().map(|a| a.valence).sum::<f32>() / bucket.len() as f32;
         let axiom = IdentityAxiom {
             id: new_id("ax"),
@@ -238,6 +233,10 @@ fn promote_traits(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
             superseded_by: None,
             schema: Some(label.into()),
             layer: AxiomLayer::Trait,
+            stake_kind: crate::core::model::StakeKind::None,
+            bearer: crate::core::model::Bearer::Self_,
+            loss_kind: crate::core::model::LossKind::None,
+            stake_mark: String::new(),
         };
         store.add_axiom(axiom.clone());
         out.push(axiom);
@@ -286,7 +285,29 @@ fn weighted_valence(store: &MemoryStore, ids: &[String]) -> f32 {
     if w <= 0.0 { 0.0 } else { acc / w }
 }
 
-fn charge_statement(schema: &str, _valence: f32) -> String {
-    // A single charged hour is a motif, not a law. The policy wording is for a belief.
-    crate::lexicon::rule().axiom_mid.replace("{schema}", schema)
+fn stake_axiom(schema: &str, mark: &str, traces: &[&crate::core::model::MemoryTrace], valence: f32) -> String {
+    let kind = traces.first().map(|t| t.stake_kind.token()).unwrap_or("none");
+    let bearer = traces.first().map(|t| t.bearer.token()).unwrap_or("world");
+    let loss = traces.first().map(|t| t.loss_kind.token()).unwrap_or("none");
+    let sign = if valence <= -0.2 { "against" } else if valence >= 0.2 { "for" } else { "under" };
+    format!(
+        "stake={kind} bearer={bearer} loss={loss} mark={mark} n={} sign={sign} schema={schema}",
+        traces.len()
+    )
+}
+
+fn hour_act(traces: &[&crate::core::model::MemoryTrace]) -> String {
+    const MARKS: &[&str] = &["withdrawn", "cancelled", "extended", "renewed"];
+    for t in traces {
+        let blob = format!("{} {}", t.core, t.gist).to_lowercase();
+        for m in MARKS {
+            if blob.contains(m) {
+                return (*m).to_string();
+            }
+        }
+        if let Some(a) = t.semantic.actions.first() {
+            return a.clone();
+        }
+    }
+    String::new()
 }

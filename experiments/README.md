@@ -9,6 +9,7 @@ This folder is the public record of the SelMem benches. The white paper states t
 | What | Stimulus | Runner | Offline | Grok |
 | --- | --- | --- | --- | --- |
 | Bifurcation (one marked hour) | `data/bifurcation.json` | `examples/bifurcation` | yes | 1 pair |
+| Fork stage 0 (opposite stake, scrubbed suffix) | `data/fork.json` | `examples/fork` | yes | Grok-4.3 n=5, 100/100 valid; one hour `d_beh` 0; fork3 night mean 0.80, clean 3/5 |
 | Split lives (five hours each side) | `data/divergence.json` | `examples/divergence` | yes | not run |
 | Erasure (trivia vs aversion) | `data/erasure.json` | `examples/erasure` | yes | not run |
 | v0.1 C0 / C1 / C2 | `data/v01.json` | `examples/benchmark` | yes | 10 pairs × k=24 and k=8 |

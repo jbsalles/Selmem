@@ -42,6 +42,8 @@ pub struct SelectiveMemory {
     mouth_held: bool,
     /// Outside labeler. None means the organ does not invent a proposition.
     scorer: Option<Box<dyn crate::recall::PropositionScorer>>,
+    /// Ablation. The mouth does not receive the reading profile.
+    drop_stake: bool,
 }
 
 /// Runtime LLM endpoint. Key stays on the process; GET only reports a mask.
@@ -83,6 +85,7 @@ impl SelectiveMemory {
             mouth_epoch: 0,
             mouth_held: false,
             scorer: None,
+            drop_stake: false,
         }
     }
 
@@ -119,6 +122,7 @@ impl SelectiveMemory {
                 mouth_epoch: 0,
                 mouth_held: false,
                 scorer: None,
+            drop_stake: false,
             })
         } else {
             Ok(Self {
@@ -137,6 +141,7 @@ impl SelectiveMemory {
                 mouth_epoch: 0,
                 mouth_held: false,
                 scorer: None,
+            drop_stake: false,
             })
         }
     }
@@ -159,6 +164,12 @@ impl SelectiveMemory {
         self.seed = seed;
         let origin = (seed as u64).saturating_mul(0x1000).max(1);
         crate::core::model::set_next_id(origin);
+        self
+    }
+
+    /// Ablation. The mouth is not given the reading profile.
+    pub fn with_drop_stake(mut self) -> Self {
+        self.drop_stake = true;
         self
     }
 
@@ -666,12 +677,18 @@ impl SelectiveMemory {
         axioms_only: bool,
     ) -> (String, RetrievalDump) {
         let draft = self.open_mouth_inner(user, hold, bias, marked, axioms_only);
-        let reply = self.narrator.reply(
+        let profile = if self.drop_stake {
+            String::new()
+        } else {
+            crate::recall::reading::ReadingProfile::from_book(&self.store, &draft.mood).render()
+        };
+        let reply = self.narrator.reply_disposed(
             &draft.user,
             &draft.memories,
             &draft.axioms,
             &draft.mood,
             &draft.talk,
+            &profile,
         );
         self.close_mouth(&draft, &reply);
         (reply, draft.dump)
@@ -744,21 +761,35 @@ impl SelectiveMemory {
                 .who_am_i()
                 .into_iter()
                 .filter(|a| {
-                    if !drop_ax {
+                    if drop_ax
+                        && crate::recall::retrieve::axiom_supported_by_lineage(
+                            &a.support_trace_ids,
+                            a.schema.as_deref(),
+                            &lineage,
+                            &lineage_schemas,
+                        )
+                    {
+                        return false;
+                    }
+                    // Only the strongest belief may color a probe that does not name the hour.
+                    // Every other belief stays behind the probe's own tokens, or an unrelated stake colors the offer.
+                    let strongest_belief = self
+                        .who_am_i()
+                        .into_iter()
+                        .find(|a| a.layer == crate::core::model::AxiomLayer::Belief)
+                        .map(|a| a.id.clone());
+                    if a.layer == crate::core::model::AxiomLayer::Belief
+                        && strongest_belief.as_deref() == Some(a.id.as_str())
+                    {
                         return true;
                     }
-                    !crate::recall::retrieve::axiom_supported_by_lineage(
-                        &a.support_trace_ids,
-                        a.schema.as_deref(),
-                        &lineage,
-                        &lineage_schemas,
-                    )
+                    let mut probe_cloud = std::collections::HashMap::new();
+                    for token in crate::encode::scoring::token_set(user) {
+                        probe_cloud.insert(token, 1.0);
+                    }
+                    crate::recall::retrieve::statement_anchored(&probe_cloud, &a.statement)
                 })
                 .map(|a| a.statement.clone())
-                .filter(|s| {
-                    let cloud = crate::recall::retrieve::context_cloud_pub(&self.store, user);
-                    crate::recall::retrieve::statement_anchored(&cloud, s)
-                })
                 .collect();
             let memories: Vec<String> = if axioms_only {
                 Vec::new()

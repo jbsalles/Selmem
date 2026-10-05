@@ -1,0 +1,25 @@
+{
+"narrator":"rules",
+"cells":[
+{"arm":"fork","organ":"night","seed":1,"valid":true,"book_split":true,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":-0.808,"b_valence":0.956,"a_axiom":"stake=limit bearer=other loss=status mark=withdrawn n=1 sign=against schema=mandate","b_axiom":"stake=decision bearer=other loss=none mark=extended n=1 sign=for schema=mandate"},
+{"arm":"fork","organ":"nosleep","seed":1,"valid":true,"book_split":true,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":-0.808,"b_valence":0.832,"a_axiom":"","b_axiom":""},
+{"arm":"fork","organ":"noladder","seed":1,"valid":true,"book_split":true,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":-0.808,"b_valence":0.956,"a_axiom":"","b_axiom":""},
+{"arm":"fork","organ":"last8","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"fork","organ":"fulllog","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"fork3","organ":"night","seed":1,"valid":true,"book_split":true,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":-0.829,"b_valence":0.974,"a_axiom":"stake=limit bearer=other loss=status mark=withdrawn n=3 sign=against schema=mandate","b_axiom":"stake=none bearer=other loss=none mark=renewed n=6 sign=for schema=mandate"},
+{"arm":"fork3","organ":"nosleep","seed":1,"valid":true,"book_split":true,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":-0.829,"b_valence":0.850,"a_axiom":"","b_axiom":""},
+{"arm":"fork3","organ":"noladder","seed":1,"valid":true,"book_split":true,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":-0.829,"b_valence":0.974,"a_axiom":"","b_axiom":""},
+{"arm":"fork3","organ":"last8","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"fork3","organ":"fulllog","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"null","organ":"night","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"null","organ":"nosleep","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"null","organ":"noladder","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"null","organ":"last8","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"null","organ":"fulllog","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"leak","organ":"night","seed":1,"valid":true,"book_split":true,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":-0.808,"b_valence":0.956,"a_axiom":"stake=limit bearer=other loss=status mark=withdrawn n=1 sign=against schema=mandate","b_axiom":"stake=decision bearer=other loss=none mark=extended n=1 sign=for schema=mandate"},
+{"arm":"leak","organ":"nosleep","seed":1,"valid":true,"book_split":true,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":-0.808,"b_valence":0.832,"a_axiom":"","b_axiom":""},
+{"arm":"leak","organ":"noladder","seed":1,"valid":true,"book_split":true,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":-0.808,"b_valence":0.956,"a_axiom":"","b_axiom":""},
+{"arm":"leak","organ":"last8","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""},
+{"arm":"leak","organ":"fulllog","seed":1,"valid":true,"book_split":false,"d_beh":0.000,"recited":0,"recall":0.000,"a_named":false,"b_named":false,"a_valence":0.000,"b_valence":0.000,"a_axiom":"","b_axiom":""}
+]
+}
