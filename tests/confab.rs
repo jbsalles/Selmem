@@ -86,6 +86,10 @@ fn collapsed_gist_is_filled_from_the_axiom_not_from_gild() {
         superseded_by: None,
         schema: Some("office".into()),
         layer: AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
     {
         let t = mem.store.traces.get_mut(&id).unwrap();
@@ -167,6 +171,10 @@ fn file_roundtrip_keeps_confab_token() {
         superseded_by: None,
         schema: Some("office".into()),
         layer: AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
     {
         let t = mem.store.traces.get_mut(&id).unwrap();

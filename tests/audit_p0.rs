@@ -56,18 +56,17 @@ fn detached_clocks_do_not_share_a_jump() {
 }
 
 #[test]
-fn different_cause_is_not_the_same_claim() {
+fn different_cause_without_witness_is_unjudged() {
     let j = selmem::recall::judge_against_core(
         "He left because he hated me",
-        "He left because I misunderstood him",
-    );
-    assert_eq!(j.kind, selmem::recall::DetachKind::Elaborate);
+        "He left because I misunderstood him", &selmem::NullScorer);
+    assert_eq!(j.kind, selmem::recall::DetachKind::Unjudged);
     assert!(j.causal_match < 0.5);
 }
 
 #[test]
-fn paraphrase_of_leaving_is_a_reframe_not_a_departure() {
-    let j = selmem::recall::judge_against_core("She walked away", "She abandoned me");
+fn paraphrase_without_witness_does_not_invent_a_departure() {
+    let j = selmem::recall::judge_against_core("She walked away", "She abandoned me", &selmem::NullScorer);
     assert_ne!(j.kind, selmem::recall::DetachKind::Depart, "{:?}", j.kind);
     assert!(j.entity_match > 0.0);
 }

@@ -401,6 +401,10 @@ fn merge_keeps_axiom_backed_gist_and_valence() {
         superseded_by: None,
         schema: Some("office".into()),
         layer: selmem::AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
     let before = mem.store.traces[&keep].gist.clone();
     let val = mem.store.traces[&keep].valence;
@@ -438,6 +442,10 @@ fn rewrite_skips_axiom_backed_hours() {
         superseded_by: None,
         schema: Some("office".into()),
         layer: selmem::AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
     let before = mem.store.traces[&keep].gist.clone();
     let n = selmem::dream::rewrite::run(
@@ -446,6 +454,7 @@ fn rewrite_skips_axiom_backed_hours() {
         &selmem::RuleNarrator,
         &selmem::HashEmbedder,
         true,
+        &selmem::NullScorer,
     );
     let after = &mem.store.traces[&keep].gist;
     assert_eq!(after, &before, "rewrite must skip axiom-backed hours");
@@ -515,6 +524,7 @@ fn external_hour_is_not_rewritten() {
         &selmem::RuleNarrator,
         &selmem::HashEmbedder,
         true,
+        &selmem::NullScorer,
     );
     assert_eq!(mem.store.traces[&id].gist, gist0);
 }

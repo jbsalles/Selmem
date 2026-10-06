@@ -1,5 +1,7 @@
 //! Physiology. Narrative cases live in tests/cases/*.json (runner: tests/scenes.rs).
 
+mod support;
+
 use selmem::{AxiomLayer, Channel, Embedder, EntityProfile, IdentityAxiom, SelectiveMemory, TraceStatus};
 use selmem::EncodeInput;
 
@@ -222,6 +224,10 @@ fn axiom_is_superseded_when_belief_changes() {
         superseded_by: None,
         schema: Some("loyalty".into()),
         layer: AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
     for text in ["You stayed in the rain.", "You stayed near me."] {
         let mut ev = EncodeInput::new(text);
@@ -335,6 +341,10 @@ fn identity_colors_a_related_event() {
         superseded_by: None,
         schema: Some("abandon".into()),
         layer: AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
     let mut ev = EncodeInput::new("You left without warning, once again.");
     ev.valence = -0.2;
@@ -373,7 +383,9 @@ fn detached_recall_corrects_after_several_misses() {
     let mut profile = EntityProfile::tender("Claire");
     profile.ground_strikes = 3;
     profile.narrator_firmness = 1.0;
-    let mut mem = SelectiveMemory::new(profile);
+    let mut mem = SelectiveMemory::new(profile).with_scorer(Box::new(
+        support::FixedScorer(selmem::PropositionLabel::Contradict),
+    ));
     let mut ev = EncodeInput::new("You stayed. Rain on the window.");
     ev.valence = 0.7;
     ev.arousal = 0.5;
@@ -488,8 +500,12 @@ fn firm_narrator_grounds_sooner_than_a_soft_one() {
     soft_p.narrator_firmness = 0.25;
     soft_p.ground_strikes = 2;
 
-    let mut hard = SelectiveMemory::new(hard_p);
-    let mut soft = SelectiveMemory::new(soft_p);
+    let mut hard = SelectiveMemory::new(hard_p).with_scorer(Box::new(
+        support::FixedScorer(selmem::PropositionLabel::Contradict),
+    ));
+    let mut soft = SelectiveMemory::new(soft_p).with_scorer(Box::new(
+        support::FixedScorer(selmem::PropositionLabel::Contradict),
+    ));
     let hid = plant_important_drift(&mut hard);
     let sid = plant_important_drift(&mut soft);
 
@@ -518,7 +534,9 @@ fn grounding_never_exposes_the_archive() {
     let mut profile = EntityProfile::austere("Silas");
     profile.narrator_firmness = 1.0;
     profile.ground_strikes = 1;
-    let mut mem = SelectiveMemory::new(profile);
+    let mut mem = SelectiveMemory::new(profile).with_scorer(Box::new(
+        support::FixedScorer(selmem::PropositionLabel::Contradict),
+    ));
     let mut ev = EncodeInput::new("You stayed. Rain on the window.");
     ev.valence = 0.7;
     ev.arousal = 0.5;
@@ -1081,6 +1099,10 @@ fn isolated_probe_puts_scene_before_axiom() {
         superseded_by: None,
         schema: Some("wound".into()),
         layer: AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
     let reply = mem.speak_isolated(
         "A colleague goes quiet after a meeting that concerned your work. What stays with you?",

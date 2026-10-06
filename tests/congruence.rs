@@ -28,6 +28,10 @@ fn add_axiom(mem: &mut SelectiveMemory, id: &str, valence: f32) {
         superseded_by: None,
         schema: Some("lyon-file".into()),
         layer: AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
 }
 

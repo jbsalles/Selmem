@@ -116,6 +116,10 @@ fn confidence_starts_at_one_and_falls_when_the_gist_is_rewritten() {
         superseded_by: None,
         schema: Some("office".into()),
         layer: selmem::AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
     assert!(selmem::dream::confab::fill_if_hole(
         &mut mem.store,

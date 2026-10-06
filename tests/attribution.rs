@@ -165,6 +165,10 @@ fn internal_same_sign_axiom_skips_rewrite() {
         superseded_by: None,
         schema: Some("lyon-file".into()),
         layer: AxiomLayer::Belief,
+        stake_kind: selmem::core::model::StakeKind::None,
+        bearer: selmem::core::model::Bearer::World,
+        loss_kind: selmem::core::model::LossKind::None,
+        stake_mark: String::new(),
     });
     assert!(selmem::dream::rewrite::skip_rewrite(&mem.store, &id));
 }

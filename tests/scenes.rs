@@ -77,6 +77,10 @@ fn seed_axioms(raw: &str, mem: &mut SelectiveMemory) {
             superseded_by: None,
             schema: field_str(&obj, "schema"),
             layer,
+            stake_kind: selmem::core::model::StakeKind::None,
+            bearer: selmem::core::model::Bearer::World,
+            loss_kind: selmem::core::model::LossKind::None,
+            stake_mark: String::new(),
         });
     }
 }
