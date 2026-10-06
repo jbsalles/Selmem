@@ -617,6 +617,7 @@ impl SelectiveMemory {
     /// Chat only. Pin the sitting's content lines so sleep can clear the
     /// frame without dropping what was just said. Does not change the gate.
     pub fn keep_sitting(&mut self) -> (usize, Option<String>) {
+        let _clock = self.enter_clock();
         self.talk.refresh();
         let lines: Vec<String> = self
             .talk
@@ -672,6 +673,7 @@ impl SelectiveMemory {
     /// Sitting hours are not vows. Fidelity floors at 0.15 (husk).
     /// Access drops; at the floor the hour goes latent, then leaves.
     pub fn fade_sitting(&mut self) {
+        let _clock = self.enter_clock();
         let talk_ids: Vec<String> = self
             .store
             .traces
@@ -718,6 +720,7 @@ impl SelectiveMemory {
 
     /// Drop the frame if the conversation went idle (10 min) or hit 2 h.
     pub fn refresh_talk(&mut self) {
+        let _clock = self.enter_clock();
         self.talk.refresh();
     }
 
@@ -730,6 +733,7 @@ impl SelectiveMemory {
     }
 
     pub fn close_mouth(&mut self, draft: &MouthDraft, reply: &str) {
+        let _clock = self.enter_clock();
         if draft.epoch != self.mouth_epoch {
             return;
         }

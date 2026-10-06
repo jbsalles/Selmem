@@ -48,7 +48,7 @@ fn semantic_core_names_actor_and_action_without_replacing_lexical_core() {
 #[test]
 fn detached_clocks_do_not_share_a_jump() {
     let mut a = SelectiveMemory::new(EntityProfile::tender("A")).detach_clock();
-    let mut b = SelectiveMemory::new(EntityProfile::tender("B")).detach_clock();
+    let b = SelectiveMemory::new(EntityProfile::tender("B")).detach_clock();
     let before = a.clock.now();
     a.advance_hours(48.0);
     assert!(a.clock.now() >= before + 47 * 3600);

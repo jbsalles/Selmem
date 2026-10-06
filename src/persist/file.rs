@@ -1,5 +1,5 @@
 use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, Seek, SeekFrom, Write};
 use std::path::Path;
 
 use crate::core::model::{
@@ -386,7 +386,7 @@ fn write_trace(w: &mut impl Write, t: &MemoryTrace) -> io::Result<()> {
     Ok(())
 }
 
-fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
+fn read_trace(r: &mut (impl BufRead + Seek)) -> io::Result<MemoryTrace> {
     let header = read_line(r)?;
     let p: Vec<&str> = header.split_whitespace().collect();
     if p.len() < 15 || p[0] != "trace" {
@@ -434,7 +434,7 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
             .and_then(|s| s.trim().parse().ok())
             .unwrap_or(0)
     };
-    let attribution = if next_line_starts_with(r, "attr ") {
+    let attribution = if next_line_starts_with(r, "attr ")? {
         let line = read_line(r).unwrap_or_default();
         let token = line.strip_prefix("attr ").unwrap_or("").trim();
         match token {
@@ -442,16 +442,16 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
             _ => return fail(format!("attr inconnu: {token}")),
         }
     } else if p.len() >= 17
-        || next_line_starts_with(r, "ops ")
-        || next_line_starts_with(r, "sem ")
-        || next_line_starts_with(r, "real ")
+        || next_line_starts_with(r, "ops ")?
+        || next_line_starts_with(r, "sem ")?
+        || next_line_starts_with(r, "real ")?
     {
         // Post-P1 file that omitted the line. None is a written legacy value, not a default.
         return fail("attr manquant");
     } else {
         Attribution::None
     };
-    let stake_line = if next_line_starts_with(r, "stake ") {
+    let stake_line = if next_line_starts_with(r, "stake ")? {
         Some(read_line(r)?)
     } else {
         None
@@ -514,7 +514,7 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
         trace.stake_mark = m;
         trace.absence = a;
     }
-    if next_line_starts_with(r, "ops ") {
+    if next_line_starts_with(r, "ops ")? {
         let line = read_line(r).unwrap_or_default();
         let n: usize = line.strip_prefix("ops ").unwrap_or("0").trim().parse().unwrap_or(0);
         for _ in 0..n {
@@ -545,7 +545,7 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
         trace.interpretation.statement = op.after.clone();
         trace.interpretation.confidence = op.confidence;
     }
-    if next_line_starts_with(r, "sem ") {
+    if next_line_starts_with(r, "sem ")? {
         let line = read_line(r).unwrap_or_default();
         let hp: Vec<&str> = line.split_whitespace().collect();
         let claim = read_blob(r).unwrap_or_default();
@@ -557,7 +557,7 @@ fn read_trace(r: &mut impl BufRead) -> io::Result<MemoryTrace> {
         trace.semantic.entities = if entities.is_empty() { Vec::new() } else { entities.split('\t').map(|s| s.to_string()).collect() };
         trace.semantic.actions = if actions.is_empty() { Vec::new() } else { actions.split('\t').map(|s| s.to_string()).collect() };
     }
-    if next_line_starts_with(r, "real ") {
+    if next_line_starts_with(r, "real ")? {
         let line = read_line(r).unwrap_or_default();
         let verifiable = line.split_whitespace().nth(1).map(|s| s == "1").unwrap_or(false);
         let claim = read_blob(r).unwrap_or_default();
@@ -755,17 +755,14 @@ fn parse_opt(s: &str) -> io::Result<Option<u64>> {
     }
 }
 
-fn next_line_starts_with(r: &mut impl BufRead, prefix: &str) -> bool {
-    match r.fill_buf() {
-        Ok(buf) if buf.is_empty() => false,
-        Ok(buf) => {
-            let n = buf.iter().position(|&b| b == b'\n').unwrap_or(buf.len());
-            std::str::from_utf8(&buf[..n])
-                .map(|s| s.starts_with(prefix))
-                .unwrap_or(false)
-        }
-        Err(_) => false,
-    }
+// A format marker may straddle the reader's internal buffer boundary.
+fn next_line_starts_with(r: &mut (impl BufRead + Seek), prefix: &str) -> io::Result<bool> {
+    let position = r.stream_position()?;
+    let mut line = String::new();
+    let result = r.read_line(&mut line);
+    r.seek(SeekFrom::Start(position))?;
+    result?;
+    Ok(line.starts_with(prefix))
 }
 
 fn empty_none(s: String) -> Option<String> {
@@ -822,4 +819,26 @@ fn fail<T>(msg: impl Into<String>) -> io::Result<T> {
 }
 fn invalid<E: std::fmt::Display>(e: E) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn optional_markers_cross_buffer_boundaries_without_consuming_input() {
+        for capacity in 1..=8 {
+            let mut reader = BufReader::with_capacity(
+                capacity,
+                Cursor::new(b"attr internal\nstake none\n"),
+            );
+            assert!(next_line_starts_with(&mut reader, "attr ").unwrap());
+            assert!(!next_line_starts_with(&mut reader, "ops ").unwrap());
+            assert_eq!(read_line(&mut reader).unwrap(), "attr internal");
+            assert!(next_line_starts_with(&mut reader, "stake ").unwrap());
+            assert_eq!(read_line(&mut reader).unwrap(), "stake none");
+            assert!(!next_line_starts_with(&mut reader, "real ").unwrap());
+        }
+    }
 }

@@ -8,7 +8,13 @@
 //! - copier-reason on day 90 is the January factor, independent of T0
 //! - primary / same-treatment / kettle-neutral arms as before
 //!
+//! Final mouth probes use an echo fixture to check the memories supplied to a narrator.
+//! They do not measure language-model generation.
+//!
 //! After 360 nights (primary): A keeps the vow and the kept date; both drop 4412.
+
+#[path = "support/echo.rs"]
+mod echo;
 
 use std::sync::Mutex;
 
@@ -25,6 +31,15 @@ fn with_real_clock<R>(f: impl FnOnce() -> R) -> R {
     let out = f();
     set_clock_scale(24);
     out
+}
+
+// Every clone observes exactly the same simulated instant, including on slow CI.
+fn simulated(mut memory: SelectiveMemory) -> SelectiveMemory {
+    memory.clock.detached = true;
+    memory.clock.origin_real = 4_000_000_000;
+    memory.clock.jump = 0;
+    memory.clock.scale = 1;
+    memory
 }
 
 const DAYS: u32 = 360;
@@ -293,6 +308,9 @@ fn horizon_year_one_stream() {
 
         let living_a = active_blob(&a);
         let living_b = active_blob(&b);
+        // Instrument only the final mouth: daily history keeps its original rule backend.
+        a = a.with_narrator(Box::new(echo::EchoNarrator));
+        b = b.with_narrator(Box::new(echo::EchoNarrator));
         let speak_a = a.speak_isolated(PROBE);
         let speak_b = b.speak_isolated(PROBE);
 
@@ -352,8 +370,8 @@ fn horizon_year_one_stream() {
 #[test]
 fn horizon_same_treatment() {
     with_real_clock(|| {
-        let mut a = SelectiveMemory::new(EntityProfile::tender("Claire"));
-        let mut c = SelectiveMemory::new(EntityProfile::tender("Claire"));
+        let mut a = simulated(SelectiveMemory::new(EntityProfile::tender("Claire")));
+        let mut c = simulated(SelectiveMemory::new(EntityProfile::tender("Claire")));
         a.profile.encode_threshold = 0.12;
         c.profile.encode_threshold = 0.12;
         let pre = singularity_distance(&fingerprint(&a), &fingerprint(&c));
@@ -385,7 +403,8 @@ fn horizon_same_treatment() {
             }
             shared_day(&mut a, n);
             shared_day(&mut c, n);
-            advance_hours(24.0);
+            a.advance_hours(24.0);
+            c.advance_hours(24.0);
             night(&mut a);
             night(&mut c);
         }
@@ -458,6 +477,9 @@ fn horizon_neutral_t0() {
             .traces
             .values()
             .any(|t| names_vow(&t.gist) || names_vow(&t.core));
+        // Instrument only the final mouth: daily history keeps its original rule backend.
+        a = a.with_narrator(Box::new(echo::EchoNarrator));
+        b = b.with_narrator(Box::new(echo::EchoNarrator));
         let speak_a = a.speak_isolated(PROBE);
         let speak_b = b.speak_isolated(PROBE);
         let jan_a = has_january(&active_blob(&a));

@@ -1,5 +1,9 @@
 //! P1 storage + P2 skip_rewrite policy.
 
+mod support;
+#[path = "support/rewrite.rs"]
+mod rewrite;
+
 use selmem::{
     Attribution, AxiomLayer, EncodeInput, EntityProfile, IdentityAxiom, SelectiveMemory,
 };
@@ -177,7 +181,11 @@ fn internal_same_sign_axiom_skips_rewrite() {
 fn internal_conflict_night_moves_gist_keeps_core() {
     let mut p = EntityProfile::tender("B");
     p.encode_threshold = 0.05;
-    let mut mem = SelectiveMemory::new(p);
+    let mut mem = SelectiveMemory::new(p)
+        .with_narrator(Box::new(rewrite::RewriteNarrator))
+        .with_scorer(Box::new(support::FixedScorer(selmem::PropositionLabel::Entail)));
+    // Isolate the rewrite pass: a newly minted matching axiom can resolve conflict.
+    mem.cut.ladder = false;
     let id = mem
         .live_with(t0_internal(
             "The project was cancelled in front of the team.",

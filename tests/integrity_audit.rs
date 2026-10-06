@@ -1,5 +1,10 @@
 //! Behavioral audit of the integrity corrections.
+
 //! Does not read ORGAN-INTEGRITY.md. A pass here is a runtime fact.
+
+mod support;
+#[path = "support/rewrite.rs"]
+mod rewrite;
 
 use selmem::{
     Attribution, Channel, EncodeInput, EntityProfile, SelectiveMemory, TraceStatus,
@@ -136,10 +141,10 @@ fn rewrite_records_an_operation() {
     let n = selmem::dream::rewrite::run(
         &mut mem.store,
         &mem.profile,
-        &selmem::RuleNarrator,
+        &rewrite::RewriteNarrator,
         &selmem::HashEmbedder,
         true,
-        &selmem::NullScorer,
+        &support::FixedScorer(selmem::PropositionLabel::Entail),
     );
     assert!(n >= 1, "rewrite did not run");
     assert!(

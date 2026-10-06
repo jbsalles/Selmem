@@ -3,8 +3,7 @@
 //! No `MemoryTrace`, no profile, no I/O. A float cut may be passed in
 //! (`is_grounding_miss`). Embeddings rank recall; they do not decide this.
 
-use crate::encode::scoring::{lexical_similarity, token_set};
-use crate::lexicon;
+use crate::encode::scoring::{lexical_similarity};
 
 /// How the spoken sentence sits relative to the frozen core.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -172,14 +171,7 @@ fn entity_overlap(a: &str, b: &str) -> f32 {
     hit as f32 / ea.len().max(eb.len()) as f32
 }
 
-fn same_departure(a: &str, b: &str) -> bool {
-    const LEAVE: &[&str] = &["left", "abandoned", "walked", "went", "departed", "quit", "away"];
-    let al = a.to_lowercase();
-    let bl = b.to_lowercase();
-    let a_leave = LEAVE.iter().any(|w| al.contains(w));
-    let b_leave = LEAVE.iter().any(|w| bl.contains(w));
-    a_leave && b_leave && entity_overlap(a, b) >= 0.34
-}
+
 
 /// Miss if the kind is unauthorized, or if the identity gate fails the cut.
 pub fn is_grounding_miss(
@@ -202,35 +194,7 @@ fn extra_cause(generated: &str, core: &str) -> bool {
     CAUSE.iter().any(|m| generated.contains(m) && !core.contains(m))
 }
 
-fn extra_frame(generated: &str, core: &str) -> bool {
-    let lex = lexicon::affect();
-    let g_neg: f32 = lex
-        .neg
-        .iter()
-        .filter(|w| generated.contains(&w.stem) && !core.contains(&w.stem))
-        .map(|w| w.w)
-        .sum();
-    let g_pos: f32 = lex
-        .pos
-        .iter()
-        .filter(|w| generated.contains(&w.stem) && !core.contains(&w.stem))
-        .map(|w| w.w)
-        .sum();
-    let c_neg: f32 = lex
-        .neg
-        .iter()
-        .filter(|w| core.contains(&w.stem))
-        .map(|w| w.w)
-        .sum();
-    let c_pos: f32 = lex
-        .pos
-        .iter()
-        .filter(|w| core.contains(&w.stem))
-        .map(|w| w.w)
-        .sum();
-    // A new charged stem the core never used, and it actually shifts the frame.
-    (g_neg > 0.55 && g_neg > c_neg + 0.4) || (g_pos > 0.55 && g_pos > c_pos + 0.4)
-}
+
 
 fn has_neg(s: &str) -> bool {
     NEG.iter().any(|n| s.contains(n))

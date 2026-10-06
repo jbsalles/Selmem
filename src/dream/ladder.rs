@@ -6,14 +6,14 @@ use crate::core::model::{now_secs, new_id, AxiomLayer, IdentityAxiom, TraceStatu
 use crate::core::store::MemoryStore;
 use crate::recall::narrator::Narrator;
 
-pub fn run(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<IdentityAxiom> {
+pub fn run(store: &mut MemoryStore, _narrator: &dyn Narrator) -> Vec<IdentityAxiom> {
     let prior: Vec<String> = store
         .living_axioms()
         .into_iter()
         .map(|a| a.id.clone())
         .collect();
-    let mut axioms = extract_axioms(store, narrator);
-    axioms.extend(promote_traits(store, narrator));
+    let mut axioms = extract_axioms(store);
+    axioms.extend(promote_traits(store));
     rust_unused(store, &prior);
     axioms
 }
@@ -41,17 +41,16 @@ fn rust_unused(store: &mut MemoryStore, prior: &[String]) {
     }
 }
 
-fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<IdentityAxiom> {
-    let mut evidence: HashMap<String, Vec<String>> = HashMap::new();
-    let mut living: HashMap<String, Vec<String>> = HashMap::new();
+fn extract_axioms(store: &mut MemoryStore) -> Vec<IdentityAxiom> {
+    let mut evidence: HashMap<(String, String), Vec<String>> = HashMap::new();
+    let mut living: HashMap<(String, String), Vec<String>> = HashMap::new();
     for t in store.traces.values() {
         if t.channel.verbatim() {
             continue;
         }
-        let s = format!(
-            "{}:{}",
+        let s = (
             t.schema.clone().unwrap_or_else(|| "self".into()),
-            t.stake_mark
+            t.stake_mark.clone(),
         );
         match t.status {
             // Merged siblings stay Myth; they still count as episodes.
@@ -73,13 +72,13 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
         .collect();
 
     let mut created = Vec::new();
-    for (schema, ids) in evidence {
+    for ((schema, mark), ids) in evidence {
         let charge = schema_charge(store, &ids);
         // Count still mints a dull motif. Charge lets one wound mint without a second copy.
         if ids.len() < 2 && charge < 0.28 {
             continue;
         }
-        let Some(live_ids) = living.get(&schema) else {
+        let Some(live_ids) = living.get(&(schema.clone(), mark.clone())) else {
             continue;
         };
         let mut support = ids.clone();
@@ -90,7 +89,7 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
         let prev = store
             .living_axioms()
             .into_iter()
-            .find(|a| a.schema.as_deref() == Some(schema.as_str()))
+            .find(|a| a.schema.as_deref() == Some(schema.as_str()) && a.stake_mark == mark)
             .map(|a| (a.id.clone(), a.strength, a.valence));
         let traces_for_mean: Vec<&crate::core::model::MemoryTrace> = support
             .iter()
@@ -115,7 +114,6 @@ fn extract_axioms(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<Ident
             .iter()
             .filter_map(|id| store.traces.get(id))
             .collect();
-        let (schema, mark) = schema.split_once(':').map(|(s, m)| (s.to_string(), m.to_string())).unwrap_or((schema, String::new()));
         let preview_v = weighted_valence(store, &support);
         let statement = stake_axiom(&schema, &mark, &traces, preview_v);
         if existing.iter().any(|s| s == &statement) {
@@ -185,7 +183,7 @@ fn keep_schema_axiom(
     }
 }
 
-fn promote_traits(store: &mut MemoryStore, narrator: &dyn Narrator) -> Vec<IdentityAxiom> {
+fn promote_traits(store: &mut MemoryStore) -> Vec<IdentityAxiom> {
     let beliefs: Vec<IdentityAxiom> = store
         .living_axioms()
         .into_iter()
@@ -294,20 +292,4 @@ fn stake_axiom(schema: &str, mark: &str, traces: &[&crate::core::model::MemoryTr
         "stake={kind} bearer={bearer} loss={loss} mark={mark} n={} sign={sign} schema={schema}",
         traces.len()
     )
-}
-
-fn hour_act(traces: &[&crate::core::model::MemoryTrace]) -> String {
-    const MARKS: &[&str] = &["withdrawn", "cancelled", "extended", "renewed"];
-    for t in traces {
-        let blob = format!("{} {}", t.core, t.gist).to_lowercase();
-        for m in MARKS {
-            if blob.contains(m) {
-                return (*m).to_string();
-            }
-        }
-        if let Some(a) = t.semantic.actions.first() {
-            return a.clone();
-        }
-    }
-    String::new()
 }

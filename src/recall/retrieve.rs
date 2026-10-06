@@ -142,14 +142,28 @@ pub fn recall_with(
                 return None;
             }
             let mut score = recall_score_emb(trace, query, Some(&query_embedding), mood, profile);
-            let anchor = cloud_anchor(&cloud, trace);
+            // Operational facts have no identity/affect/recency dependency.
+            // Require lexical relevance; never give unrelated World records a floor.
+            if trace.channel.verbatim() && !talk {
+                let sim = crate::encode::scoring::lexical_similarity(query, &trace.gist)
+                    .max(crate::encode::scoring::lexical_similarity(query, &trace.core));
+                if sim <= 0.0 {
+                    return None;
+                }
+                score = 0.75 * sim + 0.25;
+            }
+            let anchor = if trace.channel.verbatim() && !talk {
+                1.0
+            } else {
+                cloud_anchor(&cloud, trace)
+            };
             if anchor <= 0.0 {
                 score = 0.0;
             } else {
                 score *= anchor;
             }
-            // Frozen δ. If DropLineage stops flattening Grok D, this is too large.
-            if !store.living_axiom_ids_for(&trace_id).is_empty() {
+            // Supporting axioms only assist an already anchored candidate.
+            if anchor > 0.0 && !store.living_axiom_ids_for(&trace_id).is_empty() {
                 score += 0.12;
             }
             // Episode probes ("what happened that day") must not lose to a
@@ -216,8 +230,19 @@ pub fn recall_with(
         };
 
         if live {
+            let operational = store.traces.get(trace_id).map(|t| {
+                t.channel.verbatim()
+                    && t.archive_id.as_ref()
+                        .and_then(|id| store.archives.get(id))
+                        .map(|a| a.source != "talk")
+                        .unwrap_or(true)
+            }).unwrap_or(false);
             if let Some(trace) = store.traces.get_mut(trace_id) {
-                refresh_access(trace, profile);
+                if operational {
+                    trace.access = 1.0;
+                } else {
+                    refresh_access(trace, profile);
+                }
                 trace.last_recalled_at = Some(now_secs());
             }
         }

@@ -399,7 +399,7 @@ fn run(n: usize, nights: u32) {
     let rec_div = 1.0 - lexical_similarity(&rec_c, &rec_s);
 
     // path-dependence: reverse non-world events, keep planted facts at same indices
-    let mut shuffled = events.clone();
+    let shuffled = events.clone();
     let worlds: Vec<_> = shuffled
         .iter()
         .enumerate()
