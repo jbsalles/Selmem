@@ -1,0 +1,43 @@
+name: Container
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build runtime image
+        run: docker build -t selmem-test .
+      - name: Start container
+        run: docker run -d --name selmem-test -p 10000:10000 -e SELMEM_TOKEN=ci-demo-token selmem-test
+      - name: Check health, UI, and authenticated API
+        shell: bash
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:10000/health >/dev/null; then
+              breakstaging
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://localhost:10000/health
+          curl --fail --silent http://localhost:10000/ | grep -qi '<html'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:10000/profile)" = 401
+          curl --fail --silent -H 'Authorization: Bearer ci-demo-token' http://localhost:10000/profile
+          curl --fail --silent -H 'Authorization: Bearer ci-demo-token' -H 'Content-Type: application/json' \
+            -d '{"event":"The appointment is Tuesday in room B.","channel":"world"}' http://localhost:10000/live
+          docker restart selmem-test
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:10000/health >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://localhost:10000/health
+      - name: Container logs
+        if: always()
+        run: docker logs selmem-test

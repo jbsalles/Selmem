@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: selmemd
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: SELMEM_NAME
+        value: Demo
+      - key: SELMEM_PROFILE
+        value: tender
+      - key: SELMEM_PATH
+        value: /var/lib/selmem/demo.db
+      - key: SELMEM_TOKEN
+        generateValue: true

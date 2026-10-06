@@ -1,0 +1,11 @@
+*
+!Cargo.toml
+!Cargo.lock
+!src/
+!src/**
+!data/
+!data/**
+!voices/
+!voices/**
+!deploy/
+!deploy/start.sh

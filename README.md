@@ -467,3 +467,7 @@ No local neural encoder ships in-tree: pass `--embed` if you have one.
 ## How it's built
 
 Humans own architecture, concepts and governance. Models draft code, tests, and prose. Generated patches are reviewed.
+## Test deployment
+
+Deploy the Rust server and UI together on Render Free using [the deployment guide](deploy/README.md).
+The `staging` branch deploys after CI passes; the demo uses temporary shared memory.
