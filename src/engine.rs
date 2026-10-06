@@ -32,6 +32,7 @@ pub struct SelectiveMemory {
     /// Live HTTP narrator bind. Not in the vault. Empty url = RuleNarrator.
     pub llm: LlmBind,
     narrator: Arc<dyn Narrator>,
+    semantic_interpreter: Option<Arc<dyn crate::encode::semantic::SemanticInterpreter>>,
     /// Experiment seed. Does not make the night stochastic; it seeds the id stream.
     pub seed: u32,
     pub clock: MemoryClock,
@@ -79,6 +80,7 @@ impl SelectiveMemory {
             recall_tally: RecallTally::default(),
             llm: LlmBind::default(),
             narrator: Arc::new(RuleNarrator),
+            semantic_interpreter: None,
             embedder: Box::new(HashEmbedder),
             seed: 0,
             clock: MemoryClock::default(),
@@ -107,6 +109,7 @@ impl SelectiveMemory {
                 recall_tally: RecallTally::default(),
                 llm: LlmBind::default(),
                 narrator: Arc::new(RuleNarrator),
+            semantic_interpreter: None,
                 embedder: Box::new(HashEmbedder),
                 seed: 0,
                 clock: MemoryClock {
@@ -135,6 +138,7 @@ impl SelectiveMemory {
                 recall_tally: RecallTally::default(),
                 llm: LlmBind::default(),
                 narrator: Arc::new(RuleNarrator),
+            semantic_interpreter: None,
                 embedder: Box::new(HashEmbedder),
                 seed: 0,
                 clock: MemoryClock::default(),
@@ -144,6 +148,14 @@ impl SelectiveMemory {
             drop_stake: false,
             })
         }
+    }
+
+    /// Select semantic interpretation independently of behavioral expression.
+    pub fn with_semantic_interpreter(
+        mut self, interpreter: Box<dyn crate::encode::semantic::SemanticInterpreter>,
+    ) -> Self {
+        self.semantic_interpreter = Some(Arc::from(interpreter));
+        self
     }
 
     pub fn with_narrator(mut self, narrator: Box<dyn Narrator>) -> Self {
@@ -302,7 +314,67 @@ impl SelectiveMemory {
             .into_iter()
             .map(|ax| ax.statement.clone())
             .collect();
-        encode::interpret(&mut input, &self.mood, &axioms, self.narrator.as_ref());
+        if input.semantics.is_none() {
+            if let Some(interpreter) = &self.semantic_interpreter {
+                match interpreter.interpret_event(input.event) {
+                    Ok(semantics) => input.semantics = Some(semantics),
+                    Err(reason) => return EncodeDecision {
+                        kept: false, score: 0.0, reason: format!("semantic interpretation failed: {reason}"),
+                        trace_id: None, archive_id: String::new(), parts: 0, kept_n: 0,
+                    },
+                }
+            }
+        }
+        if let Some(semantics) = &input.semantics {
+            if let Err(reason) = semantics.validate() {
+                return EncodeDecision {
+                    kept: false, score: 0.0, reason, trace_id: None,
+                    archive_id: String::new(), parts: 0, kept_n: 0,
+                };
+            }
+            input.valence = semantics.valence;
+            input.arousal = semantics.arousal;
+            input.disgust = semantics.disgust;
+            input.self_relevance = semantics.self_relevance;
+            input.goal_align = semantics.goal_relevance;
+            input.attribution = semantics.attribution;
+            input.schema = semantics.schema.clone();
+        } else {
+            // Compatibility path for historical protocols / old narrator implementations.
+            encode::interpret(&mut input, &self.mood, &axioms, self.narrator.as_ref());
+        }
+        let event_owned = input.event.to_string();
+        let proposed = encode::propose_split(&event_owned, self.narrator.as_ref());
+        let parts = encode::split_event(&event_owned, proposed.as_deref());
+        if parts.len() > 1 && input.semantics.is_some() && input.part_semantics.is_none() {
+            if let Some(interpreter) = &self.semantic_interpreter {
+                let annotations: Result<Vec<_>, String> = parts.iter().map(|part| {
+                    let s = interpreter.interpret_event(part)?;
+                    s.validate()?;
+                    Ok(s)
+                }).collect();
+                match annotations {
+                    Ok(s) => input.part_semantics = Some(s),
+                    Err(reason) => return EncodeDecision {
+                        kept: false, score: 0.0, reason: format!("semantic interpretation failed: {reason}"),
+                        trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
+                    },
+                }
+            } else {
+                return EncodeDecision {
+                    kept: false, score: 0.0, reason: "multipart annotations require per-slice semantics".into(),
+                    trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
+                };
+            }
+        }
+        if let Some(annotations) = &input.part_semantics {
+            if annotations.len() != parts.len() || annotations.iter().any(|s| s.validate().is_err()) {
+                return EncodeDecision {
+                    kept: false, score: 0.0, reason: "invalid per-slice annotations".into(),
+                    trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
+                };
+            }
+        }
         encode::paint(&mut self.store, &self.mood, &mut input);
         // How long the hour lasts follows how hard the text hit, unless the
         // caller already pinned permanence (shared protocol days).
@@ -320,14 +392,13 @@ impl SelectiveMemory {
         let arousal = input.arousal;
         let disgust = input.disgust;
         let input_source = input.source;
-        let event_owned = input.event.to_string();
-        let proposed = encode::propose_split(&event_owned, self.narrator.as_ref());
-        let decision = encode::encode_with_parts(
+        let decision = encode::gate::encode_with_interpreter(
             &mut self.store,
             &self.profile,
             input,
             self.embedder.as_ref(),
             proposed.as_deref(),
+            self.semantic_interpreter.as_deref(),
         );
         encode::maybe_set_core(
             &mut self.store,

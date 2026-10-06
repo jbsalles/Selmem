@@ -122,3 +122,5 @@ pub use recall::stance::{
     charged_mood, isolated_stance, is_charged, query_hits_episode,
 };
 pub use HttpNarrator as LLMNarrator;
+
+pub use encode::semantic::{EventSemantics, LexicalInterpreter, SemanticInterpreter};

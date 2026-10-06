@@ -5,6 +5,10 @@ use crate::core::model::{Attribution, Channel};
 /// One hour offered to the gate. Defaults are a neutral Selfhood event.
 pub struct EncodeInput<'a> {
     pub event: &'a str,
+    /// Optional semantic annotation. Supplied annotations bypass lexical inference.
+    pub semantics: Option<crate::encode::semantic::EventSemantics>,
+    /// Per-slice annotations, ordered exactly as split_event returns them.
+    pub part_semantics: Option<Vec<crate::encode::semantic::EventSemantics>>,
     pub source: &'a str,
     pub cues: Option<Vec<String>>,
     pub valence: f32,
@@ -26,6 +30,8 @@ impl<'a> EncodeInput<'a> {
     pub fn new(event: &'a str) -> Self {
         Self {
             event,
+            semantics: None,
+            part_semantics: None,
             source: "interaction",
             cues: None,
             valence: 0.0,

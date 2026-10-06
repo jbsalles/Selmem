@@ -20,10 +20,53 @@ pub fn encode(
 pub fn encode_with_parts(
     store: &mut MemoryStore,
     profile: &EntityProfile,
-    input: EncodeInput<'_>,
+    mut input: EncodeInput<'_>,
     embedder: &dyn Embedder,
     proposed: Option<&[String]>,
 ) -> EncodeDecision {
+    if let Some(s) = &input.semantics {
+        input.valence = s.valence;
+        input.arousal = s.arousal;
+        input.disgust = s.disgust;
+        input.self_relevance = s.self_relevance;
+        input.goal_align = s.goal_relevance;
+        input.attribution = s.attribution;
+        input.schema = s.schema.clone();
+    }
+    encode_with_interpreter(store, profile, input, embedder, proposed, None)
+}
+
+pub fn encode_with_interpreter(
+    store: &mut MemoryStore,
+    profile: &EntityProfile,
+    mut input: EncodeInput<'_>,
+    embedder: &dyn Embedder,
+    proposed: Option<&[String]>,
+    interpreter: Option<&dyn super::semantic::SemanticInterpreter>,
+) -> EncodeDecision {
+    let annotated = input.semantics.is_some() || interpreter.is_some();
+    // Resolve once at the boundary. The gate never infers psychological labels.
+    if input.semantics.is_none() {
+        let backend = interpreter.unwrap_or(&super::semantic::LexicalInterpreter);
+        match backend.interpret_event(input.event) {
+            Ok(mut s) => {
+                if interpreter.is_none() { s.core.polarity = input.valence.clamp(-1.0, 1.0); }
+                input.semantics = Some(s);
+            }
+            Err(reason) => return EncodeDecision {
+                kept: false, score: 0.0, reason, trace_id: None,
+                archive_id: String::new(), parts: 0, kept_n: 0,
+            },
+        }
+    }
+    if let Some(semantics) = &input.semantics {
+        if let Err(reason) = semantics.validate() {
+            return EncodeDecision {
+                kept: false, score: 0.0, reason, trace_id: None,
+                archive_id: String::new(), parts: 0, kept_n: 0,
+            };
+        }
+    }
     let parts = split_event(input.event, proposed);
     if parts.is_empty() {
         return EncodeDecision {
@@ -40,6 +83,39 @@ pub fn encode_with_parts(
         return encode_one(store, profile, input, embedder, None);
     }
 
+    // Interpret and validate all slices before writing anything. Never silently
+    // replace a selected learned backend with English lexical inference.
+    let lexical = super::semantic::LexicalInterpreter;
+    let backend = interpreter.unwrap_or(&lexical);
+    if annotated && interpreter.is_none() && input.part_semantics.is_none() {
+        return EncodeDecision {
+            kept: false, score: 0.0,
+            reason: "multipart annotations require a per-slice semantic interpreter".into(),
+            trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
+        };
+    }
+    let annotations = if let Some(annotations) = input.part_semantics.take() {
+        if annotations.len() != parts.len() || annotations.iter().any(|s| s.validate().is_err()) {
+            return EncodeDecision {
+                kept: false, score: 0.0, reason: "invalid per-slice annotations".into(),
+                trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
+            };
+        }
+        annotations
+    } else {
+        let mut annotations = Vec::new();
+        for part in &parts {
+            match backend.interpret_event(part).and_then(|s| { s.validate()?; Ok(s) }) {
+                Ok(s) => annotations.push(s),
+                Err(reason) => return EncodeDecision {
+                    kept: false, score: 0.0, reason: format!("semantic interpretation failed: {reason}"),
+                    trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
+                },
+            }
+        }
+        annotations
+    };
+
     // Novelty is against the book as it stood before this paste. Sibling
     // slices of the same document must not knock each other under τ.
     let prior_emb: Vec<Vec<f32>> = store
@@ -54,8 +130,10 @@ pub fn encode_with_parts(
     let mut first_archive = String::new();
     let mut best = 0.0_f32;
     let mut last_reason = String::new();
-    for part in &parts {
+    for (part, mut semantics) in parts.iter().zip(annotations) {
+        if !annotated { semantics.core.polarity = input.valence.clamp(-1.0, 1.0); }
         let mut slice = EncodeInput::new(part);
+        slice.semantics = Some(semantics.clone());
         slice.source = input.source;
         slice.valence = input.valence;
         slice.arousal = input.arousal;
@@ -68,6 +146,16 @@ pub fn encode_with_parts(
         slice.schema = input.schema.clone();
         slice.channel = input.channel;
         slice.permanence = input.permanence;
+        slice.paint_from = input.paint_from.clone();
+        if interpreter.is_some() || annotated {
+            slice.valence = semantics.valence;
+            slice.arousal = semantics.arousal;
+            slice.disgust = semantics.disgust;
+            slice.self_relevance = semantics.self_relevance;
+            slice.goal_align = semantics.goal_relevance;
+            slice.attribution = semantics.attribution;
+            slice.schema = semantics.schema;
+        }
         let d = encode_one(
             store,
             profile,
@@ -239,18 +327,21 @@ fn encode_one(
         absence: None,
     };
     trace.interpretation.statement = trace.gist.clone();
-    trace.semantic = crate::core::model::SemanticCore::from_event(input.event, &trace.core, input.valence);
+    if let Some(semantics) = input.semantics {
+        trace.semantic = semantics.core;
+        // The factual core remains grounded by the existing core acceptance pass.
+        trace.semantic.claim = trace.core.clone();
+        trace.stake_kind = semantics.stake_kind;
+        trace.bearer = semantics.bearer;
+        trace.loss_kind = semantics.loss_kind;
+        trace.stake_mark = semantics.stake_mark;
+        trace.absence = semantics.absence;
+    }
     trace.reality = crate::core::model::RealityAnchor {
         observation_id: trace.observation_id.clone(),
         claim: input.event.trim().to_string(),
         verifiable: true,
     };
-    let (kind, bearer, loss, mark, absence) = crate::core::model::derive_stake(input.event);
-    trace.stake_kind = kind;
-    trace.bearer = bearer;
-    trace.loss_kind = loss;
-    trace.stake_mark = mark;
-    trace.absence = absence;
     trace.record_operation(crate::core::model::MemoryOperation {
         kind: "encode".into(),
         at: trace.created_at,

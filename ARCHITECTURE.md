@@ -172,3 +172,52 @@ Ladder mints on charge (|v| * arousal * self_relevance), not headcount. One woun
 ## Stake (2026-10-05)
 
 `stake_kind`, `bearer`, `loss_kind`, `stake_mark` and `absence` are encode fields, read before affect. Merge and rewrite refuse a different mark. The ladder keys schema plus mark. Release multiplies hazard by stake survival: a limit is 0.55, a mood is 1.15. An unmet arrival is an absence. The mouth is not mapped from the sign. Dump experiments/selmem-fork-llm.json. Report §17.
+
+## Semantic interpretation boundary
+
+Semantic interpretation, memory dynamics and behavioral expression are independently
+selectable. `SemanticInterpreter::interpret_event` receives only the live event,
+never the archive, mood or axioms, and returns `EventSemantics`: semantic entities
+and actions, event type (`StakeKind`), bearer, loss, absence, affect, self relevance,
+goal relevance, attribution and schema. `EncodeInput::semantics` accepts external
+annotations directly; `SelectiveMemory::with_semantic_interpreter` binds a backend.
+The gate consumes those labels rather than identifying promises, boundaries or
+verbs itself. Selection, novelty, anchor seeding and subsequent memory dynamics
+continue to use the existing rules. Novelty remains a comparison to the lived book;
+no unused prediction-error variable or new psychological coefficient is added.
+
+`LexicalInterpreter` preserves the English lexical baseline, including its known
+limitations. The existing `SemanticCore::from_event` and `derive_stake` APIs delegate
+to this backend for backwards compatibility and legacy snapshot recovery. Existing
+organs without a selected interpreter retain the historical affect/narrator path.
+The lexical backend is explicitly an implementation choice, not a learned result.
+
+`HttpNarrator` also implements `SemanticInterpreter`, using the same HTTP transport
+in an independent role. Bind a separate instance as interpreter and another as
+narrator. Semantic HTTP calls have no identity context. The strict line protocol
+rejects missing fields, duplicate fields, invalid enums, out-of-range and non-finite
+numbers. `FailurePolicy::Error` rejects intake; fallback policies use the lexical
+baseline and mark the backend's failure log. Keep a shared interpreter handle to
+inspect `Narrator::failure_log` when reporting fallback use.
+
+```rust
+use selmem::{EntityProfile, FailurePolicy, HttpNarrator, SelectiveMemory};
+let interpreter = HttpNarrator::parse(
+    "http://localhost:11434/v1/chat/completions", "your-model", None,
+).unwrap().with_policy(FailurePolicy::Error);
+let organ = SelectiveMemory::new(EntityProfile::new("ada"))
+    .with_semantic_interpreter(Box::new(interpreter));
+// Attach a behavioral narrator independently with with_narrator.
+```
+
+Long events are interpreted per fact slice. All annotations are validated before
+paint, talk or archive writes. Whole-document annotations must supply
+`EncodeInput::part_semantics` for the exact `split_event` order or select a backend
+that can interpret each slice. This prevents a promise or actor in one slice from
+being copied to every other slice. Semantic annotations survive using the existing
+trace/snapshot fields; backend bindings remain runtime configuration.
+
+This change separates event interpretation at intake. Narrative reconstruction,
+core grounding guards and the rule narrator still contain language-dependent
+fallbacks; they are not a claim of language-independent learned behavior. Learned
+interpretation requires empirical evaluation against the lexical baseline.

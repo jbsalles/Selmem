@@ -331,55 +331,8 @@ impl Default for SemanticCore {
 
 impl SemanticCore {
     pub fn from_event(event: &str, claim: &str, valence: f32) -> Self {
-        let entities = extract_entities(event);
-        let actions = extract_actions(event);
-        Self {
-            claim: claim.to_string(),
-            entities,
-            actions,
-            polarity: valence.clamp(-1.0, 1.0),
-            confidence: 0.55,
-        }
+        crate::encode::semantic::legacy_core(event, claim, valence)
     }
-}
-
-fn extract_entities(event: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    for raw in event.split_whitespace() {
-        let w = raw.trim_matches(|c: char| !c.is_alphanumeric());
-        if w.len() < 2 {
-            continue;
-        }
-        let low = w.to_lowercase();
-        let pronoun = matches!(low.as_str(), "i" | "me" | "she" | "he" | "they" | "we" | "him" | "her");
-        let named = w.chars().next().map(|c| c.is_uppercase()).unwrap_or(false);
-        if pronoun || named {
-            if !out.iter().any(|e: &String| e.eq_ignore_ascii_case(w)) {
-                out.push(w.to_string());
-            }
-        }
-    }
-    out.truncate(8);
-    out
-}
-
-fn extract_actions(event: &str) -> Vec<String> {
-    const VERBS: &[&str] = &[
-        "left", "said", "walked", "abandoned", "told", "asked", "stayed", "opened", "closed",
-        "went", "came", "took", "gave", "kept", "broke", "loved", "hated", "waited", "lied",
-        "withdrawn", "renewed",
-    ];
-    let mut out = Vec::new();
-    for raw in event.split_whitespace() {
-        let w = raw.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase();
-        if VERBS.contains(&w.as_str()) || (w.len() > 4 && w.ends_with("ed")) {
-            if !out.contains(&w) {
-                out.push(w);
-            }
-        }
-    }
-    out.truncate(6);
-    out
 }
 
 /// What is still checkable. Distinct from the belief core, which may be revised.
@@ -547,70 +500,7 @@ impl AbsenceKind {
 
 /// Stake read off the hour, before affect colors it.
 pub fn derive_stake(event: &str) -> (StakeKind, Bearer, LossKind, String, Option<AbsenceKind>) {
-    let low = event.to_lowercase();
-    let absence = if low.contains("no reply") || low.contains("unanswered") {
-        Some(AbsenceKind::Unanswered)
-    } else if low.contains("didn't come") || low.contains("did not come") || low.contains("missed") {
-        Some(AbsenceKind::Missed)
-    } else if low.contains("never arrived") || low.contains("unmet") {
-        Some(AbsenceKind::Unmet)
-    } else {
-        None
-    };
-    let kind = if absence.is_some() {
-        StakeKind::Absence
-    } else if low.contains("promise") || low.contains("vow") {
-        StakeKind::Promise
-    } else if low.contains("rule") || low.contains("must") {
-        StakeKind::Rule
-    } else if low.contains("limit") || low.contains("boundary") || low.contains("withdrawn") || low.contains("cancelled") {
-        StakeKind::Limit
-    } else if low.contains("decision") || low.contains("choose") {
-        StakeKind::Decision
-    } else if low.contains("present") || low.contains("stayed") {
-        StakeKind::Presence
-    } else if low.contains("felt") || low.contains("mood") {
-        StakeKind::Mood
-    } else {
-        StakeKind::None
-    };
-    let bearer = if low.contains(" i ") || low.starts_with("i ") {
-        Bearer::Self_
-    } else if low.contains("she ") || low.contains("he ") || low.contains("they ") {
-        Bearer::Other
-    } else {
-        Bearer::World
-    };
-    let loss = if kind == StakeKind::Limit {
-        LossKind::Status
-    } else if kind == StakeKind::Absence {
-        LossKind::Access
-    } else if kind == StakeKind::Promise || kind == StakeKind::Rule {
-        LossKind::Coherence
-    } else if kind == StakeKind::Presence {
-        LossKind::Time
-    } else {
-        LossKind::None
-    };
-    let mark = stake_mark(&low);
-    (kind, bearer, loss, mark, absence)
-}
-
-fn stake_mark(low: &str) -> String {
-    const SKIP: &[&str] = &[
-        "that", "this", "with", "from", "after", "before", "into", "your", "their", "been",
-        "were", "was", "have", "has", "had", "them", "they", "what", "the", "and", "for",
-    ];
-    let tokens: Vec<&str> = low
-        .split_whitespace()
-        .map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()))
-        .filter(|w| w.len() > 4 && !SKIP.contains(w))
-        .collect();
-    const PREFER: &[&str] = &["withdrawn", "cancelled", "extended", "renewed"];
-    if let Some(act) = tokens.iter().find(|w| PREFER.contains(w)) {
-        return (*act).to_string();
-    }
-    tokens.into_iter().max_by_key(|w| w.len()).unwrap_or("").to_string()
+    crate::encode::semantic::legacy_stake(event)
 }
 
 /// One lived episode. This is what the entity *uses*.
