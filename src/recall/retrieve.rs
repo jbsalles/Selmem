@@ -37,6 +37,12 @@ pub struct ScoredTrace {
     pub trace_id: String,
     pub score: f32,
     pub status: TraceStatus,
+    pub base_score: f32,
+    pub anchor: f32,
+}
+
+impl ScoredTrace {
+    pub fn is_eligible(&self) -> bool { eligible(self) }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -147,6 +153,7 @@ pub fn recall_with(
                 }
                 score = 0.75 * sim + 0.25;
             }
+            let base_score = score;
             let anchor = if trace.channel.verbatim() && !talk {
                 1.0
             } else {
@@ -163,14 +170,14 @@ pub fn recall_with(
             }
             // Episode probes ("what happened that day") must not lose to a
             // sharp World calendar line. Lived Selfhood keeps the floor.
-            if episode_ask(query) {
+            if anchor > 0.0 && episode_ask(query) {
                 if trace.channel.verbatim() {
                     score *= 0.32;
                 } else {
                     score += 0.20;
                 }
             }
-            if let Some(schema) = trace.schema.as_deref() {
+            if let Some(schema) = trace.schema.as_deref().filter(|_| anchor > 0.0) {
                 let q = query.to_ascii_lowercase();
                 for part in schema.split('-') {
                     if part.len() > 3 && q.contains(part) {
@@ -183,6 +190,8 @@ pub fn recall_with(
                 trace_id,
                 score,
                 status: trace.status,
+                base_score,
+                anchor,
             })
         })
         .collect();
@@ -489,7 +498,8 @@ fn context_cloud(
 ) -> std::collections::HashMap<String, f32> {
     use crate::encode::scoring::{behavior_weight, lexical_similarity, token_set};
     let mut weights: std::collections::HashMap<String, f32> = std::collections::HashMap::new();
-    let ids = store.active_ids();
+    let mut ids = store.active_ids();
+    ids.sort();
     let add = |weights: &mut std::collections::HashMap<String, f32>, text: &str, w: f32| {
         if w <= 0.0 { return; }
         for tok in token_set(text) {
@@ -499,6 +509,7 @@ fn context_cloud(
     let mut seeds: Vec<String> = Vec::new();
     for id in &ids {
         let Some(t) = store.traces.get(id) else { continue };
+        if t.suppressed || t.status == TraceStatus::Latent { continue; }
         let mut sim = lexical_similarity(query, &t.gist);
         sim = sim.max(lexical_similarity(query, &t.core));
         for cue in &t.cues {
@@ -532,9 +543,12 @@ fn context_cloud(
             }
         }
     }
+    linked.sort();
+    linked.dedup();
     for id in linked {
         if seeds.iter().any(|s| s == &id) { continue; }
         let Some(t) = store.traces.get(&id) else { continue };
+        if t.suppressed || t.status == TraceStatus::Latent { continue; }
         let w = 0.5 * behavior_weight(t) * t.self_relevance.max(0.05) * t.access.max(0.05);
         add(&mut weights, &t.gist, w);
         add(&mut weights, &t.core, w * 0.5);

@@ -331,3 +331,86 @@ fn trace_provenance_survives_file_and_sqlite_roundtrip() {
         std::fs::remove_file(path).unwrap();
     }
 }
+
+#[test]
+fn reported_event_retains_actor_and_incident_before_reassurance() {
+    let text = "Caroline said: Hey Mel! How're ya doin'? Recently, I had a not-so-great experience on a hike. I ran into a group of religious conservatives who said something that really upset me. It made me think how much work we still have to do for LGBTQ rights. It's been so helpful to have people around me who accept and support me, so I know I'll be ok!";
+    let mut mem = SelectiveMemory::new(EntityProfile::new("Claire"));
+    let mut input = EncodeInput::new(text);
+    input.permanence = 1.0;
+    input.attribution = Attribution::External;
+    let id = mem.live_with(input).trace_id.unwrap();
+    let t = &mem.store.traces[&id];
+    assert_eq!(t.bearer, Bearer::Other);
+    assert_eq!(t.semantic.entities[0], "Caroline");
+    assert_eq!(t.core, t.gist);
+    assert!(t.core.starts_with("Caroline said: Recently"));
+    assert!(t.core.contains("really upset me."));
+    assert!(t.core.split_whitespace().count() <= 64);
+    assert!(!t.core.contains("Hey Mel"));
+}
+#[test]
+fn core_cannot_reverse_actors_or_invent_short_words() {
+    assert!(selmem::accept_core("Bob betrayed Alice", "Alice betrayed Bob").is_none());
+    assert!(selmem::accept_core("Jo betrayed Bob", "Alice betrayed Bob").is_none());
+    assert!(selmem::accept_core("Alice betrayed Bob", "Yesterday Alice betrayed Bob").is_some());
+}
+#[test]
+fn first_person_entity_is_not_lost_because_it_is_one_letter() {
+    use selmem::SemanticInterpreter;
+    let s = selmem::LexicalInterpreter.interpret_event("I kept my promise.").unwrap();
+    assert_eq!(s.core.entities[0], "I");
+    assert_eq!(s.bearer, Bearer::Self_);
+}
+#[test]
+fn suppressed_traces_cannot_seed_context() {
+    let mut mem = SelectiveMemory::new(EntityProfile::new("test"));
+    let id = event(&mut mem, "Alice opened the project.", "a", "project", 0.8);
+    mem.store.traces.get_mut(&id).unwrap().suppressed = true;
+    assert!(selmem::recall::retrieve::context_cloud_pub(&mem.store, "Alice project").is_empty());
+}
+#[test]
+fn repeated_graph_links_cannot_amplify_context() {
+    let mut mem = SelectiveMemory::new(EntityProfile::new("test"));
+    let a = event(&mut mem, "Alice opened the project.", "a", "project", 0.8);
+    let c = event(&mut mem, "Alice closed project.", "c", "project", 0.8);
+    let b = event(&mut mem, "Zebra crossed desert.", "b", "desert", -0.8);
+    mem.store.edges.clear();
+    mem.store.traces.get_mut(&b).unwrap().schema = Some("journey".into());
+    mem.store.edges.insert(a, [b.clone()].into_iter().collect());
+    let first = selmem::recall::retrieve::context_cloud_pub(&mem.store, "Alice project");
+    mem.store.edges.insert(c, [b].into_iter().collect());
+    assert_eq!(first, selmem::recall::retrieve::context_cloud_pub(&mem.store, "Alice project"));
+}
+#[test]
+fn greetings_with_facts_are_not_discarded() {
+    let text = "Alice said: Hey I lost my job! My friends helped me.";
+    assert_eq!(selmem::encode::core::extractive_core(text), text);
+}
+#[test]
+fn episode_and_schema_bonus_cannot_revive_unanchored_memory() {
+    let mut mem = SelectiveMemory::new(EntityProfile::new("test"));
+    let id = event(&mut mem, "Zebra crossed desert.", "b", "desert", -0.8);
+    let t = mem.store.traces.get_mut(&id).unwrap();
+    t.embedding.clear();
+    t.cues.clear();
+    t.schema = Some("calendar".into());
+    let (recalled, dump) = mem.remember_with("What happened that day calendar?", selmem::RecallWrite::ReadOnly, selmem::RecallBias::Observed, &[]);
+    assert!(recalled.is_empty());
+    let c = dump.candidates.iter().find(|c| c.trace_id == id).unwrap();
+    assert_eq!(c.anchor, 0.0);
+    assert_eq!(c.score, 0.0);
+}
+#[test]
+fn proposed_core_cannot_drop_reported_speech_attribution() {
+    let text = "Alice said: I kept my promise.";
+    assert!(selmem::accept_core("I kept my promise.", text).is_none());
+    assert_eq!(selmem::accept_core(text, text).as_deref(), Some(text));
+}
+#[test]
+fn latent_scene_cannot_seed_lexical_context() {
+    let mut mem = SelectiveMemory::new(EntityProfile::new("test"));
+    let id = event(&mut mem, "Alice opened the project.", "a", "project", 0.8);
+    mem.store.traces.get_mut(&id).unwrap().status = TraceStatus::Latent;
+    assert!(selmem::recall::retrieve::context_cloud_pub(&mem.store, "Alice project").is_empty());
+}

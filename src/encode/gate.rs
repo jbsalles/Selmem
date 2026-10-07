@@ -328,7 +328,6 @@ fn encode_one(
         stake_mark: String::new(),
         absence: None,
     };
-    trace.interpretation.statement = trace.gist.clone();
     if let Some(semantics) = input.semantics {
         trace.semantic = semantics.core;
         if let Some(claim) = super::core::accept_core(&trace.semantic.claim, input.event) {
@@ -341,6 +340,11 @@ fn encode_one(
         trace.stake_mark = semantics.stake_mark;
         trace.absence = semantics.absence;
     }
+    // Quoted observations start with the same retained facts in core and gist.
+    if !trace.channel.verbatim() && super::core::reported_speech(input.event).is_some() {
+        trace.gist = trace.core.clone();
+    }
+    trace.interpretation.statement = trace.gist.clone();
     trace.reality = crate::core::model::RealityAnchor {
         observation_id: trace.observation_id.clone(),
         claim: trace.core.clone(),

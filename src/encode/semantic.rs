@@ -89,7 +89,7 @@ fn extract_entities(event: &str) -> Vec<String> {
     let mut out = Vec::new();
     for raw in event.split_whitespace() {
         let w = raw.trim_matches(|c: char| !c.is_alphanumeric());
-        if w.len() < 2 {
+        if w.is_empty() {
             continue;
         }
         let low = w.to_lowercase();
@@ -185,7 +185,9 @@ pub fn legacy_stake(event: &str) -> (StakeKind, Bearer, LossKind, String, Option
     };
     let words: Vec<_> = low.split_whitespace()
         .map(|w|w.trim_matches(|c:char|!c.is_alphanumeric())).collect();
-    let bearer = if words.contains(&"i") {
+    let bearer = if super::core::reported_speech(event).is_some() {
+        Bearer::Other
+    } else if words.iter().any(|w| matches!(*w, "i" | "i'm" | "i’ve" | "i've" | "i’m")) {
         Bearer::Self_
     } else if words.iter().any(|w|matches!(*w,"she"|"he"|"they"|"you")) {
         Bearer::Other
