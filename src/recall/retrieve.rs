@@ -131,12 +131,7 @@ pub fn recall_with(
             if trace.suppressed && !matches!(bias, RecallBias::ForceMarked) {
                 return None;
             }
-            let talk = trace
-                .archive_id
-                .as_ref()
-                .and_then(|id| store.archives.get(id))
-                .map(|a| a.source == "talk")
-                .unwrap_or(false);
+            let talk = trace.source == "talk";
             let access = crate::encode::scoring::access_value(trace, profile);
             if talk && access < 0.10 {
                 return None;
@@ -195,6 +190,13 @@ pub fn recall_with(
         b.score
             .partial_cmp(&a.score)
             .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| {
+                let ta = &store.traces[&a.trace_id];
+                let tb = &store.traces[&b.trace_id];
+                ta.core.cmp(&tb.core).then(ta.gist.cmp(&tb.gist))
+                    .then_with(|| ta.valence.total_cmp(&tb.valence)).then(ta.created_at.cmp(&tb.created_at))
+                    .then(a.trace_id.cmp(&b.trace_id))
+            })
     });
 
     let eligible: Vec<String> = ranked
@@ -231,11 +233,7 @@ pub fn recall_with(
 
         if live {
             let operational = store.traces.get(trace_id).map(|t| {
-                t.channel.verbatim()
-                    && t.archive_id.as_ref()
-                        .and_then(|id| store.archives.get(id))
-                        .map(|a| a.source != "talk")
-                        .unwrap_or(true)
+                t.channel.verbatim() && t.source != "talk"
             }).unwrap_or(false);
             if let Some(trace) = store.traces.get_mut(trace_id) {
                 if operational {

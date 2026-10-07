@@ -1,7 +1,7 @@
 use selmem::{accept_core, EncodeInput, EntityProfile, SelectiveMemory};
 
 #[test]
-fn without_llm_core_is_twelve_word_compress() {
+fn extractive_core_preserves_the_event_relation_within_its_budget() {
     let event = "Yesterday at 5:30pm leaving the office Marc told me he was resigning because Sarah threatened to expose the accounting problem";
     let mut mem = SelectiveMemory::new(EntityProfile::tender("t"));
     let mut ev = EncodeInput::new(event);
@@ -10,11 +10,18 @@ fn without_llm_core_is_twelve_word_compress() {
     ev.arousal = 1.0;
     assert!(mem.live_with(ev).kept);
     let core = mem.store.traces.values().next().unwrap().core.clone();
-    let prefix: String = event.split_whitespace().take(12).collect::<Vec<_>>().join(" ");
-    assert!(
-        core == prefix || core == format!("{prefix}…"),
-        "expected 12-word compress, got: {core}"
-    );
+    assert!(core.split_whitespace().count() <= 32);
+    for fact in [
+        "Marc",
+        "resigning",
+        "because",
+        "Sarah",
+        "threatened",
+        "accounting problem",
+    ] {
+        assert!(core.contains(fact), "lost event relation {fact}: {core}");
+    }
+    assert!(accept_core(&core, event).is_some());
 }
 
 #[test]

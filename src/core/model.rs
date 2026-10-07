@@ -551,6 +551,8 @@ pub struct MemoryTrace {
     pub detach_strikes: u32,
     /// Archive id of the observation. The verbatim is not copied into the live core.
     pub observation_id: Option<String>,
+    /// Ingest provenance belongs to the trace; runtime never asks the archive.
+    pub source: String,
     /// What SelMem concluded at encode. Distinct from the frozen core and the drifted gist.
     pub interpretation: InterpretationStamp,
     /// Genealogy of later transformations. Empty on old vaults.

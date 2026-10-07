@@ -244,6 +244,7 @@ pub fn save(
     let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_polarity REAL;");
     let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_confidence REAL;");
     let _ = db.exec("ALTER TABLE traces ADD COLUMN reality_claim TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN source TEXT;");
     let _ = db.exec("ALTER TABLE traces ADD COLUMN reality_verifiable INTEGER;");
     let _ = db.exec(
         "CREATE TABLE IF NOT EXISTS operations(
@@ -318,8 +319,8 @@ pub fn save(
         }
     }
     let q_tr = db.prepare(
-        "INSERT INTO traces(id,gist,core,valence,arousal,disgust,self_relevance,schema,channel,archive_id,created,last_recalled,last_consolidated,fidelity,permanence,rehearsals,access,status,salience,embedding,anchor,detach_strikes,attribution,self_congruence,confidence,suppressed,observation_id,semantic_claim,semantic_entities,semantic_actions,semantic_polarity,semantic_confidence,reality_claim,reality_verifiable)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29,?30,?31,?32,?33,?34)",
+        "INSERT INTO traces(id,gist,core,valence,arousal,disgust,self_relevance,schema,channel,archive_id,created,last_recalled,last_consolidated,fidelity,permanence,rehearsals,access,status,salience,embedding,anchor,detach_strikes,attribution,self_congruence,confidence,suppressed,observation_id,semantic_claim,semantic_entities,semantic_actions,semantic_polarity,semantic_confidence,reality_claim,reality_verifiable,source)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29,?30,?31,?32,?33,?34,?35)",
     )?;
     let q_cue = db.prepare("INSERT INTO cues(trace_id,cue) VALUES (?1,?2)")?;
     let q_dr = db.prepare(
@@ -366,6 +367,7 @@ pub fn save(
         q_tr.bind_f64(32, t.semantic.confidence as f64)?;
         q_tr.bind_text(33, &t.reality.claim)?;
         q_tr.bind_i64(34, if t.reality.verifiable { 1 } else { 0 })?;
+        q_tr.bind_text(35, &t.source)?;
         q_tr.step_done()?;
         for c in &t.cues {
             q_cue.bind_text(1, &t.id)?;
@@ -508,6 +510,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_polarity REAL;");
     let _ = db.exec("ALTER TABLE traces ADD COLUMN semantic_confidence REAL;");
     let _ = db.exec("ALTER TABLE traces ADD COLUMN reality_claim TEXT;");
+    let _ = db.exec("ALTER TABLE traces ADD COLUMN source TEXT;");
     let _ = db.exec("ALTER TABLE traces ADD COLUMN reality_verifiable INTEGER;");
     let _ = db.exec(
         "CREATE TABLE IF NOT EXISTS centers(
@@ -594,7 +597,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
 
     for row in query(
         &db,
-        "SELECT id,gist,core,valence,arousal,disgust,self_relevance,schema,channel,archive_id,created,last_recalled,last_consolidated,fidelity,permanence,rehearsals,access,status,salience,embedding,anchor,detach_strikes,attribution,self_congruence,confidence,suppressed,observation_id,semantic_claim,semantic_entities,semantic_actions,semantic_polarity,semantic_confidence,reality_claim,reality_verifiable FROM traces",
+        "SELECT id,gist,core,valence,arousal,disgust,self_relevance,schema,channel,archive_id,created,last_recalled,last_consolidated,fidelity,permanence,rehearsals,access,status,salience,embedding,anchor,detach_strikes,attribution,self_congruence,confidence,suppressed,observation_id,semantic_claim,semantic_entities,semantic_actions,semantic_polarity,semantic_confidence,reality_claim,reality_verifiable,source FROM traces",
     )? {
         if row.len() < 20 {
             continue;
@@ -671,6 +674,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
         if let Some(c) = row.get(31).and_then(|s| s.parse().ok()) {
             t.semantic.confidence = c;
         }
+        t.source = row.get(34).cloned().unwrap_or_default();
         if let Some(claim) = row.get(32).and_then(|s| empty_none(s)) {
             t.reality.claim = claim;
         }

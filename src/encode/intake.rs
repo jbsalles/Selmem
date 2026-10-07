@@ -10,6 +10,8 @@ pub struct EncodeInput<'a> {
     /// Per-slice annotations, ordered exactly as split_event returns them.
     pub part_semantics: Option<Vec<crate::encode::semantic::EventSemantics>>,
     pub source: &'a str,
+    /// Stable caller identity for one observation, including repeated ingestion.
+    pub observation_id: Option<&'a str>,
     pub cues: Option<Vec<String>>,
     pub valence: f32,
     pub arousal: f32,
@@ -33,6 +35,7 @@ impl<'a> EncodeInput<'a> {
             semantics: None,
             part_semantics: None,
             source: "interaction",
+            observation_id: None,
             cues: None,
             valence: 0.0,
             arousal: 0.3,

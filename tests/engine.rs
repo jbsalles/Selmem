@@ -231,9 +231,9 @@ fn axiom_is_superseded_when_belief_changes() {
         superseded_by: None,
         schema: Some("loyalty".into()),
         layer: AxiomLayer::Belief,
-        stake_kind: selmem::core::model::StakeKind::None,
-        bearer: selmem::core::model::Bearer::World,
-        loss_kind: selmem::core::model::LossKind::None,
+        stake_kind: selmem::core::model::StakeKind::Presence,
+        bearer: selmem::core::model::Bearer::Other,
+        loss_kind: selmem::core::model::LossKind::Time,
         stake_mark: String::new(),
     });
     for text in ["You stayed in the rain.", "You stayed near me."] {

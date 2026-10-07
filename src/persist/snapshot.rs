@@ -93,6 +93,7 @@ pub fn assemble_trace(
         cues,
         drifts,
         observation_id,
+        source: String::new(),
         interpretation,
         operations: Vec::new(),
         semantic,

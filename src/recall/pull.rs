@@ -22,11 +22,7 @@ pub fn is_slipping_away(trace: &MemoryTrace) -> bool {
 }
 
 pub fn semantic_core_of(trace: &MemoryTrace) -> &str {
-    if trace.reality.claim.trim().is_empty() {
-        trace.core.as_str()
-    } else {
-        trace.reality.claim.as_str()
-    }
+    trace.core.as_str()
 }
 
 pub fn misses_before_rewrite(trace: &MemoryTrace, profile: &EntityProfile) -> usize {
@@ -213,10 +209,6 @@ pub fn apply_grounding(
     }
 }
 
-fn claim_of(trace: &MemoryTrace, core: &str) -> String {
-    if trace.reality.claim.trim().is_empty() {
-        core.to_string()
-    } else {
-        trace.reality.claim.clone()
-    }
+fn claim_of(_trace: &MemoryTrace, core: &str) -> String {
+    core.to_string()
 }

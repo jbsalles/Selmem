@@ -135,6 +135,7 @@ pub fn encode_with_interpreter(
         let mut slice = EncodeInput::new(part);
         slice.semantics = Some(semantics.clone());
         slice.source = input.source;
+        slice.observation_id = input.observation_id;
         slice.valence = input.valence;
         slice.arousal = input.arousal;
         slice.disgust = input.disgust;
@@ -278,7 +279,7 @@ fn encode_one(
         core: if input.channel == Channel::Log {
             compress(input.event, 24)
         } else {
-            compress(input.event, 12)
+            super::core::extractive_core(input.event)
         },
         cues: input.cues.unwrap_or_else(|| default_cues(input.event)),
         valence: input.valence,
@@ -311,7 +312,8 @@ fn encode_one(
             input.self_relevance,
         ),
         detach_strikes: 0,
-        observation_id: Some(archive_id.clone()),
+        observation_id: Some(input.observation_id.unwrap_or(&archive_id).to_string()),
+        source: input.source.to_string(),
         interpretation: crate::core::model::InterpretationStamp {
             statement: String::new(),
             valence: input.valence,
@@ -329,7 +331,9 @@ fn encode_one(
     trace.interpretation.statement = trace.gist.clone();
     if let Some(semantics) = input.semantics {
         trace.semantic = semantics.core;
-        // The factual core remains grounded by the existing core acceptance pass.
+        if let Some(claim) = super::core::accept_core(&trace.semantic.claim, input.event) {
+            trace.core = claim;
+        }
         trace.semantic.claim = trace.core.clone();
         trace.stake_kind = semantics.stake_kind;
         trace.bearer = semantics.bearer;
@@ -339,7 +343,7 @@ fn encode_one(
     }
     trace.reality = crate::core::model::RealityAnchor {
         observation_id: trace.observation_id.clone(),
-        claim: input.event.trim().to_string(),
+        claim: trace.core.clone(),
         verifiable: true,
     };
     trace.record_operation(crate::core::model::MemoryOperation {

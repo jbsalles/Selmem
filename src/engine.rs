@@ -392,6 +392,7 @@ impl SelectiveMemory {
         let arousal = input.arousal;
         let disgust = input.disgust;
         let input_source = input.source;
+        let annotated_core = input.semantics.is_some();
         let decision = encode::gate::encode_with_interpreter(
             &mut self.store,
             &self.profile,
@@ -400,13 +401,15 @@ impl SelectiveMemory {
             proposed.as_deref(),
             self.semantic_interpreter.as_deref(),
         );
-        encode::maybe_set_core(
-            &mut self.store,
-            self.narrator.as_ref(),
-            &decision,
-            input_source,
-            &event_owned,
-        );
+        if !annotated_core {
+            encode::maybe_set_core(
+                &mut self.store,
+                self.narrator.as_ref(),
+                &decision,
+                input_source,
+                &event_owned,
+            );
+        }
         if decision.kept {
             self.mood.blend(
                 &Mood {
@@ -680,11 +683,7 @@ impl SelectiveMemory {
             .values()
             .filter(|t| {
                 t.permanence < 0.80
-                    && t.archive_id
-                        .as_ref()
-                        .and_then(|id| self.store.archives.get(id))
-                        .map(|a| a.source == "talk")
-                        .unwrap_or(false)
+                    && t.source == "talk"
             })
             .map(|t| t.id.clone())
             .collect();

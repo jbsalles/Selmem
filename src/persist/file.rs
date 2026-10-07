@@ -383,6 +383,10 @@ fn write_trace(w: &mut impl Write, t: &MemoryTrace) -> io::Result<()> {
     write_blob(w, &t.semantic.actions.join("\t"))?;
     writeln!(w, "real {}", if t.reality.verifiable { 1 } else { 0 })?;
     write_blob(w, &t.reality.claim)?;
+    writeln!(w, "observation")?;
+    write_blob(w, t.observation_id.as_deref().unwrap_or(""))?;
+    writeln!(w, "source")?;
+    write_blob(w, &t.source)?;
     Ok(())
 }
 
@@ -566,6 +570,15 @@ fn read_trace(r: &mut (impl BufRead + Seek)) -> io::Result<MemoryTrace> {
             trace.reality.claim = claim;
         }
         trace.reality.observation_id = trace.observation_id.clone();
+    }
+    if next_line_starts_with(r, "observation")? {
+        read_line(r)?;
+        trace.observation_id = empty_none(read_blob(r)?);
+        trace.reality.observation_id = trace.observation_id.clone();
+    }
+    if next_line_starts_with(r, "source")? {
+        read_line(r)?;
+        trace.source = read_blob(r)?;
     }
     if p.get(3) == Some(&"sealed") {
         trace.drifts.push(assemble_drift(

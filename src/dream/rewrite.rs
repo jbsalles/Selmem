@@ -8,6 +8,14 @@ use crate::core::store::MemoryStore;
 use crate::encode::embed::Embedder;
 use crate::recall::narrator::Narrator;
 
+#[derive(Clone, Debug, Default)]
+pub struct RewriteReport {
+    pub proposed: u32,
+    pub unjudged: u32,
+    pub grounding_refused: u32,
+    pub rewritten: u32,
+}
+
 pub fn run(
     store: &mut MemoryStore,
     profile: &EntityProfile,
@@ -16,6 +24,18 @@ pub fn run(
     ground: bool,
     scorer: &dyn crate::recall::PropositionScorer,
 ) -> u32 {
+    run_report(store, profile, narrator, embedder, ground, scorer).rewritten
+}
+
+pub fn run_report(
+    store: &mut MemoryStore,
+    profile: &EntityProfile,
+    narrator: &dyn Narrator,
+    embedder: &dyn Embedder,
+    ground: bool,
+    scorer: &dyn crate::recall::PropositionScorer,
+) -> RewriteReport {
+    let mut report = RewriteReport::default();
     let ids = store.active_ids();
     let mut rewritten = 0u32;
     let mut budget = 6u32;
@@ -24,7 +44,9 @@ pub fn run(
             break;
         }
         let (channel, _anchor, schema, embedding, status) = {
-            let Some(t) = store.traces.get(&id) else { continue };
+            let Some(t) = store.traces.get(&id) else {
+                continue;
+            };
             (
                 t.channel,
                 t.anchor,
@@ -51,7 +73,8 @@ pub fn run(
                 }
                 !embedding.is_empty()
                     && !o.embedding.is_empty()
-                    && crate::encode::embed::cosine(&embedding, &o.embedding) >= profile.merge_similarity
+                    && crate::encode::embed::cosine(&embedding, &o.embedding)
+                        >= profile.merge_similarity
             })
             .cloned()
             .collect();
@@ -72,22 +95,25 @@ pub fn run(
             }
         }
         let neighbor_refs: Vec<&crate::core::model::MemoryTrace> = neighbors.iter().collect();
-        let Some(t) = store.traces.get(&id) else { continue };
-        let Some(text) = narrator.rewrite(t, &neighbor_refs, profile) else { continue };
+        let Some(t) = store.traces.get(&id) else {
+            continue;
+        };
+        let Some(text) = narrator.rewrite(t, &neighbor_refs, profile) else {
+            continue;
+        };
         if text.trim().is_empty() || text == t.gist {
             continue;
         }
-        let claim = if t.reality.claim.trim().is_empty() {
-            t.core.clone()
-        } else {
-            t.reality.claim.clone()
-        };
+        report.proposed += 1;
+        let claim = t.core.clone();
         let core = t.core.clone();
         let judged = crate::recall::judge_against_core(&text, &claim, scorer);
         if judged.kind == crate::recall::DetachKind::Unjudged {
+            report.unjudged += 1;
             continue;
         }
         if ground && crate::recall::ground::is_grounding_miss(&text, &claim, scorer) {
+            report.grounding_refused += 1;
             let rewrite = narrator.recontextualize(t, &core, profile);
             let before = t.gist.clone();
             if let Some(tr) = store.traces.get_mut(&id) {
@@ -127,7 +153,8 @@ pub fn run(
             budget -= 1;
         }
     }
-    rewritten
+    report.rewritten = rewritten;
+    report
 }
 
 fn record_rewrite(t: &mut MemoryTrace, neighbors: &[MemoryTrace], before: String) {
@@ -207,8 +234,16 @@ fn skip_rewrite_legacy(store: &MemoryStore, t: &MemoryTrace) -> bool {
     charged_n >= 2
 }
 
-fn stake_near(store: &crate::core::store::MemoryStore, id: &str, other: &crate::core::model::MemoryTrace) -> bool {
-    let Some(t) = store.traces.get(id) else { return false };
+fn stake_near(
+    store: &crate::core::store::MemoryStore,
+    id: &str,
+    other: &crate::core::model::MemoryTrace,
+) -> bool {
+    let Some(t) = store.traces.get(id) else {
+        return false;
+    };
     t.stake_kind == other.stake_kind
-        && (t.stake_mark.is_empty() || other.stake_mark.is_empty() || t.stake_mark == other.stake_mark)
+        && (t.stake_mark.is_empty()
+            || other.stake_mark.is_empty()
+            || t.stake_mark == other.stake_mark)
 }

@@ -58,6 +58,7 @@ pub struct DreamReport {
     pub extinguished: u32,
     pub weathered: u32,
     pub rewritten: u32,
+    pub rewrite_diagnostics: rewrite::RewriteReport,
     pub released: u32,
     pub sculpted: Vec<DriftEvent>,
     pub axioms: Vec<IdentityAxiom>,
@@ -83,7 +84,15 @@ pub fn dream_cut(
     embedder: &dyn Embedder,
     cut: OrganCut,
 ) -> DreamReport {
-    dream_kind(store, profile, narrator, embedder, cut, NightKind::Deep, &crate::recall::NullScorer)
+    dream_kind(
+        store,
+        profile,
+        narrator,
+        embedder,
+        cut,
+        NightKind::Deep,
+        &crate::recall::NullScorer,
+    )
 }
 
 pub fn dream_budget(
@@ -94,7 +103,15 @@ pub fn dream_budget(
     cut: OrganCut,
 ) -> DreamReport {
     let kind = evaluate_budget(store, profile).kind;
-    dream_kind(store, profile, narrator, embedder, cut, kind, &crate::recall::NullScorer)
+    dream_kind(
+        store,
+        profile,
+        narrator,
+        embedder,
+        cut,
+        kind,
+        &crate::recall::NullScorer,
+    )
 }
 
 pub fn dream_kind(
@@ -116,7 +133,7 @@ pub fn dream_kind(
 
     singularite::apply_anchors(store);
     let w = weather::run(store, profile);
-    let (rewritten, merged, axioms) = if kind == NightKind::Deep {
+    let (rewrite_diagnostics, pulled, merged, axioms) = if kind == NightKind::Deep {
         let _ = crate::dream::confab::run(store, profile);
         let axioms = if cut.ladder {
             ladder::run(store, narrator)
@@ -125,11 +142,12 @@ pub fn dream_kind(
         };
         crate::dream::centers::refresh(store);
         let pulled = crate::dream::centers::gravitate(store);
-        let rewritten = rewrite::run(store, profile, narrator, embedder, cut.ground, scorer) + pulled;
+        let rewrite_diagnostics =
+            rewrite::run_report(store, profile, narrator, embedder, cut.ground, scorer);
         let merged = merge::run(store, profile, embedder, cut.merge_support_veto);
-        (rewritten, merged, axioms)
+        (rewrite_diagnostics, pulled, merged, axioms)
     } else {
-        (0, 0, Vec::new())
+        (rewrite::RewriteReport::default(), 0, 0, Vec::new())
     };
     let released = release::run(store, &previously_latent);
     singularite::apply_anchors(store);
@@ -145,7 +163,8 @@ pub fn dream_kind(
         merged,
         extinguished: w.extinguished,
         weathered: w.weathered,
-        rewritten,
+        rewritten: rewrite_diagnostics.rewritten + pulled,
+        rewrite_diagnostics,
         released,
         sculpted: w.sculpted,
         axioms,

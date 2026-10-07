@@ -1,6 +1,6 @@
 //! Third night pass: fuse close Selfhood episodes that share a schema.
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::core::model::{now_secs, Channel, DriftEvent, DriftKind, TraceStatus};
 use crate::core::profile::EntityProfile;
@@ -13,7 +13,7 @@ pub fn run(
     embedder: &dyn crate::encode::embed::Embedder,
     veto: bool,
 ) -> u32 {
-    let mut groups: HashMap<String, Vec<String>> = HashMap::new();
+    let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for t in store.traces.values() {
         if t.channel != Channel::Selfhood {
             continue;
@@ -76,18 +76,12 @@ pub fn run(
             }
             let other_clone = store.traces.get(other).cloned();
             let Some(src) = other_clone else { continue };
-            let hour = src
-                .archive_id
-                .as_ref()
-                .and_then(|id| store.archives.get(id))
-                .map(|a| a.verbatim.clone())
-                .unwrap_or_default();
             let keep_charged = !store.living_axiom_ids_for(&keep).is_empty();
             if let Some(dst) = store.traces.get_mut(&keep) {
                 if !keep_charged {
                     dst.gist = fuse_gist(&dst.gist, &src.gist);
                 }
-                dst.core = fuse_core(&dst.core, &src.core, &hour);
+                dst.core = fuse_core(&dst.core, &src.core);
                 // Do not average a charged hour toward the sibling's dull valence.
                 dst.valence = if keep_charged {
                     dst.valence
@@ -172,14 +166,22 @@ impl MergeDecision {
     }
 }
 
-fn merge_decision(a: &crate::core::model::MemoryTrace, b: &crate::core::model::MemoryTrace) -> MergeDecision {
+fn merge_decision(
+    a: &crate::core::model::MemoryTrace,
+    b: &crate::core::model::MemoryTrace,
+) -> MergeDecision {
     let semantic_similarity = lexical_similarity(&a.gist, &b.gist);
     let temporal_distance = (a.created_at as f32 - b.created_at as f32).abs() / 3600.0;
-    let affective_difference = (a.valence - b.valence).abs().max((a.disgust - b.disgust).abs());
+    let affective_difference = (a.valence - b.valence)
+        .abs()
+        .max((a.disgust - b.disgust).abs());
     let anchor_conflict = (a.anchor - b.anchor).abs() >= 0.45 && a.anchor.max(b.anchor) >= 0.80;
     let axiom_conflict = a.valence * b.valence < 0.0 && affective_difference >= 0.45;
     let far_and_different = temporal_distance > 24.0 * 30.0 && affective_difference >= 0.30;
     let same_stake = a.stake_kind == b.stake_kind
+        && a.bearer == b.bearer
+        && a.loss_kind == b.loss_kind
+        && a.attribution == b.attribution
         && (a.stake_mark.is_empty() || b.stake_mark.is_empty() || a.stake_mark == b.stake_mark);
     let mergeable = affective_difference < 0.55
         && !anchor_conflict
@@ -242,7 +244,7 @@ fn token_in(source: &str, word: &str) -> bool {
     })
 }
 
-fn fuse_core(keeper: &str, absorbed: &str, absorbed_hour: &str) -> String {
+fn fuse_core(keeper: &str, absorbed: &str) -> String {
     let keeper = keeper.trim();
     let absorbed = absorbed.trim();
     if absorbed.is_empty() || keeper.contains(absorbed) {
@@ -252,20 +254,12 @@ fn fuse_core(keeper: &str, absorbed: &str, absorbed_hour: &str) -> String {
     if keeper.is_empty() {
         return absorbed.to_string();
     }
-    // Extra words must be in the absorbed hour, not only in a core that a
-    // previous fuse may already have widened. No archive: the absorbed core is the hour.
-    let hour = if absorbed_hour.trim().is_empty() {
-        absorbed
-    } else {
-        absorbed_hour
-    };
+    // Only retained cores are available to consolidation.
     let extra: Vec<&str> = absorbed
         .split_whitespace()
         .filter(|w| {
             let w = w.trim_matches(|c: char| !c.is_alphanumeric());
-            w.chars().count() > 2
-                && !token_in(keeper, w)
-                && token_in(hour, w)
+            w.chars().count() > 2 && !token_in(keeper, w) && token_in(absorbed, w)
         })
         .take(4)
         .collect();
@@ -273,7 +267,7 @@ fn fuse_core(keeper: &str, absorbed: &str, absorbed_hour: &str) -> String {
         return keeper.to_string();
     }
     let candidate = format!("{keeper} {}", extra.join(" "));
-    crate::encode::accept_core(&candidate, &format!("{keeper} {hour}"))
+    crate::encode::accept_core(&candidate, &format!("{keeper} {absorbed}"))
         .unwrap_or_else(|| keeper.to_string())
 }
 

@@ -327,7 +327,7 @@ fn second_night_keeps_a_strengthened_schema() {
     mem.cut.util_to_strength = true;
     for text in [
         "You stayed in the rain by the window.",
-        "Again you waited in the rain and did not leave.",
+        "You stayed in the rain again and did not leave.",
     ] {
         assert!(mem.live_with(charged(text, "loyalty")).kept);
     }
@@ -345,10 +345,10 @@ fn second_night_keeps_a_strengthened_schema() {
     mem.note_spoken(&id);
     let after_use = mem.store.max_axiom_strength();
     assert!(mem
-        .live_with(charged("A third night in the rain by the window.", "loyalty"))
+        .live_with(charged("You stayed a third night in the rain by the window.", "loyalty"))
         .kept);
     assert!(mem
-        .live_with(charged("Still in the rain. You did not leave.", "loyalty"))
+        .live_with(charged("You stayed still in the rain and did not leave.", "loyalty"))
         .kept);
     for trace in mem.store.traces.values_mut() {
         trace.stake_mark = "same-stake".into();
@@ -359,7 +359,7 @@ fn second_night_keeps_a_strengthened_schema() {
         after_night + 0.001 >= after_use,
         "same schema must not remint under the spoken strength: use={after_use} night={after_night}"
     );
-    assert_eq!(mem.store.living_axioms().len(), 1, "one living axiom per schema");
+    assert_eq!(mem.store.living_axioms().len(), 1, "one living axiom per compatible semantic context");
 }
 
 #[test]

@@ -58,7 +58,7 @@ impl SemanticInterpreter for LexicalInterpreter {
         let (valence, arousal, disgust, schema) = super::affect::guess(event);
         let (stake_kind, bearer, loss_kind, stake_mark, absence) = legacy_stake(event);
         Ok(EventSemantics {
-            core: legacy_core(event, event, valence),
+            core: legacy_core(event, &super::core::extractive_core(event), valence),
             stake_kind,
             bearer,
             loss_kind,
@@ -95,9 +95,12 @@ fn extract_entities(event: &str) -> Vec<String> {
         let low = w.to_lowercase();
         let pronoun = matches!(
             low.as_str(),
-            "i" | "me" | "she" | "he" | "they" | "we" | "him" | "her"
+            "i" | "me" | "she" | "he" | "they" | "we" | "him" | "her" | "you"
         );
-        let named = w.chars().next().map(|c| c.is_uppercase()).unwrap_or(false);
+        let grammatical = matches!(low.as_str(),
+            "a"|"an"|"the"|"this"|"that"|"these"|"those"|"first"|"second"|"third"|
+            "yesterday"|"today"|"hello"|"hi"|"hey"|"observation");
+        let named = !grammatical && w.chars().next().map(|c| c.is_uppercase()).unwrap_or(false);
         if pronoun || named {
             if !out.iter().any(|e: &String| e.eq_ignore_ascii_case(w)) {
                 out.push(w.to_string());
@@ -173,16 +176,18 @@ pub fn legacy_stake(event: &str) -> (StakeKind, Bearer, LossKind, String, Option
         StakeKind::Limit
     } else if low.contains("decision") || low.contains("choose") {
         StakeKind::Decision
-    } else if low.contains("present") || low.contains("stayed") {
+    } else if low.contains("present") || low.contains("stayed") || low.contains("remained") {
         StakeKind::Presence
     } else if low.contains("felt") || low.contains("mood") {
         StakeKind::Mood
     } else {
         StakeKind::None
     };
-    let bearer = if low.contains(" i ") || low.starts_with("i ") {
+    let words: Vec<_> = low.split_whitespace()
+        .map(|w|w.trim_matches(|c:char|!c.is_alphanumeric())).collect();
+    let bearer = if words.contains(&"i") {
         Bearer::Self_
-    } else if low.contains("she ") || low.contains("he ") || low.contains("they ") {
+    } else if words.iter().any(|w|matches!(*w,"she"|"he"|"they"|"you")) {
         Bearer::Other
     } else {
         Bearer::World
@@ -278,7 +283,11 @@ pub fn parse_semantics(raw: &str, event: &str) -> Result<EventSemantics, String>
     let mark = get("stake_mark")?;
     let semantics = EventSemantics {
         core: SemanticCore {
-            claim: event.to_string(),
+            claim: match fields.get("core_claim") {
+                Some(claim) => super::core::accept_core(claim, event)
+                    .ok_or("core_claim is not grounded in the event")?,
+                None => super::core::extractive_core(event),
+            },
             entities: list("entities")?,
             actions: list("actions")?,
             polarity: number("valence")?,

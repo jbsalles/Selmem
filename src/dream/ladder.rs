@@ -1,261 +1,329 @@
-//! Fourth night pass: motif → belief → trait. Latent traces do not mint.
-
-use std::collections::HashMap;
-
-use crate::core::model::{now_secs, new_id, AxiomLayer, IdentityAxiom, TraceStatus};
+//! Fourth night pass: motif → belief → contextual trait. Evidence is provenance,
+//! never the number of copies or associative neighbors of an observation.
+use crate::core::model::{new_id, now_secs, AxiomLayer, IdentityAxiom, MemoryTrace, TraceStatus};
 use crate::core::store::MemoryStore;
 use crate::recall::narrator::Narrator;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+
+// Strings make semantic categories ordered without changing public enum APIs.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct Context {
+    schema: String,
+    stake_kind: String,
+    bearer: String,
+    loss_kind: String,
+    attribution: String,
+    subject: String,
+}
+type Family = (Context, String);
+fn context(t: &MemoryTrace) -> Context {
+    // The first annotated entity is the subject candidate. Object inventory
+    // must not split otherwise equivalent observations of the same actor.
+    let subject = t
+        .semantic
+        .entities
+        .first()
+        .map(|e| e.to_lowercase())
+        .unwrap_or_default();
+    Context {
+        schema: t.schema.clone().unwrap_or_else(|| "self".into()),
+        stake_kind: t.stake_kind.token().into(),
+        bearer: t.bearer.token().into(),
+        loss_kind: t.loss_kind.token().into(),
+        attribution: t.attribution.token().into(),
+        subject,
+    }
+}
+fn family(t: &MemoryTrace) -> Family {
+    (context(t), t.stake_mark.clone())
+}
+fn observation(t: &MemoryTrace) -> &str {
+    t.observation_id.as_deref().unwrap_or(&t.id)
+}
+fn independent(store: &MemoryStore, ids: &[String]) -> Vec<String> {
+    let mut seen = BTreeSet::new();
+    let mut sorted = ids.to_vec();
+    sorted.sort_by(|a, b| {
+        let ta = &store.traces[a];
+        let tb = &store.traces[b];
+        // Prefer a surviving original over a merged myth; duplicates cannot
+        // acquire extra weight just by being rehearsed or copied.
+        (ta.status == TraceStatus::Myth)
+            .cmp(&(tb.status == TraceStatus::Myth))
+            .then_with(|| hour_charge(tb).total_cmp(&hour_charge(ta)))
+            .then(ta.core.cmp(&tb.core))
+            .then(a.cmp(b))
+    });
+    sorted.retain(|id| seen.insert(observation(&store.traces[id]).to_string()));
+    sorted.sort_by(|a, b| {
+        store.traces[a]
+            .core
+            .cmp(&store.traces[b].core)
+            .then(store.traces[a].created_at.cmp(&store.traces[b].created_at))
+            .then(a.cmp(b))
+    });
+    sorted
+}
+fn compatible_axiom(store: &MemoryStore, ax: &IdentityAxiom, key: &Family) -> bool {
+    ax.schema.as_deref() == Some(key.0.schema.as_str())
+        && ax.stake_mark == key.1
+        && ax.stake_kind.token() == key.0.stake_kind
+        && ax.bearer.token() == key.0.bearer
+        && ax.loss_kind.token() == key.0.loss_kind
+        && ax
+            .support_trace_ids
+            .iter()
+            .filter_map(|id| store.traces.get(id))
+            .all(|t| family(t) == *key)
+}
 
 pub fn run(store: &mut MemoryStore, _narrator: &dyn Narrator) -> Vec<IdentityAxiom> {
-    let prior: Vec<String> = store
-        .living_axioms()
-        .into_iter()
-        .map(|a| a.id.clone())
-        .collect();
+    let prior: Vec<_> = store.living_axioms().iter().map(|a| a.id.clone()).collect();
     let mut axioms = extract_axioms(store);
     axioms.extend(promote_traits(store));
     rust_unused(store, &prior);
     axioms
 }
-
-/// Unused living axioms ease toward their floor. Spoken support blocks the rust.
 fn rust_unused(store: &mut MemoryStore, prior: &[String]) {
-    let spoken: HashMap<String, bool> = store
+    let spoken: HashMap<_, _> = store
         .traces
         .iter()
         .map(|(id, t)| (id.clone(), t.rehearsals > 0))
         .collect();
     for id in prior {
-        let Some(ax) = store.axioms.get(id) else { continue };
-        let used = ax
-            .support_trace_ids
-            .iter()
-            .any(|tid| spoken.get(tid).copied().unwrap_or(false));
-        if used {
-            continue;
-        }
-        let floor = ax.layer.strength_floor();
         if let Some(ax) = store.axioms.get_mut(id) {
-            ax.strength = (ax.strength - 0.05).max(floor);
+            if !ax
+                .support_trace_ids
+                .iter()
+                .any(|id| spoken.get(id).copied().unwrap_or(false))
+            {
+                ax.strength = (ax.strength - 0.05).max(ax.layer.strength_floor());
+            }
         }
     }
 }
-
 fn extract_axioms(store: &mut MemoryStore) -> Vec<IdentityAxiom> {
-    let mut evidence: HashMap<(String, String), Vec<String>> = HashMap::new();
-    let mut living: HashMap<(String, String), Vec<String>> = HashMap::new();
+    let mut groups: BTreeMap<Family, Vec<String>> = BTreeMap::new();
     for t in store.traces.values() {
-        if t.channel.verbatim() {
-            continue;
-        }
-        let s = (
-            t.schema.clone().unwrap_or_else(|| "self".into()),
-            t.stake_mark.clone(),
-        );
-        match t.status {
-            // Merged siblings stay Myth; they still count as episodes.
-            TraceStatus::Active | TraceStatus::Cold => {
-                evidence.entry(s.clone()).or_default().push(t.id.clone());
-                living.entry(s.clone()).or_default().push(t.id.clone());
-            }
-            TraceStatus::Myth => {
-                evidence.entry(s.clone()).or_default().push(t.id.clone());
-            }
-            // Latent must not mint a belief.
-            _ => {}
+        if !t.channel.verbatim()
+            && matches!(
+                t.status,
+                TraceStatus::Active | TraceStatus::Cold | TraceStatus::Myth
+            )
+        {
+            groups.entry(family(t)).or_default().push(t.id.clone());
         }
     }
-    let existing: Vec<String> = store
-        .living_axioms()
-        .into_iter()
-        .map(|a| a.statement.clone())
-        .collect();
-
     let mut created = Vec::new();
-    for ((schema, mark), ids) in evidence {
-        let charge = schema_charge(store, &ids);
-        // Count still mints a dull motif. Charge lets one wound mint without a second copy.
-        if ids.len() < 2 && charge < 0.28 {
+    for (key, ids) in groups {
+        let mut support = independent(store, &ids);
+        let mut charge = schema_charge(store, &support);
+        if support.len() < 2 && charge < 0.28 {
             continue;
         }
-        let Some(live_ids) = living.get(&(schema.clone(), mark.clone())) else {
-            continue;
-        };
-        let mut support = ids.clone();
-        extend_support(store, &mut support);
-        if support.is_empty() {
+        let live_n = support
+            .iter()
+            .filter(|id| store.traces[*id].status != TraceStatus::Myth)
+            .count();
+        if live_n == 0 {
             continue;
         }
         let prev = store
             .living_axioms()
             .into_iter()
-            .find(|a| a.schema.as_deref() == Some(schema.as_str()) && a.stake_mark == mark)
-            .map(|a| (a.id.clone(), a.strength, a.valence));
-        let traces_for_mean: Vec<&crate::core::model::MemoryTrace> = support
-            .iter()
-            .filter_map(|id| store.traces.get(id))
-            .collect();
-        let preview_v = if traces_for_mean.is_empty() {
-            0.0
-        } else {
-            traces_for_mean.iter().map(|t| t.valence).sum::<f32>()
-                / traces_for_mean.len() as f32
-        };
-        if let Some((ref prev_id, prev_strength, prev_v)) = prev {
-            let flipped = prev_v * preview_v < 0.0
-                || (prev_v.abs() < 0.15 && preview_v.abs() >= 0.30);
-            if prev_strength >= 0.36 || !flipped {
-                keep_schema_axiom(store, prev_id, &support, live_ids.len(), charge);
+            .filter(|a| a.layer != AxiomLayer::Trait && compatible_axiom(store, a, &key))
+            .min_by(|a, b| a.created_at.cmp(&b.created_at).then(a.id.cmp(&b.id)))
+            .cloned();
+        let mut mean_v = weighted_valence(store, &support);
+        let mut revision = false;
+        if let Some(old) = &prev {
+            let mut known = BTreeSet::new();
+            let mut generation = vec![old.id.clone()];
+            let mut ancestors = BTreeSet::new();
+            while let Some(id) = generation.pop() {
+                if !ancestors.insert(id.clone()) {
+                    continue;
+                }
+                if let Some(ax) = store.axioms.get(&id) {
+                    known.extend(
+                        ax.support_trace_ids
+                            .iter()
+                            .filter_map(|id| store.traces.get(id))
+                            .map(|t| observation(t).to_string()),
+                    );
+                }
+                generation.extend(
+                    store
+                        .axioms
+                        .values()
+                        .filter(|a| a.superseded_by.as_deref() == Some(&id))
+                        .map(|a| a.id.clone()),
+                );
+            }
+            let contrary: Vec<_> = support
+                .iter()
+                .filter(|id| {
+                    let t = &store.traces[*id];
+                    !known.contains(observation(t))
+                        && old.valence * t.valence < 0.0
+                        && t.valence.abs() >= 0.2
+                })
+                .cloned()
+                .collect();
+            let flipped =
+                old.valence * mean_v < 0.0 || (old.valence.abs() < 0.15 && mean_v.abs() >= 0.30);
+            // Strong beliefs resist one contrary episode, but three independent
+            // charged observations can revise them. Replaying the night cannot.
+            revision = (old.strength < 0.36 && flipped)
+                || (contrary.len() >= 3
+                    && schema_charge(store, &contrary) >= old.strength.max(0.45));
+            if revision && !contrary.is_empty() {
+                support = contrary;
+                charge = schema_charge(store, &support);
+                mean_v = weighted_valence(store, &support);
+            }
+            if !revision {
+                let agreeing: Vec<_> = support
+                    .iter()
+                    .filter(|id| old.valence * store.traces[*id].valence >= 0.0)
+                    .cloned()
+                    .collect();
+                let agreeing_charge = schema_charge(store, &agreeing);
+                if let Some(ax) = store.axioms.get_mut(&old.id) {
+                    for id in &agreeing {
+                        if !ax.support_trace_ids.contains(id) {
+                            ax.support_trace_ids.push(id.clone());
+                        }
+                    }
+                    ax.support_trace_ids.sort();
+                    if agreeing.len() >= 3
+                        && agreeing_charge >= 0.45
+                        && ax.layer == AxiomLayer::Motif
+                    {
+                        ax.layer = AxiomLayer::Belief;
+                        ax.strength = ax.strength.max(AxiomLayer::Belief.strength_floor());
+                    }
+                }
                 continue;
             }
-            // Weak living axiom, opposite sense: mint a replacement below.
         }
-        let traces: Vec<&crate::core::model::MemoryTrace> = support
-            .iter()
-            .filter_map(|id| store.traces.get(id))
-            .collect();
-        let preview_v = weighted_valence(store, &support);
-        let statement = stake_axiom(&schema, &mark, &traces, preview_v);
-        if existing.iter().any(|s| s == &statement) {
-            continue;
-        }
-        let mean_v = weighted_valence(store, &support);
-        // One wound is a motif. A belief needs the same schema several times.
-        let layer = if live_ids.len() >= 3 && charge >= 0.45 {
+        let layer = if support.len() >= 3 && charge >= 0.45 {
             AxiomLayer::Belief
         } else {
             AxiomLayer::Motif
         };
-        let strength = (0.22 + charge).clamp(layer.strength_floor(), layer.strength_cap());
-        let axiom = IdentityAxiom {
+        let first = &store.traces[&support[0]];
+        let ax = IdentityAxiom {
             id: new_id("ax"),
-            statement,
+            statement: stake_axiom(store, &key.0.schema, &key.1, &support, mean_v),
             support_trace_ids: support,
             valence: mean_v,
-            strength,
+            strength: (0.22 + charge).clamp(layer.strength_floor(), layer.strength_cap()),
             created_at: now_secs(),
             superseded_by: None,
-            schema: Some(schema.clone()),
+            schema: Some(key.0.schema.clone()),
             layer,
-            stake_kind: traces.first().map(|t| t.stake_kind).unwrap_or_default(),
-            bearer: traces.first().map(|t| t.bearer).unwrap_or_default(),
-            loss_kind: traces.first().map(|t| t.loss_kind).unwrap_or_default(),
-            stake_mark: mark.clone(),
+            stake_kind: first.stake_kind,
+            bearer: first.bearer,
+            loss_kind: first.loss_kind,
+            stake_mark: key.1,
         };
-        if let Some((ref prev_id, prev_strength, prev_v)) = prev {
-            let flipped = prev_v * preview_v < 0.0
-                || (prev_v.abs() < 0.15 && preview_v.abs() >= 0.30);
-            if prev_strength < 0.36 && flipped {
-                if let Some(old) = store.axioms.get_mut(prev_id) {
-                    old.superseded_by = Some(axiom.id.clone());
-                }
+        if revision {
+            if let Some(old) = prev.and_then(|p| store.axioms.get_mut(&p.id)) {
+                old.superseded_by = Some(ax.id.clone());
             }
         }
-        store.add_axiom(axiom.clone());
-        created.push(axiom);
+        store.add_axiom(ax.clone());
+        created.push(ax);
     }
     created
 }
-
-fn keep_schema_axiom(
-    store: &mut MemoryStore,
-    prev_id: &str,
-    support: &[String],
-    live_n: usize,
-    charge: f32,
-) {
-    let Some(ax) = store.axioms.get_mut(prev_id) else {
-        return;
-    };
-    for id in support {
-        if !ax.support_trace_ids.iter().any(|x| x == id) {
-            ax.support_trace_ids.push(id.clone());
-        }
-    }
-    // Three dull hours are not a belief. The mint path already requires charge.
-    if live_n >= 3 && charge >= 0.45 && ax.layer == AxiomLayer::Motif {
-        ax.layer = AxiomLayer::Belief;
-        ax.strength = ax.strength.max(AxiomLayer::Belief.strength_floor());
-    }
-    let cap = ax.layer.strength_cap();
-    if ax.strength > cap {
-        ax.strength = cap;
-    }
-}
-
 fn promote_traits(store: &mut MemoryStore) -> Vec<IdentityAxiom> {
-    let beliefs: Vec<IdentityAxiom> = store
-        .living_axioms()
-        .into_iter()
-        .filter(|a| a.layer == AxiomLayer::Belief && a.strength >= 0.45)
-        .cloned()
-        .collect();
-    if beliefs.len() < 2 {
-        return Vec::new();
-    }
-    let pos: Vec<_> = beliefs.iter().filter(|a| a.valence > 0.2).collect();
-    let neg: Vec<_> = beliefs.iter().filter(|a| a.valence < -0.2).collect();
-    let mut out = Vec::new();
-    for (bucket, label) in [(pos, "trust"), (neg, "withdrawal")] {
-        if bucket.len() < 2 {
+    let mut groups: BTreeMap<(Context, i8), Vec<IdentityAxiom>> = BTreeMap::new();
+    for ax in store.living_axioms() {
+        if ax.layer != AxiomLayer::Belief || ax.strength < 0.45 {
             continue;
         }
-        if store
-            .living_axioms()
-            .iter()
-            .any(|a| a.layer == AxiomLayer::Trait && a.schema.as_deref() == Some(label))
-        {
-            continue;
-        }
-        let mut support: Vec<String> = bucket
-            .iter()
-            .flat_map(|a| a.support_trace_ids.clone())
-            .collect();
-        extend_support(store, &mut support);
-        if support.is_empty() {
-            continue;
-        }
-        let traces: Vec<&crate::core::model::MemoryTrace> = support
+        let traces: Vec<_> = ax
+            .support_trace_ids
             .iter()
             .filter_map(|id| store.traces.get(id))
             .collect();
-        let statement = stake_axiom(label, "", &traces, 0.0);
-        let mean_v = bucket.iter().map(|a| a.valence).sum::<f32>() / bucket.len() as f32;
-        let axiom = IdentityAxiom {
+        let Some(t) = traces.first() else { continue };
+        let ctx = context(t);
+        if traces.iter().any(|t| context(t) != ctx) {
+            continue;
+        }
+        let sign = if ax.valence > 0.2 {
+            1
+        } else if ax.valence < -0.2 {
+            -1
+        } else {
+            0
+        };
+        groups.entry((ctx, sign)).or_default().push(ax.clone());
+    }
+    let mut out = Vec::new();
+    for ((ctx, _), mut beliefs) in groups {
+        beliefs.sort_by(|a, b| a.stake_mark.cmp(&b.stake_mark).then(a.id.cmp(&b.id)));
+        let mut seen = BTreeSet::new();
+        let mut distinct = Vec::new();
+        let mut support = Vec::new();
+        for ax in beliefs {
+            let ids = independent(store, &ax.support_trace_ids);
+            let origins: Vec<_> = ids
+                .iter()
+                .map(|id| observation(&store.traces[id]).to_string())
+                .collect();
+            if origins.is_empty() || origins.iter().any(|id| seen.contains(id)) {
+                continue;
+            }
+            seen.extend(origins);
+            support.extend(ids);
+            distinct.push(ax);
+        }
+        if distinct.len() < 2 {
+            continue;
+        }
+        // Contextual regularity, not positive→trust or negative→withdrawal.
+        let schema = format!("contextual:{}", ctx.schema);
+        let first = &store.traces[&support[0]];
+        if store.living_axioms().iter().any(|a| {
+            a.layer == AxiomLayer::Trait
+                && a.schema.as_deref() == Some(&schema)
+                && a.stake_kind == first.stake_kind
+                && a.bearer == first.bearer
+                && a.loss_kind == first.loss_kind
+                && a.support_trace_ids
+                    .iter()
+                    .filter_map(|id| store.traces.get(id))
+                    .all(|t| context(t) == ctx)
+        }) {
+            continue;
+        }
+        support.sort();
+        let v = weighted_valence(store, &support);
+        let ax = IdentityAxiom {
             id: new_id("ax"),
-            statement,
+            statement: stake_axiom(store, &schema, "", &support, v),
             support_trace_ids: support,
-            valence: mean_v,
+            valence: v,
             strength: AxiomLayer::Trait.strength_cap() * 0.72,
             created_at: now_secs(),
             superseded_by: None,
-            schema: Some(label.into()),
+            schema: Some(schema),
             layer: AxiomLayer::Trait,
-            stake_kind: crate::core::model::StakeKind::None,
-            bearer: crate::core::model::Bearer::Self_,
-            loss_kind: crate::core::model::LossKind::None,
+            stake_kind: first.stake_kind,
+            bearer: first.bearer,
+            loss_kind: first.loss_kind,
             stake_mark: String::new(),
         };
-        store.add_axiom(axiom.clone());
-        out.push(axiom);
+        store.add_axiom(ax.clone());
+        out.push(ax);
     }
     out
 }
-
-fn extend_support(store: &MemoryStore, ids: &mut Vec<String>) {
-    let mut extra = Vec::new();
-    for id in ids.iter() {
-        let Some(neigh) = store.edges.get(id) else { continue };
-        for n in neigh {
-            if !ids.iter().any(|x| x == n) && !extra.iter().any(|x| x == n) {
-                extra.push(n.clone());
-            }
-        }
-    }
-    ids.extend(extra);
-}
-
-fn hour_charge(t: &crate::core::model::MemoryTrace) -> f32 {
+fn hour_charge(t: &MemoryTrace) -> f32 {
     let raw = t.valence.abs() * t.arousal.max(0.05) * t.self_relevance.max(0.05);
     if t.permanence < 0.40 {
         raw * 0.25
@@ -263,33 +331,45 @@ fn hour_charge(t: &crate::core::model::MemoryTrace) -> f32 {
         raw
     }
 }
-
 fn schema_charge(store: &MemoryStore, ids: &[String]) -> f32 {
-    ids.iter()
-        .filter_map(|id| store.traces.get(id))
-        .map(hour_charge)
-        .sum()
+    ids.iter().map(|id| hour_charge(&store.traces[id])).sum()
 }
-
 fn weighted_valence(store: &MemoryStore, ids: &[String]) -> f32 {
     let mut w = 0.0;
     let mut acc = 0.0;
     for id in ids {
-        let Some(t) = store.traces.get(id) else { continue };
+        let t = &store.traces[id];
         let c = hour_charge(t).max(0.02);
         w += c;
         acc += c * t.valence;
     }
-    if w <= 0.0 { 0.0 } else { acc / w }
+    if w <= 0.0 {
+        0.0
+    } else {
+        acc / w
+    }
 }
-
-fn stake_axiom(schema: &str, mark: &str, traces: &[&crate::core::model::MemoryTrace], valence: f32) -> String {
-    let kind = traces.first().map(|t| t.stake_kind.token()).unwrap_or("none");
-    let bearer = traces.first().map(|t| t.bearer.token()).unwrap_or("world");
-    let loss = traces.first().map(|t| t.loss_kind.token()).unwrap_or("none");
-    let sign = if valence <= -0.2 { "against" } else if valence >= 0.2 { "for" } else { "under" };
+fn stake_axiom(
+    store: &MemoryStore,
+    schema: &str,
+    mark: &str,
+    ids: &[String],
+    valence: f32,
+) -> String {
+    let first = &store.traces[&ids[0]];
+    let sign = if valence <= -0.2 {
+        "against"
+    } else if valence >= 0.2 {
+        "for"
+    } else {
+        "under"
+    };
     format!(
-        "stake={kind} bearer={bearer} loss={loss} mark={mark} n={} sign={sign} schema={schema}",
-        traces.len()
+        "stake={} bearer={} loss={} agency={} mark={mark} n={} sign={sign} schema={schema}",
+        first.stake_kind.token(),
+        first.bearer.token(),
+        first.loss_kind.token(),
+        first.attribution.token(),
+        ids.len()
     )
 }

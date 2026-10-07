@@ -58,8 +58,19 @@ fn polarity_flipped(event: &str, proposed: &str) -> bool {
 fn has_neg(s: &str) -> bool {
     let low = format!(" {} ", s.to_lowercase());
     const NEG: &[&str] = &[
-        " not ", " never ", " no ", " didn't ", " didnt ", " dont ", " don't ",
-        " cannot ", " can't ", " cant ", " won't ", " wont ", " without ",
+        " not ",
+        " never ",
+        " no ",
+        " didn't ",
+        " didnt ",
+        " dont ",
+        " don't ",
+        " cannot ",
+        " can't ",
+        " cant ",
+        " won't ",
+        " wont ",
+        " without ",
     ];
     NEG.iter().any(|n| low.contains(n)) || low.contains("n't")
 }
@@ -87,5 +98,34 @@ pub fn maybe_set_core(
     if let Some(t) = store.traces.get_mut(tid) {
         t.core = ok;
         t.semantic.claim = t.core.clone();
+        t.reality.claim = t.core.clone();
     }
+}
+
+/// Bounded extractive baseline. Select a complete informative sentence instead
+/// of spending the core budget on a greeting. Learned/annotated claims take
+/// precedence at the gate; this fallback does not infer a psychology.
+pub fn extractive_core(event: &str) -> String {
+    let candidates: Vec<&str> = event
+        .split_inclusive(['.', '!', '?', ';', '\n'])
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .collect();
+    let best = candidates
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| s.split_whitespace().count() <= 32)
+        .filter(|(_, s)| !polarity_flipped(event, s))
+        .max_by_key(|(i, s)| (content_tokens(s).len(), std::cmp::Reverse(*i)))
+        .map(|(_, s)| *s);
+    if let Some(sentence) = best {
+        return sentence.to_string();
+    }
+    // Long indivisible sentences remain lossy. Do not claim that this baseline
+    // performs learned semantic compression or restores forgotten details.
+    event
+        .split_whitespace()
+        .take(32)
+        .collect::<Vec<_>>()
+        .join(" ")
 }

@@ -114,7 +114,16 @@ fn salient_marks(store: &MemoryStore) -> Vec<SalientMark> {
             valence: t.valence,
         })
         .collect();
-    marks.sort_by(|a, b| b.valence.abs().partial_cmp(&a.valence.abs()).unwrap_or(std::cmp::Ordering::Equal));
+    marks.sort_by(|a, b| {
+        b.valence
+            .abs()
+            .total_cmp(&a.valence.abs())
+            .then_with(|| store.traces[&a.id].core.cmp(&store.traces[&b.id].core))
+            .then_with(|| b.valence.total_cmp(&a.valence))
+            .then_with(|| b.fidelity.total_cmp(&a.fidelity))
+            .then_with(|| b.access.total_cmp(&a.access))
+            .then(a.id.cmp(&b.id))
+    });
     marks.truncate(4);
     marks
 }
@@ -131,15 +140,30 @@ fn living_lines(store: &MemoryStore) -> Vec<String> {
             AxiomLayer::Belief => 1,
             AxiomLayer::Motif => 0,
         };
-        rank(b.layer).cmp(&rank(a.layer))
+        rank(b.layer)
+            .cmp(&rank(a.layer))
+            .then_with(|| b.strength.total_cmp(&a.strength))
+            .then(a.statement.cmp(&b.statement))
+            .then(a.id.cmp(&b.id))
     });
-    axioms.into_iter().take(4).map(|a| a.statement.clone()).collect()
+    axioms
+        .into_iter()
+        .take(4)
+        .map(|a| a.statement.clone())
+        .collect()
 }
 
 /// Schema and sense only. The hour text is not a stake name.
 fn stakes_from(store: &MemoryStore, axioms: &[String]) -> Vec<String> {
     let mut out = Vec::new();
-    for a in store.axioms.values() {
+    let mut ordered: Vec<_> = store.axioms.values().collect();
+    ordered.sort_by(|a, b| {
+        a.statement
+            .cmp(&b.statement)
+            .then_with(|| b.valence.total_cmp(&a.valence))
+            .then(a.id.cmp(&b.id))
+    });
+    for a in ordered {
         if a.superseded_by.is_some() {
             continue;
         }
