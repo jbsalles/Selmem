@@ -1,64 +1,51 @@
-# Free Render test environment
+# Public Render demo
 
-The Rust daemon serves both the UI and its API on the same HTTPS origin.
-This Blueprint explicitly selects Render's Free plan in Frankfurt. There is no paid
-persistent disk, database, or external LLM configured by default.
+The UI and Rust API share one HTTPS origin. `SELMEM_PUBLIC_DEMO=true` enables
+anonymous browser sessions and ignores `SELMEM_TOKEN`. Each visitor gets a separate
+memory, conversation, profile and LLM configuration. The server supplies a random
+HttpOnly, SameSite=Strict cookie. Render HTTPS responses also set Secure.
+There is no visitor account or shared token to enter.
 
-## First deployment
+## Update an existing Render deployment
 
-1. Apply the deployment patch to your updated checkout and commit the files.
-2. Create a new test branch and push it:
+1. Apply and push this patch to `main`.
+2. In Render → your service → Environment, add `SELMEM_PUBLIC_DEMO=true`.
+3. Delete `SELMEM_TOKEN`. Removing it from render.yaml alone may leave an existing
+   environment variable in place. Public demo mode ignores it even if it remains.
+4. Remove server provider keys (`SELMEM_API_KEY`) and external narrator/scorer/embedder
+   configuration from this demo. Visitors' LLM configuration never inherits them.
+5. Save, redeploy, then reload the UI. Test with two separate browser profiles or a
+   normal window and an incognito window. Each must have an independent empty book.
 
-   ```bash
-   git switch -c staging
-   git push -u origin staging
-   ```
+For a new deployment, create a Render Blueprint from `jbsalles/Selmem`, branch
+`main`, and `render.yaml`. Confirm the Free plan. Later pushes deploy after CI passes.
 
-   If `staging` already exists, switch to it and merge or cherry-pick the deployment
-   commit rather than recreating or force-pushing it.
-3. Sign in to https://dashboard.render.com and connect your GitHub account.
-4. Select **New → Blueprint**, choose `jbsalles/Selmem`, and select branch `staging`.
-5. Render reads `render.yaml`. Confirm that the proposed service uses **Free**,
-   then create it. Wait for the deployment to complete.
-6. Open the service's actual `https://…onrender.com` URL. Both `/` (UI) and `/health`
-   should respond. In Render's **Environment** settings, copy the generated
-   `SELMEM_TOKEN` and paste it into the UI's token field. Share it only with testers.
+## Visitors
 
-Later commits pushed to `staging` redeploy automatically after GitHub checks pass.
-The Rust and container workflows run on this branch and on pull requests.
-The first Blueprint creation starts an initial deployment; check its CI results too.
+Select grok or gpt, enter your own provider API key, and click Attach. Then chat.
+Without a key, the rule narrator is available; provider requests require a valid key.
+Your key is sent over HTTPS to this server, kept in your session's RAM, and forwarded
+only to the selected provider. It is not written to a database, exposed by GET /llm,
+or inherited by another session. Changing provider clears the previous key.
+The public demo restricts endpoints to the built-in OpenAI and xAI URLs.
 
-## What this demo does
+Sessions expire after 30 minutes of inactivity and all sessions disappear when the
+server restarts/redeploys/sleeps. At most 64 sessions are retained. If full, new visitors
+must retry after idle sessions expire. Tabs in one browser profile share a session.
+An expired session starts a new empty memory and requires entering the key again.
+This is a temporary demo, unsuitable for durable experiments.
 
-Without LLM configuration, SelMem uses RuleNarrator. Memory mechanisms work, but
-this is not a demo of a language model's conversational capabilities.
-All testers share one memory and one profile. Reset/profile changes affect everyone.
-
-The database lives in `/var/lib/selmem/demo.db`, on the service's ephemeral filesystem.
-Render's Free service sleeps after 15 minutes without traffic; waking it can take
-about a minute. Sleep, replacement, restart, or redeployment can erase the memory.
-This reset is an infrastructure limitation, separate from SelMem's selective forgetting.
-Do not use this instance for long-term experiments or durable personal memories.
-
-## Optional external LLM
-
-In Render's Environment settings, add:
-
-- `SELMEM_LLM`: provider chat-completions URL
-- `SELMEM_MODEL`: model identifier
-- `SELMEM_API_KEY`: provider key, stored as a secret
-
-Save and redeploy. The hosting plan remains Free; provider API usage can cost money.
-No provider key belongs in GitHub, the Docker image, or `render.yaml`.
-
-## Local container check
+## Local check
 
 ```bash
 docker build -t selmem-demo .
-docker run --rm -p 10000:10000 -e SELMEM_TOKEN=local-demo-token selmem-demo
+docker run --rm -p 10000:10000 -e SELMEM_PUBLIC_DEMO=true selmem-demo
 ```
 
-Open http://localhost:10000 and enter `local-demo-token` in the UI.
-A volume can preserve local data, but the free Render Blueprint deliberately has none.
+Open http://localhost:10000. No shared token is required.
+The default daemon mode remains a single instance with optional SELMEM_TOKEN auth;
+only public demo mode enables visitor isolation.
 
+Render Free sleeps after 15 minutes idle. Waking can take about a minute.
+Provider API charges are billed to the visitor's key, independently of hosting.
 References: https://render.com/docs/free and https://render.com/docs/blueprint-spec

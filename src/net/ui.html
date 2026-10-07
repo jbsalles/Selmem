@@ -252,13 +252,27 @@
 const log = document.getElementById('log');
 const tokenEl = document.getElementById('token');
 tokenEl.value = localStorage.getItem('selmem_token') || '';
+let publicDemo = false;
+async function connectSession() {
+  const response = await fetch('/session', { credentials: 'same-origin' });
+  const state = await response.json();
+  if (!response.ok) throw new Error(state.error || 'Could not start session');
+  publicDemo = !!state.public_demo;
+  tokenEl.closest('fieldset').hidden = publicDemo;
+  if (publicDemo) {
+    document.querySelector('#llm-plug').closest('fieldset').querySelector('.hint').textContent =
+      'Your memory and API key belong to this browser session. Enter your own provider key. Sessions expire after 30 minutes idle or a server restart.';
+  }
+}
+let sessionReady = connectSession();
+let renewal = null;
 let bookTab = 'events';
 let bookCache = { traces: [], axioms: [], archives: [], events: [] };
 
 function headers() {
   const h = { 'Content-Type': 'application/json' };
   const t = tokenEl.value.trim();
-  if (t) { h['Authorization'] = 'Bearer ' + t; localStorage.setItem('selmem_token', t); }
+  if (t && !publicDemo) { h['Authorization'] = 'Bearer ' + t; localStorage.setItem('selmem_token', t); }
   return h;
 }
 function add(cls, html) {
@@ -268,11 +282,18 @@ function add(cls, html) {
   log.appendChild(d);
   log.scrollTop = log.scrollHeight;
 }
-async function api(method, path, body) {
-  const r = await fetch(path, { method, headers: headers(), body: body ? JSON.stringify(body) : undefined });
+async function api(method, path, body, retry = true) {
+  await sessionReady;
+  const r = await fetch(path, { method, credentials: 'same-origin', headers: headers(), body: body ? JSON.stringify(body) : undefined });
   const t = await r.text();
   let j = {};
   try { j = JSON.parse(t); } catch(e) { j = { error: t }; }
+  if (publicDemo && retry && r.status === 401 && j.error === 'session expired') {
+    if (!renewal) renewal = connectSession().finally(() => { renewal = null; });
+    await renewal;
+    add('sys', 'Your session expired. A new memory has been started; attach your API key again.');
+    return api(method, path, body, false);
+  }
   if (!r.ok) throw new Error(j.error || r.status);
   return j;
 }

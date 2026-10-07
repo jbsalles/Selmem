@@ -44,6 +44,15 @@ pub fn mouth_body(path: &str, reply: &str, mem: &SelectiveMemory) -> HttpRespons
 }
 
 pub fn dispatch(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str, body: &str) -> HttpResponse {
+    dispatch_for(mem, method, path, query, body, false)
+}
+
+/// Browser visitors never inherit daemon-wide LLM credentials or custom endpoints.
+pub fn dispatch_public(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str, body: &str) -> HttpResponse {
+    dispatch_for(mem, method, path, query, body, true)
+}
+
+fn dispatch_for(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str, body: &str, visitor: bool) -> HttpResponse {
     if method == "OPTIONS" {
         return HttpResponse {
             status: 204,
@@ -118,15 +127,23 @@ pub fn dispatch(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
             let _ = mem.save();
             ok(profile_json(mem))
         }
-        ("GET", "/llm") => ok(llm_json(mem)),
+        ("GET", "/llm") => ok(llm_json(mem, visitor)),
         ("POST", "/llm") => {
             if let Some(plug) = json_str(body, "plug") {
                 let plug = plug.trim();
                 if plug.is_empty() || plug == "rules" || json_bool(body, "clear").unwrap_or(false) {
                     let _ = mem.set_llm("", "", None);
-                    return ok(llm_json(mem));
+                    return ok(llm_json(mem, visitor));
                 }
-                match crate::config::Config::get().mouth_named(plug, None, None, "gpt-4o-mini") {
+                let mouth = if visitor {
+                    crate::config::expand_plug(plug).map(|(url, model)| crate::config::Mouth {
+                        plug: plug.into(), url: url.into(), model: model.into(), api_key: None,
+                    }).ok_or_else(|| "choose grok or gpt".to_string()).map(Some)
+                } else {
+                    crate::config::Config::get().mouth_named(plug, None, None, "gpt-4o-mini")
+                };
+                if visitor { let _ = mem.set_llm("", "", None); }
+                match mouth {
                     Ok(Some(mouth)) => {
                         if let Err(e) = mem.set_plug(&mouth.plug, &mouth.url, &mouth.model, mouth.api_key)
                         {
@@ -136,17 +153,25 @@ pub fn dispatch(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
                     Ok(None) => return err(400, "plug has no endpoint"),
                     Err(e) => return err(400, &e),
                 }
-                return ok(llm_json(mem));
+                return ok(llm_json(mem, visitor));
             }
             let url = json_str(body, "url").unwrap_or_else(|| mem.llm.url.clone());
             let model = json_str(body, "model").unwrap_or_else(|| mem.llm.model.clone());
             let key = json_str(body, "api_key");
+            if visitor && !url.is_empty() && !["grok", "gpt"].iter().any(|plug| {
+                crate::config::expand_plug(plug).map(|(endpoint, _)| endpoint == url).unwrap_or(false)
+            }) { return err(400, "public demo supports grok and gpt endpoints only"); }
+            if visitor && url != mem.llm.url { let _ = mem.set_llm("", "", None); }
             if json_bool(body, "clear").unwrap_or(false) || url.trim().is_empty() {
                 let _ = mem.set_llm("", "", None);
-            } else if let Err(e) = mem.set_llm(&url, &model, key) {
-                return err(400, &e);
+            } else {
+                let result = if visitor {
+                    let plug = if crate::config::expand_plug("gpt").map(|(endpoint, _)| endpoint == url).unwrap_or(false) { "gpt" } else { "grok" };
+                    mem.set_plug(plug, &url, &model, key)
+                } else { mem.set_llm(&url, &model, key) };
+                if let Err(e) = result { return err(400, &e); }
             }
-            ok(llm_json(mem))
+            ok(llm_json(mem, visitor))
         }
         ("GET", "/mood") => ok(format!(
             "{{\"valence\":{:.4},\"arousal\":{:.4},\"disgust\":{:.4}}}",
@@ -614,12 +639,18 @@ fn mask_key(key: &str) -> String {
     format!("{}…{}", &t[..4], &t[t.len() - 4..])
 }
 
-fn llm_json(mem: &SelectiveMemory) -> String {
+fn llm_json(mem: &SelectiveMemory, visitor: bool) -> String {
     let attached = !mem.llm.url.is_empty();
     let key = mem.llm.key.as_deref().unwrap_or("");
     let cfg = crate::config::Config::get();
-    let plugs: Vec<String> = cfg
-        .plugs()
+    let mouths = if visitor {
+        ["grok", "gpt"].iter().filter_map(|plug| {
+            crate::config::expand_plug(plug).map(|(url, model)| crate::config::Mouth {
+                plug: (*plug).into(), url: url.into(), model: model.into(), api_key: None,
+            })
+        }).collect()
+    } else { cfg.plugs() };
+    let plugs: Vec<String> = mouths
         .into_iter()
         .map(|p| {
             format!(
@@ -635,7 +666,7 @@ fn llm_json(mem: &SelectiveMemory) -> String {
             )
         })
         .collect();
-    let default = cfg.default_llm().unwrap_or_default();
+    let default = if visitor { String::new() } else { cfg.default_llm().unwrap_or_default() };
     format!(
         "{{\"ok\":true,\"attached\":{},\"plug\":\"{}\",\"default\":\"{}\",\"url\":\"{}\",\"model\":\"{}\",\"has_key\":{},\"key_hint\":\"{}\",\"plugs\":[{}]}}",
         if attached { "true" } else { "false" },
@@ -648,7 +679,7 @@ fn llm_json(mem: &SelectiveMemory) -> String {
         } else {
             "false"
         },
-        json_esc(&if key.is_empty() { String::new() } else { mask_key(key) }),
+        json_esc(&if key.is_empty() { String::new() } else if visitor { "••••".into() } else { mask_key(key) }),
         plugs.join(","),
     )
 }

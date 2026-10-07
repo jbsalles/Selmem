@@ -20,7 +20,7 @@ jobs:
         run: |
           for attempt in {1..30}; do
             if curl --fail --silent http://localhost:10000/health >/dev/null; then
-              breakstaging
+              break
             fi
             sleep 1
           done
@@ -38,6 +38,19 @@ jobs:
             sleep 1
           done
           curl --fail --silent http://localhost:10000/health
+      - name: Check anonymous visitor isolation
+        run: |
+          docker stop selmem-test
+          docker run -d --name selmem-public -p 10000:10000 -e SELMEM_PUBLIC_DEMO=true -e SELMEM_TOKEN=ignored-in-demo -e SELMEM_API_KEY=dummy-server-key selmem-test
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:10000/health >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          python3 deploy/test_public_demo.py http://localhost:10000
       - name: Container logs
         if: always()
-        run: docker logs selmem-test
+        run: |
+          docker logs selmem-test
+          docker logs selmem-public || true

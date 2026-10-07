@@ -16,5 +16,5 @@ services:
         value: tender
       - key: SELMEM_PATH
         value: /var/lib/selmem/demo.db
-      - key: SELMEM_TOKEN
-        generateValue: true
+      - key: SELMEM_PUBLIC_DEMO
+        value: "true"

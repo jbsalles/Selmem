@@ -470,4 +470,4 @@ Humans own architecture, concepts and governance. Models draft code, tests, and 
 ## Test deployment
 
 Deploy the Rust server and UI together on Render Free using [the deployment guide](deploy/README.md).
-The `staging` branch deploys after CI passes; the demo uses temporary shared memory.
+The `main` branch deploys after CI passes; the public demo isolates each visitor’s temporary memory and provider key.
