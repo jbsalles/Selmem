@@ -40,7 +40,9 @@ fn persist_roundtrip_keeps_lived_memory_and_archive() {
 
 #[test]
 fn http_api_live_remember_sleep() {
-    let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire"));
+    // API /sleep jumps time; keep that jump out of parallel fixtures.
+    let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire")).detach_clock();
+    let jump_before = mem.clock.jump;
     let live = selmem::api::dispatch(
         &mut mem,
         "POST",
@@ -53,6 +55,7 @@ fn http_api_live_remember_sleep() {
 
     let sleep = selmem::api::dispatch(&mut mem, "POST", "/sleep", "", "{}");
     assert_eq!(sleep.status, 200);
+    assert_eq!(mem.clock.jump - jump_before, u64::from(mem.clock.scale) * 3600);
 
     let rec = selmem::api::dispatch(&mut mem, "POST", "/remember", "", r#"{"query":"the rain"}"#);
     assert_eq!(rec.status, 200);
@@ -128,7 +131,8 @@ fn sleep_merges_close_episodes_and_can_extinguish() {
     let mut profile = EntityProfile::tender("Claire");
     profile.encode_threshold = 0.12;
     profile.merge_similarity = 0.15;
-    let mut mem = SelectiveMemory::new(profile);
+    // Fusion is tested on fresh episodes, independently of other tests' clocks.
+    let mut mem = SelectiveMemory::new(profile).detach_clock();
     for text in [
         "You stayed in the rain by the window.",
         "That rain again: you stayed by the window and did not leave.",

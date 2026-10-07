@@ -153,7 +153,8 @@ pub fn new_id(prefix: &str) -> String {
 }
 
 pub fn set_next_id(n: u64) {
-    NEXT_ID.store(n.max(1), Ordering::Relaxed);
+    // Loading an older book or selecting a seed must never reuse live IDs.
+    NEXT_ID.fetch_max(n.max(1), Ordering::Relaxed);
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
