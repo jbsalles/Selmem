@@ -15,6 +15,12 @@
   header h1 { font-size: 1.15rem; font-weight: normal; margin:0; }
   header p { margin: 4px 0 0; color:var(--muted); font-size:.9rem; }
   .head-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .identity { display:flex; align-items:center; gap:8px; }
+  .memory-warning { position:relative; }
+  .memory-warning button { background:transparent; color:var(--kept); padding:2px 5px; font-size:1rem; }
+  .memory-warning [role=tooltip] { display:none; position:absolute; top:100%; left:-70px; width:260px; max-width:calc(100vw - 40px); padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:8px; color:var(--ink); font: .78rem/1.5 system-ui,sans-serif; z-index:10; }
+  .memory-warning:hover [role=tooltip], .memory-warning:focus-within [role=tooltip] { display:block; }
+  .memory-warning[hidden] { display:none; }
   #log { flex:1; overflow-y:auto; padding: 16px 20px 88px; display:flex; flex-direction:column; gap:12px; }
   .msg { max-width: 92%; }
   .me { align-self:flex-end; background:#2a2430; padding:10px 14px; border-radius:14px 14px 4px 14px; }
@@ -106,6 +112,10 @@
   }
   #opts .field-lab { display:block; color:var(--muted); font-size:.75rem; margin-top:6px; }
   #opts .row-btns { display:flex; gap:6px; margin-top:4px; }
+  #opts .provider-select { position:relative; margin:6px 0 14px; }
+  #opts .provider-select::after { content:'⌄'; position:absolute; right:14px; top:11px; pointer-events:none; color:var(--kept); }
+  #llm-plug { appearance:none; width:100%; padding:12px 38px 12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font:600 .9rem system-ui,sans-serif; cursor:pointer; }
+  #llm-plug:focus-visible, #opts input:focus-visible { outline:2px solid var(--kept); outline-offset:2px; }
   #opts details { margin-top:8px; }
   #opts details summary { color:var(--muted); cursor:pointer; font-size:.82rem; padding:8px 0; }
   #opts-status { color:var(--muted); font-size:.75rem; padding:8px 16px; border-top:1px solid var(--line); min-height:2.2em; }
@@ -116,8 +126,14 @@
   <header>
     <div class="head-row">
       <div>
-        <h1 id="name">SelMem</h1>
-        <p id="status">test interface — memory lives on this server</p>
+        <div class="identity">
+          <h1 id="name">Claire</h1>
+          <span class="memory-warning" id="memory-warning" hidden>
+            <button type="button" aria-label="Temporary memory warning" aria-describedby="memory-tooltip">⚠</button>
+            <span role="tooltip" id="memory-tooltip">Memory is cleared every 24 hours. Server restarts can clear it sooner. Your settings stay saved in this browser.</span>
+          </span>
+        </div>
+        <p id="status">connecting to your memory…</p>
       </div>
       <div>
         <button class="ghost" type="button" id="toggle-opts">options</button>
@@ -157,20 +173,21 @@
     </fieldset>
     <fieldset>
       <legend>LLM</legend>
-      <p class="hint">Choose a mouth from .selmem. defaultLlm starts the daemon. The key stays on the process, not in the vault.</p>
-      <label class="field-lab" for="llm-plug">mouth</label>
-      <select id="llm-plug">
-        <option value="rules">rules</option>
-      </select>
+      <p class="hint">Choose an LLM and enter your own API key to chat. Your key and settings are saved in this browser.</p>
+      <label class="field-lab" for="llm-plug">provider</label>
+      <div class="provider-select"><select id="llm-plug">
+        <option value="grok">Grok</option>
+        <option value="gpt">Gpt</option>
+      </select></div>
       <label class="field-lab" for="llm-url">endpoint</label>
       <input type="text" id="llm-url" placeholder="https://api.x.ai/v1/chat/completions" autocomplete="off" readonly>
       <label class="field-lab" for="llm-model">model</label>
       <input type="text" id="llm-model" placeholder="grok-4.3" autocomplete="off" readonly>
       <label class="field-lab" for="llm-key">api key</label>
-      <input type="password" id="llm-key" placeholder="unchanged if left blank" autocomplete="off">
+      <input type="password" id="llm-key" placeholder="Enter your API key" autocomplete="off">
       <div class="row-btns">
-        <button type="button" id="llm-save">attach</button>
-        <button class="ghost" type="button" id="llm-clear">use rules</button>
+        <button type="button" id="llm-save">save LLM</button>
+        <button class="ghost" type="button" id="llm-clear">forget key</button>
       </div>
     </fieldset>
     <fieldset>
@@ -251,29 +268,73 @@
 <script>
 const log = document.getElementById('log');
 const tokenEl = document.getElementById('token');
-tokenEl.value = localStorage.getItem('selmem_token') || '';
-let publicDemo = false;
-async function connectSession() {
-  const response = await fetch('/session', { credentials: 'same-origin' });
-  const state = await response.json();
-  if (!response.ok) throw new Error(state.error || 'Could not start session');
-  publicDemo = !!state.public_demo;
-  tokenEl.closest('fieldset').hidden = publicDemo;
-  if (publicDemo) {
-    document.querySelector('#llm-plug').closest('fieldset').querySelector('.hint').textContent =
-      'Your memory and API key belong to this browser session. Enter your own provider key. Sessions expire after 30 minutes idle or a server restart.';
-  }
+const SETUP_MESSAGE = 'No, LLM setup, please configure it in options';
+function stored(key, fallback) {
+  try { return localStorage.getItem(key) || fallback; } catch (_) { return fallback; }
 }
-let sessionReady = connectSession();
+function storeValue(key, value) {
+  try { localStorage.setItem(key, value); }
+  catch (_) { document.getElementById('opts-status').textContent = 'Browser storage is unavailable. Settings will last only for this page.'; }
+}
+function loadSettings() {
+  try {
+    const value = JSON.parse(stored('selmem_settings', '{}'));
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  } catch (_) { return {}; }
+}
+let settings = loadSettings();
+let sessionId = stored('selmem_session', '');
+tokenEl.value = stored('selmem_token', '');
+let publicDemo = false;
+let sessionReady;
 let renewal = null;
 let bookTab = 'events';
 let bookCache = { traces: [], axioms: [], archives: [], events: [] };
-
+function saveSettings() { storeValue('selmem_settings', JSON.stringify(settings)); }
+function selectedProvider() { return settings.llm?.plug === 'gpt' ? 'gpt' : 'grok'; }
+function savedKey(plug) {
+  const key = settings.llm?.keys?.[plug];
+  return typeof key === 'string' ? key : '';
+}
+function llmConfig(plug, key) { return key ? { plug, api_key: key } : { clear: true }; }
 function headers() {
   const h = { 'Content-Type': 'application/json' };
+  if (sessionId) h['X-Selmem-Session'] = sessionId;
   const t = tokenEl.value.trim();
-  if (t && !publicDemo) { h['Authorization'] = 'Bearer ' + t; localStorage.setItem('selmem_token', t); }
+  if (t && !publicDemo) h['Authorization'] = 'Bearer ' + t;
   return h;
+}
+async function request(method, path, body) {
+  const response = await fetch(path, { method, credentials: 'same-origin', headers: headers(), body: body ? JSON.stringify(body) : undefined });
+  const text = await response.text();
+  let data;
+  try { data = JSON.parse(text); } catch (_) { data = { error: text }; }
+  return { response, data };
+}
+async function directApi(method, path, body) {
+  const { response, data } = await request(method, path, body);
+  if (!response.ok) throw new Error(data.error || response.status);
+  return data;
+}
+async function connectSession() {
+  // Read again so tabs opened later reconnect to the same browser memory space.
+  settings = loadSettings();
+  sessionId = stored('selmem_session', sessionId);
+  const state = await directApi('GET', '/session');
+  publicDemo = !!state.public_demo;
+  tokenEl.closest('fieldset').hidden = publicDemo;
+  document.getElementById('memory-warning').hidden = !publicDemo;
+  if (publicDemo) {
+    sessionId = state.session_id;
+    storeValue('selmem_session', sessionId);
+    await directApi('POST', '/profile', settings.profile || { name: 'Claire' });
+  } else if (settings.profile) {
+    await directApi('POST', '/profile', settings.profile);
+  }
+  if (publicDemo || settings.llm) {
+    const plug = selectedProvider();
+    await directApi('POST', '/llm', llmConfig(plug, savedKey(plug)));
+  }
 }
 function add(cls, html) {
   const d = document.createElement('div');
@@ -284,18 +345,18 @@ function add(cls, html) {
 }
 async function api(method, path, body, retry = true) {
   await sessionReady;
-  const r = await fetch(path, { method, credentials: 'same-origin', headers: headers(), body: body ? JSON.stringify(body) : undefined });
-  const t = await r.text();
-  let j = {};
-  try { j = JSON.parse(t); } catch(e) { j = { error: t }; }
-  if (publicDemo && retry && r.status === 401 && j.error === 'session expired') {
-    if (!renewal) renewal = connectSession().finally(() => { renewal = null; });
+  const { response, data } = await request(method, path, body);
+  if (publicDemo && retry && response.status === 401 && data.error === 'session expired') {
+    if (!renewal) renewal = connectSession().then(() => {
+      log.innerHTML = '';
+      bookCache = { traces: [], axioms: [], archives: [], events: [] };
+      add('sys', 'Your temporary memory was cleared. A new space has been started with your saved settings.');
+    }).finally(() => { renewal = null; });
     await renewal;
-    add('sys', 'Your session expired. A new memory has been started; attach your API key again.');
     return api(method, path, body, false);
   }
-  if (!r.ok) throw new Error(j.error || r.status);
-  return j;
+  if (!response.ok) throw new Error(data.error || response.status);
+  return data;
 }
 function when(sec) {
   if (!sec) return '';
@@ -365,26 +426,18 @@ function fillOptsFrom(p) {
   paintVals();
   optsApplying = false;
 }
+function paintLlm(l) {
+  const provider = l.attached ? l : (l.plugs || []).find(p => p.name === selectedProvider()) || l;
+  document.getElementById('llm-url').value = provider.url || '';
+  document.getElementById('llm-model').value = provider.model || '';
+}
 async function fillLlm() {
-  try {
-    const l = await api('GET', '/llm');
-    const sel = document.getElementById('llm-plug');
-    const plugs = l.plugs || [];
-    sel.innerHTML = '<option value="rules">rules</option>' + plugs.map(p =>
-      '<option value="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) +
-      (p.model ? ' · ' + escapeHtml(p.model) : '') +
-      (p.has_key ? '' : ' · no key') + '</option>'
-    ).join('');
-    sel.value = l.attached ? (l.plug || 'rules') : 'rules';
-    if (sel.value === '' ) sel.value = 'rules';
-    document.getElementById('llm-url').value = l.url || '';
-    document.getElementById('llm-model').value = l.model || '';
-    const keyEl = document.getElementById('llm-key');
-    keyEl.value = '';
-    keyEl.placeholder = l.has_key ? (l.key_hint || '••••') + ' — leave blank to keep' : 'api key';
-  } catch (e) {
-    document.getElementById('opts-status').textContent = e.message;
-  }
+  const l = await api('GET', '/llm');
+  const plug = selectedProvider();
+  document.getElementById('llm-plug').value = plug;
+  document.getElementById('llm-key').value = savedKey(plug);
+  const provider = (l.plugs || []).find(p => p.name === plug);
+  paintLlm(provider || l);
 }
 async function fillOpts() {
   try {
@@ -408,6 +461,8 @@ async function saveOpts(extra) {
   if (name) body.name = name;
   try {
     const p = await api('POST', '/profile', body);
+    settings.profile = p;
+    saveSettings();
     fillOptsFrom(p);
     document.getElementById('opts-status').textContent = 'saved · ' + (p.voice || 'custom');
     document.getElementById('name').textContent = p.name || document.getElementById('name').textContent;
@@ -485,8 +540,8 @@ async function loadBook() {
 }
 async function refresh() {
   try {
-    const h = await api('GET', '/health');
-    document.getElementById('name').textContent = h.name || 'SelMem';
+    const h = await api('GET', '/stats');
+    document.getElementById('name').textContent = h.name || 'Claire';
     document.getElementById('status').textContent = h.traces + ' traces · ' + h.axioms + ' axioms · ' + h.archives + ' archives';
     try {
       const p = await api('GET', '/profile');
@@ -552,6 +607,12 @@ document.getElementById('f').onsubmit = async (e) => {
   add('me', escapeHtml(text));
   busy('send', true);
   try {
+    const llm = await api('GET', '/llm');
+    if (!llm.attached || !llm.has_key || !['grok', 'gpt'].includes(llm.plug)) {
+      add('her', escapeHtml(SETUP_MESSAGE));
+      setOptsOpen(true);
+      return;
+    }
     const turn = await api('POST', '/turn', { text });
     add('her', escapeHtml(turn.reply || '…'));
     refresh();
@@ -564,46 +625,46 @@ document.getElementById('f').onsubmit = async (e) => {
 };
 document.getElementById('opt-name').addEventListener('change', () => saveOpts());
 document.getElementById('token').addEventListener('change', () => {
-  localStorage.setItem('selmem_token', tokenEl.value.trim());
+  storeValue('selmem_token', tokenEl.value.trim());
 });
 document.getElementById('llm-plug').addEventListener('change', async () => {
   const plug = document.getElementById('llm-plug').value;
+  settings.llm = { plug, keys: settings.llm?.keys || {} };
+  saveSettings();
+  document.getElementById('llm-key').value = savedKey(plug);
   try {
-    const l = plug === 'rules'
-      ? await api('POST', '/llm', { clear: true })
-      : await api('POST', '/llm', { plug });
-    document.getElementById('llm-url').value = l.url || '';
-    document.getElementById('llm-model').value = l.model || '';
-    document.getElementById('llm-key').value = '';
-    document.getElementById('llm-key').placeholder = l.has_key ? (l.key_hint || '••••') + ' — leave blank to keep' : 'api key';
-    document.getElementById('opts-status').textContent = l.attached ? ('LLM · ' + (l.plug || l.model || '')) : 'rules';
+    paintLlm(await api('POST', '/llm', llmConfig(plug, savedKey(plug))));
+    document.getElementById('opts-status').textContent = savedKey(plug) ? 'LLM settings restored' : 'Enter your API key to chat';
   } catch (e) {
     document.getElementById('opts-status').textContent = e.message;
   }
 });
 document.getElementById('llm-save').onclick = async () => {
-  const url = document.getElementById('llm-url').value.trim();
-  const model = document.getElementById('llm-model').value.trim();
+  const plug = document.getElementById('llm-plug').value;
   const api_key = document.getElementById('llm-key').value.trim();
-  const body = { url, model };
-  if (api_key) body.api_key = api_key;
+  if (!api_key) {
+    document.getElementById('opts-status').textContent = 'Enter your API key to chat';
+    document.getElementById('llm-key').focus();
+    return;
+  }
   try {
-    const l = await api('POST', '/llm', body);
-    document.getElementById('llm-key').value = '';
-    document.getElementById('llm-key').placeholder = l.has_key ? (l.key_hint || '••••') + ' — leave blank to keep' : 'api key';
-    document.getElementById('opts-status').textContent = l.attached ? ('LLM · ' + (l.model || '') + ' @ ' + (l.url || '')) : 'rules';
+    const l = await api('POST', '/llm', { plug, api_key });
+    settings.llm = { plug, keys: { ...(settings.llm?.keys || {}), [plug]: api_key } };
+    saveSettings();
+    paintLlm(l);
+    document.getElementById('opts-status').textContent = 'Saved in this browser · ready to chat';
   } catch (e) {
     document.getElementById('opts-status').textContent = e.message;
   }
 };
 document.getElementById('llm-clear').onclick = async () => {
+  const plug = document.getElementById('llm-plug').value;
+  settings.llm = { plug, keys: { ...(settings.llm?.keys || {}), [plug]: '' } };
+  saveSettings();
+  document.getElementById('llm-key').value = '';
   try {
-    await api('POST', '/llm', { clear: true });
-    document.getElementById('llm-url').value = '';
-    document.getElementById('llm-model').value = '';
-    document.getElementById('llm-key').value = '';
-    document.getElementById('llm-key').placeholder = 'api key';
-    document.getElementById('opts-status').textContent = 'rules narrator';
+    paintLlm(await api('POST', '/llm', { clear: true }));
+    document.getElementById('opts-status').textContent = 'Key removed · configure an LLM to chat';
   } catch (e) {
     document.getElementById('opts-status').textContent = e.message;
   }
@@ -625,7 +686,7 @@ document.getElementById('who').onclick = async () => {
   busy('bar', true);
   try {
     const w = await api('GET', '/who');
-    const axioms = (w.axioms || []).map(a => '· ' + a.statement).join('<br>') || '(no axiom yet)';
+    const axioms = (w.axioms || []).map(a => '· ' + escapeHtml(a.statement)).join('<br>') || '(no axiom yet)';
     add('her', axioms);
   } catch (e) {
     add('her', '<span class="drop">' + escapeHtml(e.message) + '</span>');
@@ -660,6 +721,7 @@ document.getElementById('sleep').onclick = async () => {
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+sessionReady = connectSession();
 refresh();
 </script>
 </body>

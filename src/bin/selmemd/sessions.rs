@@ -5,12 +5,12 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 pub type Organ = Arc<Mutex<Option<SelectiveMemory>>>;
-const TTL: Duration = Duration::from_secs(30 * 60);
+const TTL: Duration = Duration::from_secs(24 * 60 * 60);
 const MAX_SESSIONS: usize = 64;
 
 struct Session {
     organ: Organ,
-    touched: Instant,
+    created: Instant,
 }
 
 pub struct Sessions {
@@ -32,9 +32,8 @@ impl Sessions {
             .entries
             .lock()
             .map_err(|_| io::Error::other("sessions locked"))?;
-        entries.retain(|_, s| now.duration_since(s.touched) < TTL);
-        if let Some(session) = entries.get_mut(id) {
-            session.touched = now;
+        entries.retain(|_, s| now.duration_since(s.created) < TTL);
+        if let Some(session) = entries.get(id) {
             return Ok(Some((id.into(), Arc::clone(&session.organ))));
         }
         if !create || entries.len() >= MAX_SESSIONS {
@@ -51,10 +50,18 @@ impl Sessions {
             id.clone(),
             Session {
                 organ: Arc::clone(&organ),
-                touched: now,
+                created: now,
             },
         );
         Ok(Some((id, organ)))
+    }
+
+    /// Drop expired memory and keys even when no visitor sends another request.
+    pub fn purge_expired(&self) -> io::Result<()> {
+        let now = Instant::now();
+        self.entries.lock().map_err(|_| io::Error::other("sessions locked"))?
+            .retain(|_, s| now.duration_since(s.created) < TTL);
+        Ok(())
     }
 }
 
@@ -91,7 +98,7 @@ mod tests {
     }
 
     #[test]
-    fn idle_sessions_expire_and_capacity_is_bounded() {
+    fn daily_sessions_expire_even_when_active_and_capacity_is_bounded() {
         let sessions = Sessions::new(EntityProfile::tender("Demo"));
         let (id, _) = sessions.resolve("", true).unwrap().unwrap();
         sessions
@@ -100,11 +107,24 @@ mod tests {
             .unwrap()
             .get_mut(&id)
             .unwrap()
-            .touched = Instant::now() - TTL;
+            .created = Instant::now() - TTL;
         assert!(sessions.resolve(&id, false).unwrap().is_none());
         for _ in 0..MAX_SESSIONS {
             assert!(sessions.resolve("", true).unwrap().is_some());
         }
         assert!(sessions.resolve("", true).unwrap().is_none());
+    }
+
+    #[test]
+    fn returning_visitors_do_not_extend_daily_lifetime() {
+        let sessions = Sessions::new(EntityProfile::tender("Claire"));
+        let (id, _) = sessions.resolve("", true).unwrap().unwrap();
+        let created = Instant::now() - Duration::from_secs(23 * 60 * 60);
+        sessions.entries.lock().unwrap().get_mut(&id).unwrap().created = created;
+        assert!(sessions.resolve(&id, false).unwrap().is_some());
+        assert_eq!(sessions.entries.lock().unwrap().get(&id).unwrap().created, created);
+        sessions.entries.lock().unwrap().get_mut(&id).unwrap().created = Instant::now() - TTL;
+        sessions.purge_expired().unwrap();
+        assert!(sessions.entries.lock().unwrap().is_empty());
     }
 }

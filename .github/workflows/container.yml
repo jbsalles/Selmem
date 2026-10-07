@@ -49,6 +49,7 @@ jobs:
             sleep 1
           done
           python3 deploy/test_public_demo.py http://localhost:10000
+          node deploy/test_ui.mjs http://localhost:10000
       - name: Container logs
         if: always()
         run: |

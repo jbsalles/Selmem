@@ -3,7 +3,9 @@
 The UI and Rust API share one HTTPS origin. `SELMEM_PUBLIC_DEMO=true` enables
 anonymous browser sessions and ignores `SELMEM_TOKEN`. Each visitor gets a separate
 memory, conversation, profile and LLM configuration. The server supplies a random
-HttpOnly, SameSite=Strict cookie. Render HTTPS responses also set Secure.
+HttpOnly, SameSite=Strict cookie. Render HTTPS responses also set Secure. The UI
+also stores the server-issued session ID in localStorage and sends it in
+`X-Selmem-Session`, so returning visitors reconnect to the same memory space.
 There is no visitor account or shared token to enter.
 
 ## Update an existing Render deployment
@@ -22,17 +24,23 @@ For a new deployment, create a Render Blueprint from `jbsalles/Selmem`, branch
 
 ## Visitors
 
-Select grok or gpt, enter your own provider API key, and click Attach. Then chat.
-Without a key, the rule narrator is available; provider requests require a valid key.
+The entity starts as Claire. Select Grok or Gpt, enter your own provider API key,
+and click Save LLM. Chat requires an LLM and a key; there is no rules option in the UI.
 Your key is sent over HTTPS to this server, kept in your session's RAM, and forwarded
-only to the selected provider. It is not written to a database, exposed by GET /llm,
-or inherited by another session. Changing provider clears the previous key.
+only to the selected provider. It is not written to a server database, exposed by
+GET /llm, or inherited by another session. The browser saves provider keys and
+profile options in localStorage and restores them on reload or after session expiry.
+Use Forget key to remove the selected provider's saved key. Switching providers
+restores that provider's own saved key, if present.
 The public demo restricts endpoints to the built-in OpenAI and xAI URLs.
 
-Sessions expire after 30 minutes of inactivity and all sessions disappear when the
+Memory spaces expire 24 hours after creation, even with continued activity. A
+background cleanup drops expired sessions within a minute; expired spaces cannot
+be accessed. All sessions also disappear when the
 server restarts/redeploys/sleeps. At most 64 sessions are retained. If full, new visitors
-must retry after idle sessions expire. Tabs in one browser profile share a session.
-An expired session starts a new empty memory and requires entering the key again.
+must retry after sessions expire. Tabs in one browser profile share a session.
+An expired session starts a new empty memory and restores the saved configuration.
+The header warning explains daily memory clearing and early loss on server restarts.
 This is a temporary demo, unsuitable for durable experiments.
 
 ## Local check

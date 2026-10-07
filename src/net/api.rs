@@ -60,7 +60,7 @@ fn dispatch_for(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
         };
     }
     match (method, path) {
-        ("GET", "/health") => ok(format!(
+        ("GET", "/health") | ("GET", "/stats") => ok(format!(
             "{{\"ok\":true,\"name\":\"{}\",\"traces\":{},\"archives\":{},\"axioms\":{},\"scorer\":\"{}\"}}",
             json_esc(&mem.profile.name),
             mem.store.traces.len(),
@@ -145,7 +145,7 @@ fn dispatch_for(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
                 if visitor { let _ = mem.set_llm("", "", None); }
                 match mouth {
                     Ok(Some(mouth)) => {
-                        if let Err(e) = mem.set_plug(&mouth.plug, &mouth.url, &mouth.model, mouth.api_key)
+                        if let Err(e) = mem.set_plug(&mouth.plug, &mouth.url, &mouth.model, json_str(body, "api_key").or(mouth.api_key))
                         {
                             return err(400, &e);
                         }
@@ -380,8 +380,8 @@ fn dispatch_for(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
             let topic = mem.talk.topic.clone();
             let (sitting, _) = mem.keep_sitting();
             mem.clear_talk();
-            let hours = crate::core::model::clock_scale() as f32;
-            mem.advance_hours(hours);
+            let hours = memory_time_scale(mem);
+            mem.advance_hours(hours as f32);
             let report = mem.sleep();
             mem.fade_sitting();
             for t in &snap {
@@ -405,9 +405,9 @@ fn dispatch_for(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
                 report.kind.as_str(),
                 report.new_hours,
                 report.charge,
-                crate::core::model::clock_scale(),
-                crate::core::model::clock_scale(),
-                crate::core::model::now_secs()
+                hours,
+                memory_time_scale(mem),
+                mem.clock.now()
             ))
         }
         ("POST", "/speak") => {
@@ -684,6 +684,10 @@ fn llm_json(mem: &SelectiveMemory, visitor: bool) -> String {
     )
 }
 
+fn memory_time_scale(mem: &SelectiveMemory) -> u32 {
+    if mem.clock.detached { mem.clock.scale } else { crate::core::model::clock_scale() }
+}
+
 fn profile_json(mem: &SelectiveMemory) -> String {
     format!(
         "{{\"ok\":true,\"name\":\"{}\",\"voice\":\"{}\",\"encode_threshold\":{:.4},\"w_self\":{:.4},\"embellish_gain\":{:.4},\"disgust_gain\":{:.4},\"decay_lambda\":{:.4},\"narrator_firmness\":{:.4},\"max_recall\":{},\"merge_similarity\":{:.4},\"ground_min_overlap\":{:.4},\"ground_strikes\":{},\"reconsolidation_eta\":{:.4},\"time_scale\":{},\"cut_reconsolidate\":{},\"cut_ground\":{},\"cut_ladder\":{}}}",
@@ -700,7 +704,7 @@ fn profile_json(mem: &SelectiveMemory) -> String {
         mem.profile.ground_min_overlap,
         mem.profile.ground_strikes,
         mem.profile.reconsolidation_eta,
-        crate::core::model::clock_scale(),
+        memory_time_scale(mem),
         if mem.cut.reconsolidate { "true" } else { "false" },
         if mem.cut.ground { "true" } else { "false" },
         if mem.cut.ladder { "true" } else { "false" },

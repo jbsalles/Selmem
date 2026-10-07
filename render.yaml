@@ -11,7 +11,7 @@ services:
     autoDeployTrigger: checksPass
     envVars:
       - key: SELMEM_NAME
-        value: Demo
+        value: Claire
       - key: SELMEM_PROFILE
         value: tender
       - key: SELMEM_PATH

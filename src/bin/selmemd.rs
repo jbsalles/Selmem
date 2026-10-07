@@ -12,13 +12,19 @@ fn main() {
     let cfg = Config::get();
     let bind = cfg.resolve_or(flag(&args, "--bind"), "bind", "127.0.0.1:7420");
     let path = cfg.resolve_or(flag(&args, "--path"), "path", "entity.db");
-    let name = cfg.resolve_or(flag(&args, "--name"), "name", "");
+    let name = cfg.resolve_or(flag(&args, "--name"), "name", "Claire");
     let kind = cfg.resolve_or(flag(&args, "--profile"), "profile", "tender");
     let key = cfg.resolve(flag(&args, "--api-key"), "api_key");
     let embed_url = cfg.resolve(flag(&args, "--embed"), "embed");
     let public_demo = cfg.resolve(None, "public_demo").map(|s| matches!(s.as_str(), "1" | "true" | "yes")).unwrap_or(false);
     let token = if public_demo { None } else { cfg.resolve(flag(&args, "--token"), "token") };
     let visitors = public_demo.then(|| Arc::new(sessions::Sessions::new(profile_for_demo(&name, &kind))));
+    if let Some(visitors) = visitors.clone() {
+        std::thread::spawn(move || loop {
+            std::thread::sleep(std::time::Duration::from_secs(60));
+            if let Err(e) = visitors.purge_expired() { eprintln!("session cleanup: {e}"); }
+        });
+    }
 
     let profile = match kind.as_str() {
         "austere" => EntityProfile::austere(name),
@@ -134,6 +140,7 @@ fn handle_conn(
             let mut auth = String::new();
             let mut audit_role = false;
             let mut cookies = String::new();
+            let mut visitor_id = None;
             let mut secure = false;
             for line in lines {
                 let l = line.to_ascii_lowercase();
@@ -145,6 +152,9 @@ fn handle_conn(
                 }
                 if l.starts_with("cookie:") {
                     cookies = line.split_once(':').map(|(_, v)| v.trim().to_string()).unwrap_or_default();
+                }
+                if l.starts_with("x-selmem-session:") {
+                    visitor_id = Some(line.split_once(':').map(|(_, v)| v.trim().to_string()).unwrap_or_default());
                 }
                 if l.starts_with("x-forwarded-proto:") { secure = l.split_once(':').map(|(_, v)| v.trim() == "https").unwrap_or(false); }
                 if l.starts_with("x-selmem-audit:") {
@@ -167,11 +177,12 @@ fn handle_conn(
             }
             if method == "GET" && path == "/session" {
                 if let Some(visitors) = visitors {
-                    let Some((id, _)) = visitors.resolve(sessions::cookie_id(&cookies), true)? else {
+                    let Some((id, _)) = visitors.resolve(visitor_id.as_deref().unwrap_or_else(|| sessions::cookie_id(&cookies)), true)? else {
                         return write_http(&mut stream, 503, "{\"error\":\"demo full; try again later\"}");
                     };
                     let cookie = format!("Set-Cookie: selmem_session={id}; HttpOnly; SameSite=Strict; Path=/{}\r\n", if secure { "; Secure" } else { "" });
-                    return write_http_extra(&mut stream, 200, "application/json", "{\"public_demo\":true}", &cookie);
+                    let state = format!("{{\"public_demo\":true,\"session_id\":\"{id}\",\"memory_lifetime_hours\":24}}");
+                    return write_http_extra(&mut stream, 200, "application/json", &state, &cookie);
                 }
                 return write_http(&mut stream, 200, "{\"public_demo\":false}");
             }
@@ -194,7 +205,7 @@ fn handle_conn(
             }
             let session;
             let organ = if let Some(visitors) = visitors {
-                let Some((_, selected)) = visitors.resolve(sessions::cookie_id(&cookies), false)? else {
+                let Some((_, selected)) = visitors.resolve(visitor_id.as_deref().unwrap_or_else(|| sessions::cookie_id(&cookies)), false)? else {
                     return write_http(&mut stream, 401, "{\"error\":\"session expired\"}");
                 };
                 session = selected;
@@ -239,8 +250,8 @@ fn dispatch_unlocked(
             if g.mouth_held() {
                 return Ok(busy());
             }
-            if public_demo && !g.llm.url.is_empty() && g.llm.key.as_ref().map(|key| key.trim().is_empty()).unwrap_or(true) {
-                return Ok(selmem::api::HttpResponse { status: 400, body: "{\"error\":\"Enter your provider API key or choose rules\"}".into() });
+            if public_demo && (g.llm.url.is_empty() || g.llm.key.as_ref().map(|key| key.trim().is_empty()).unwrap_or(true)) {
+                return Ok(selmem::api::HttpResponse { status: 400, body: "{\"error\":\"No, LLM setup, please configure it in options\"}".into() });
             }
             let draft = g.open_mouth(&text);
             let narrator = g.narrator_arc();
