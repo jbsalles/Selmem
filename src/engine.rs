@@ -754,7 +754,7 @@ impl SelectiveMemory {
         let profile = if self.drop_stake {
             String::new()
         } else {
-            crate::recall::reading::ReadingProfile::from_book(&self.store, &draft.mood).render()
+            crate::recall::reading::ReadingProfile::for_query(&self.store, &draft.mood, &draft.user, &draft.dump.selected).render()
         };
         let reply = self.narrator.reply_disposed(
             &draft.user,

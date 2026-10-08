@@ -42,7 +42,9 @@ pub struct ScoredTrace {
 }
 
 impl ScoredTrace {
-    pub fn is_eligible(&self) -> bool { eligible(self) }
+    pub fn is_eligible(&self) -> bool {
+        eligible(self)
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -146,15 +148,21 @@ pub fn recall_with(
             // Operational facts have no identity/affect/recency dependency.
             // Require lexical relevance; never give unrelated World records a floor.
             if trace.channel.verbatim() && !talk {
-                let sim = crate::encode::scoring::lexical_similarity(query, &trace.gist)
-                    .max(crate::encode::scoring::lexical_similarity(query, &trace.core));
+                let sim = crate::encode::scoring::lexical_similarity(query, &trace.gist).max(
+                    crate::encode::scoring::lexical_similarity(query, &trace.core),
+                );
                 if sim <= 0.0 {
                     return None;
                 }
                 score = 0.75 * sim + 0.25;
             }
+            let relevance = topic_relevance(query, &trace.core);
             let base_score = score;
-            let anchor = if trace.channel.verbatim() && !talk {
+            let anchor = if trace.attribution == crate::core::model::Attribution::External
+                && relevance <= 0.0
+            {
+                0.0
+            } else if trace.channel.verbatim() && !talk {
                 1.0
             } else {
                 cloud_anchor(&cloud, trace)
@@ -164,28 +172,38 @@ pub fn recall_with(
             } else {
                 score *= anchor;
             }
-            // Supporting axioms only assist an already anchored candidate.
-            if anchor > 0.0 && !store.living_axiom_ids_for(&trace_id).is_empty() {
-                score += 0.12;
-            }
-            // Episode probes ("what happened that day") must not lose to a
-            // sharp World calendar line. Lived Selfhood keeps the floor.
-            if anchor > 0.0 && episode_ask(query) {
-                if trace.channel.verbatim() {
-                    score *= 0.32;
-                } else {
-                    score += 0.20;
-                }
-            }
-            if let Some(schema) = trace.schema.as_deref().filter(|_| anchor > 0.0) {
-                let q = query.to_ascii_lowercase();
-                for part in schema.split('-') {
-                    if part.len() > 3 && q.contains(part) {
-                        score += 0.18;
-                        break;
+            // Bonuses require topic evidence independent of the context cloud.
+            // A singleton motif cannot manufacture eligibility.
+            if anchor > 0.0 && relevance > 0.0 {
+                let strength = store
+                    .axioms
+                    .values()
+                    .filter(|a| {
+                        a.superseded_by.is_none()
+                            && a.layer != crate::core::model::AxiomLayer::Motif
+                            && a.support_trace_ids.contains(&trace_id)
+                    })
+                    .filter(|a| {
+                        let observations: std::collections::HashSet<_> = a
+                            .support_trace_ids
+                            .iter()
+                            .filter_map(|id| store.traces.get(id))
+                            .map(|t| t.observation_id.as_deref().unwrap_or(&t.id))
+                            .collect();
+                        observations.len() >= 2
+                    })
+                    .map(|a| a.strength.clamp(0.0, 1.0))
+                    .fold(0.0_f32, f32::max);
+                score += 0.12 * strength * relevance * anchor;
+                if episode_ask(query) {
+                    if trace.channel.verbatim() {
+                        score *= 0.32;
+                    } else {
+                        score += 0.20 * relevance;
                     }
                 }
             }
+            // Schema names are metadata, not query evidence.
             Some(ScoredTrace {
                 trace_id,
                 score,
@@ -202,8 +220,11 @@ pub fn recall_with(
             .then_with(|| {
                 let ta = &store.traces[&a.trace_id];
                 let tb = &store.traces[&b.trace_id];
-                ta.core.cmp(&tb.core).then(ta.gist.cmp(&tb.gist))
-                    .then_with(|| ta.valence.total_cmp(&tb.valence)).then(ta.created_at.cmp(&tb.created_at))
+                ta.core
+                    .cmp(&tb.core)
+                    .then(ta.gist.cmp(&tb.gist))
+                    .then_with(|| ta.valence.total_cmp(&tb.valence))
+                    .then(ta.created_at.cmp(&tb.created_at))
                     .then(a.trace_id.cmp(&b.trace_id))
             })
     });
@@ -225,8 +246,7 @@ pub fn recall_with(
             (trace.channel, trace.gist.clone(), trace.schema.clone())
         };
 
-        let (narrative, disclaimer, fidelity, pulled, reconsolidated) = if channel.verbatim()
-        {
+        let (narrative, disclaimer, fidelity, pulled, reconsolidated) = if channel.verbatim() {
             (
                 gist,
                 "verbatim record, not distorted".to_string(),
@@ -241,9 +261,11 @@ pub fn recall_with(
         };
 
         if live {
-            let operational = store.traces.get(trace_id).map(|t| {
-                t.channel.verbatim() && t.source != "talk"
-            }).unwrap_or(false);
+            let operational = store
+                .traces
+                .get(trace_id)
+                .map(|t| t.channel.verbatim() && t.source != "talk")
+                .unwrap_or(false);
             if let Some(trace) = store.traces.get_mut(trace_id) {
                 if operational {
                     trace.access = 1.0;
@@ -428,11 +450,7 @@ fn speak_self(
     let narrator_rewrite = {
         let trace = store.traces.get(trace_id).unwrap();
         if crate::recall::ground::should_force_core_rewrite(
-            trace,
-            profile,
-            &generated,
-            &core,
-            scorer,
+            trace, profile, &generated, &core, scorer,
         ) {
             Some(narrator.recontextualize(trace, &core, profile))
         } else {
@@ -476,6 +494,8 @@ fn speak_self(
 fn episode_ask(query: &str) -> bool {
     let q = query.to_ascii_lowercase();
     q.contains("what happened")
+        || q.contains("what effect")
+        || q.contains("how did")
         || q.contains("that day")
         || q.contains("this day")
         || q.contains("how did you feel")
@@ -487,7 +507,10 @@ fn episode_ask(query: &str) -> bool {
 
 /// Query seeds the cloud. Book links add hours: merge edges and axiom co-supports.
 /// A same-schema label does not. One shared token is not an anchor.
-pub fn context_cloud_pub(store: &crate::core::store::MemoryStore, query: &str) -> std::collections::HashMap<String, f32> {
+pub fn context_cloud_pub(
+    store: &crate::core::store::MemoryStore,
+    query: &str,
+) -> std::collections::HashMap<String, f32> {
     context_cloud(store, query, &[])
 }
 
@@ -501,15 +524,21 @@ fn context_cloud(
     let mut ids = store.active_ids();
     ids.sort();
     let add = |weights: &mut std::collections::HashMap<String, f32>, text: &str, w: f32| {
-        if w <= 0.0 { return; }
+        if w <= 0.0 {
+            return;
+        }
         for tok in token_set(text) {
             *weights.entry(tok).or_insert(0.0) += w;
         }
     };
     let mut seeds: Vec<String> = Vec::new();
     for id in &ids {
-        let Some(t) = store.traces.get(id) else { continue };
-        if t.suppressed || t.status == TraceStatus::Latent { continue; }
+        let Some(t) = store.traces.get(id) else {
+            continue;
+        };
+        if t.suppressed || t.status == TraceStatus::Latent {
+            continue;
+        }
         let mut sim = lexical_similarity(query, &t.gist);
         sim = sim.max(lexical_similarity(query, &t.core));
         for cue in &t.cues {
@@ -518,7 +547,9 @@ fn context_cloud(
         if !query_emb.is_empty() && !t.embedding.is_empty() {
             sim = sim.max(crate::encode::embed::cosine(query_emb, &t.embedding));
         }
-        if sim <= 0.0 { continue; }
+        if sim <= 0.0 {
+            continue;
+        }
         seeds.push(id.clone());
         let w = sim * behavior_weight(t) * t.self_relevance.max(0.05) * t.access.max(0.05);
         add(&mut weights, &t.gist, w);
@@ -537,7 +568,9 @@ fn context_cloud(
             }
         }
         for a in store.axioms.values() {
-            if a.superseded_by.is_some() { continue; }
+            if a.superseded_by.is_some() {
+                continue;
+            }
             if a.support_trace_ids.iter().any(|s| s == id) {
                 linked.extend(a.support_trace_ids.iter().cloned());
             }
@@ -546,9 +579,15 @@ fn context_cloud(
     linked.sort();
     linked.dedup();
     for id in linked {
-        if seeds.iter().any(|s| s == &id) { continue; }
-        let Some(t) = store.traces.get(&id) else { continue };
-        if t.suppressed || t.status == TraceStatus::Latent { continue; }
+        if seeds.iter().any(|s| s == &id) {
+            continue;
+        }
+        let Some(t) = store.traces.get(&id) else {
+            continue;
+        };
+        if t.suppressed || t.status == TraceStatus::Latent {
+            continue;
+        }
         let w = 0.5 * behavior_weight(t) * t.self_relevance.max(0.05) * t.access.max(0.05);
         add(&mut weights, &t.gist, w);
         add(&mut weights, &t.core, w * 0.5);
@@ -573,14 +612,106 @@ fn token_coverage(cloud: &std::collections::HashMap<String, f32>, tokens: &[Stri
     if scale <= 0.0 {
         return 0.0;
     }
-    let hit: f32 = tokens.iter().map(|t| cloud.get(t).copied().unwrap_or(0.0)).sum();
+    let hit: f32 = tokens
+        .iter()
+        .map(|t| cloud.get(t).copied().unwrap_or(0.0))
+        .sum();
     (hit / (tokens.len() as f32 * scale)).clamp(0.0, 1.0)
 }
 
-fn cloud_anchor(cloud: &std::collections::HashMap<String, f32>, trace: &crate::core::model::MemoryTrace) -> f32 {
+fn cloud_anchor(
+    cloud: &std::collections::HashMap<String, f32>,
+    trace: &crate::core::model::MemoryTrace,
+) -> f32 {
     let mut tokens = crate::encode::scoring::token_set(&trace.gist);
     tokens.extend(crate::encode::scoring::token_set(&trace.core));
     tokens.sort();
     tokens.dedup();
     token_coverage(cloud, &tokens)
+}
+
+/// Query-topic overlap, excluding task boilerplate and the observed speaker.
+/// This lexical check deliberately does not trust hash collisions.
+pub fn topic_relevance(query: &str, core: &str) -> f32 {
+    let subject = core.split_once(" said:").map(|(s, _)| s.to_lowercase());
+    let tokens = |text: &str| {
+        crate::encode::scoring::token_set(text)
+            .into_iter()
+            .filter(|w| {
+                !matches!(
+                    w.as_str(),
+                    "the"
+                        | "and"
+                        | "that"
+                        | "this"
+                        | "with"
+                        | "have"
+                        | "has"
+                        | "had"
+                        | "was"
+                        | "were"
+                        | "been"
+                        | "said"
+                        | "what"
+                        | "how"
+                        | "who"
+                        | "when"
+                        | "where"
+                        | "why"
+                        | "did"
+                        | "does"
+                        | "from"
+                        | "for"
+                        | "her"
+                        | "his"
+                        | "she"
+                        | "him"
+                        | "they"
+                        | "them"
+                        | "their"
+                        | "you"
+                        | "your"
+                        | "our"
+                        | "are"
+                        | "but"
+                        | "not"
+                        | "will"
+                        | "would"
+                        | "should"
+                        | "can"
+                        | "could"
+                        | "one"
+                        | "more"
+                        | "any"
+                        | "some"
+                        | "into"
+                        | "according"
+                        | "observed"
+                        | "conversation"
+                        | "conversations"
+                        | "answer"
+                        | "words"
+                        | "say"
+                        | "know"
+                        | "please"
+                        | "recommend"
+                        | "concrete"
+                        | "step"
+                        | "safeguard"
+                        | "fallback"
+                        | "state"
+                        | "benefit"
+                ) && subject
+                    .as_ref()
+                    .map_or(true, |s| !s.split_whitespace().any(|p| p == w))
+            })
+            .collect::<Vec<_>>()
+    };
+    let q = tokens(query);
+    let c = tokens(core);
+    if q.is_empty() || c.is_empty() {
+        return 0.0;
+    }
+    let hits = q.iter().filter(|t| c.contains(t)).count();
+    hits as f32 / q.len().min(c.len()) as f32
 }

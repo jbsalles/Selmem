@@ -36,6 +36,67 @@ impl ReadingProfile {
         }
     }
 
+    /// Personal disposition can transfer across topics. External observations
+    /// contribute only when selected and relevant to the named query subject.
+    pub fn for_query(store: &MemoryStore, mood: &Mood, query: &str, selected: &[String]) -> Self {
+        let query_words = crate::encode::scoring::token_set(query);
+        let mut scoped = MemoryStore::new();
+        for (id, t) in &store.traces {
+            if t.channel != crate::core::model::Channel::Selfhood {
+                continue;
+            }
+            if t.suppressed || t.status == TraceStatus::Latent {
+                continue;
+            }
+            if t.attribution == crate::core::model::Attribution::External {
+                if !selected.contains(id) {
+                    continue;
+                }
+                let Some((speaker, _)) = t.core.split_once(" said:") else {
+                    continue;
+                };
+                let names = crate::encode::scoring::token_set(speaker);
+                if names.is_empty() || !names.iter().all(|n| query_words.contains(n)) {
+                    continue;
+                }
+                if crate::recall::retrieve::topic_relevance(query, &t.core) <= 0.0 {
+                    continue;
+                }
+            }
+            scoped.traces.insert(id.clone(), t.clone());
+        }
+        for (id, a) in &store.axioms {
+            if !a.support_trace_ids.is_empty()
+                && a.support_trace_ids
+                    .iter()
+                    .all(|id| scoped.traces.contains_key(id))
+            {
+                scoped.axioms.insert(id.clone(), a.clone());
+            }
+        }
+        if scoped.traces.is_empty() {
+            return Self::empty();
+        }
+        let observed_only = scoped
+            .traces
+            .values()
+            .all(|t| t.attribution == crate::core::model::Attribution::External);
+        let neutral = Mood::default();
+        let scoped_mood = if observed_only { &neutral } else { mood };
+        let mut reading = Self::from_book(&scoped, scoped_mood);
+        let weight: f32 = reading.salient.iter().map(|m| m.fidelity * m.access).sum();
+        if weight > 0.0 {
+            reading.valence_bias = reading
+                .salient
+                .iter()
+                .map(|m| m.valence * m.fidelity * m.access)
+                .sum::<f32>()
+                / weight;
+            reading.mood = mood_label(scoped_mood, reading.valence_bias);
+        }
+        reading
+    }
+
     pub fn empty() -> Self {
         Self::default()
     }

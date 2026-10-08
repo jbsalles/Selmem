@@ -34,10 +34,7 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> WeatherReport {
                 trace.access = 1.0;
                 continue;
             }
-            // A survivor is not weathered. Status, fidelity and disgust stay.
-            if crate::encode::scoring::hazard_scale(trace) < 0.08 {
-                continue;
-            }
+            // Age slows affective change; it must never disable maintenance.
         }
         let (hold_gist, retell) = {
             let t = store.traces.get(id).unwrap();
@@ -49,7 +46,6 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> WeatherReport {
         };
         let event = {
             let trace = store.traces.get_mut(id).unwrap();
-            refresh_access(trace, profile);
             if weather(trace, profile, hold_gist).is_some() {
                 weathered += 1;
             }
@@ -58,11 +54,16 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> WeatherReport {
                 (Some(r), Some(c)) => r <= c,
                 (Some(_), None) => false,
             };
-            let ev = if unused && extinguish(trace, profile) {
+            let mut slow = profile.clone();
+            let hazard = crate::encode::scoring::hazard_scale(trace);
+            slow.extinction_rate *= hazard;
+            slow.disgust_gain *= hazard;
+            slow.embellish_gain *= hazard;
+            let ev = if unused && extinguish(trace, &slow) {
                 extinguished += 1;
                 None
             } else {
-                sculpt(trace, profile, retell)
+                sculpt(trace, &slow, retell)
             };
             if trace.last_consolidated_at.is_none() {
                 trace.last_consolidated_at = Some(trace.created_at);
@@ -75,6 +76,8 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> WeatherReport {
             sculpted.push(ev);
         }
         let trace = store.traces.get_mut(id).unwrap();
+        // Status must use the fidelity produced by this pass, not yesterday's access.
+        refresh_access(trace, profile);
         if trace.permanence >= 0.8 {
             continue;
         }
