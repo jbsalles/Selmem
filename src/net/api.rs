@@ -124,6 +124,9 @@ fn dispatch_for(mem: &mut SelectiveMemory, method: &str, path: &str, query: &str
             if let Some(v) = json_bool(body, "cut_ladder") {
                 mem.cut.ladder = v;
             }
+            let learn = json_bool(body, "associations_learn").unwrap_or(mem.store.associations.learn);
+            let reconstruct = json_bool(body, "associations_reconstruct").unwrap_or(mem.store.associations.reconstruct);
+            mem.set_associations(learn, reconstruct);
             let _ = mem.save();
             ok(profile_json(mem))
         }
@@ -690,7 +693,7 @@ fn memory_time_scale(mem: &SelectiveMemory) -> u32 {
 
 fn profile_json(mem: &SelectiveMemory) -> String {
     format!(
-        "{{\"ok\":true,\"name\":\"{}\",\"voice\":\"{}\",\"encode_threshold\":{:.4},\"w_self\":{:.4},\"embellish_gain\":{:.4},\"disgust_gain\":{:.4},\"decay_lambda\":{:.4},\"narrator_firmness\":{:.4},\"max_recall\":{},\"merge_similarity\":{:.4},\"ground_min_overlap\":{:.4},\"ground_strikes\":{},\"reconsolidation_eta\":{:.4},\"time_scale\":{},\"cut_reconsolidate\":{},\"cut_ground\":{},\"cut_ladder\":{}}}",
+        "{{\"ok\":true,\"name\":\"{}\",\"voice\":\"{}\",\"encode_threshold\":{:.4},\"w_self\":{:.4},\"embellish_gain\":{:.4},\"disgust_gain\":{:.4},\"decay_lambda\":{:.4},\"narrator_firmness\":{:.4},\"max_recall\":{},\"merge_similarity\":{:.4},\"ground_min_overlap\":{:.4},\"ground_strikes\":{},\"reconsolidation_eta\":{:.4},\"time_scale\":{},\"cut_reconsolidate\":{},\"cut_ground\":{},\"cut_ladder\":{},\"associations_learn\":{},\"associations_reconstruct\":{}}}",
         json_esc(&mem.profile.name),
         mem.profile.voice_kind(),
         mem.profile.encode_threshold,
@@ -708,6 +711,8 @@ fn profile_json(mem: &SelectiveMemory) -> String {
         if mem.cut.reconsolidate { "true" } else { "false" },
         if mem.cut.ground { "true" } else { "false" },
         if mem.cut.ladder { "true" } else { "false" },
+        if mem.store.associations.learn { "true" } else { "false" },
+        if mem.store.associations.reconstruct { "true" } else { "false" },
     )
 }
 

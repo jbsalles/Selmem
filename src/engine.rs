@@ -757,6 +757,14 @@ impl SelectiveMemory {
         }
     }
 
+    /// Release a failed mouth call without recording its fallback or error as
+    /// an assistant turn. Recall write-backs already performed are retained.
+    pub fn cancel_mouth(&mut self, draft: &MouthDraft) {
+        if draft.epoch == self.mouth_epoch {
+            self.mouth_held = false;
+        }
+    }
+
     fn speak_inner(
         &mut self,
         user: &str,

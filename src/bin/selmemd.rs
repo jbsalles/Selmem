@@ -240,7 +240,7 @@ fn dispatch_unlocked(
             Ok(t) => t,
             Err(res) => return Ok(res),
         };
-        let (draft, narrator) = {
+        let (draft, narrator, failures_before, reading) = {
             let mut slot = mem.lock().map_err(|_| {
                 std::io::Error::new(std::io::ErrorKind::Other, "memory locked")
             })?;
@@ -253,17 +253,32 @@ fn dispatch_unlocked(
             if public_demo && (g.llm.url.is_empty() || g.llm.key.as_ref().map(|key| key.trim().is_empty()).unwrap_or(true)) {
                 return Ok(selmem::api::HttpResponse { status: 400, body: "{\"error\":\"No, LLM setup, please configure it in options\"}".into() });
             }
-            let draft = g.open_mouth(&text);
             let narrator = g.narrator_arc();
-            (draft, narrator)
+            let failures_before = narrator.failure_log().failures;
+            let draft = g.open_mouth(&text);
+            let reading = selmem::recall::reading::ReadingProfile::for_query(
+                &g.store, &draft.mood, &draft.user, &draft.dump.selected).render();
+            (draft, narrator, failures_before, reading)
         };
-        let reply = selmem::Narrator::reply(narrator.as_ref(), &draft.user, &draft.memories, &draft.axioms, &draft.mood, &draft.talk);
+        let reply = selmem::Narrator::reply_disposed(narrator.as_ref(), &draft.user, &draft.memories, &draft.axioms, &draft.mood, &draft.talk, &reading);
+        let call_log = narrator.failure_log();
         let mut slot = mem.lock().map_err(|_| {
             std::io::Error::new(std::io::ErrorKind::Other, "memory locked")
         })?;
         let Some(g) = slot.as_mut() else {
             return Ok(busy());
         };
+        if call_log.failures > failures_before {
+            g.cancel_mouth(&draft);
+            let mut detail = call_log.llm_error.unwrap_or_else(|| "provider request failed".into());
+            if let Some(key) = g.llm.key.as_deref().filter(|key| !key.is_empty()) {
+                detail = detail.replace(key, "[redacted]");
+            }
+            return Ok(selmem::api::HttpResponse {
+                status: 502,
+                body: format!("{{\"error\":\"LLM request failed: {}. Check your provider, API key and model in options.\"}}", selmem::net::httpx::json_esc(&detail)),
+            });
+        }
         g.close_mouth(&draft, &reply);
         let _ = g.save();
         return Ok(api::mouth_body(path, &reply, g));
@@ -343,4 +358,102 @@ fn flag(args: &[String], name: &str) -> Option<String> {
 
 fn profile_for_demo(name: &str, kind: &str) -> EntityProfile {
     if kind == "austere" { EntityProfile::austere(name) } else { EntityProfile::tender(name) }
+}
+
+#[cfg(test)]
+mod chat_errors {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    // Real HTTP transport, local provider only: no API credits or network service.
+    fn provider(responses: Vec<(u16, &'static str)>) -> (String, std::thread::JoinHandle<Vec<String>>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/v1/chat/completions", listener.local_addr().unwrap());
+        listener.set_nonblocking(true).unwrap();
+        let worker = std::thread::spawn(move || {
+            let mut requests = Vec::new();
+            for (status, body) in responses {
+                let deadline = Instant::now() + Duration::from_secs(5);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(e) if e.kind() == std::io::ErrorKind::WouldBlock && Instant::now() < deadline => std::thread::sleep(Duration::from_millis(10)),
+                        Err(e) => panic!("local provider was not called: {e}"),
+                    }
+                };
+                stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+                let mut data = Vec::new();
+                let mut buffer = [0; 4096];
+                loop {
+                    let n = stream.read(&mut buffer).unwrap();
+                    assert!(n > 0); data.extend_from_slice(&buffer[..n]);
+                    assert!(data.len() < 65536);
+                    if let Some(pos) = data.windows(4).position(|w| w == b"\r\n\r\n") {
+                        let headers = String::from_utf8_lossy(&data[..pos]);
+                        let length: usize = headers.lines().find_map(|line| {
+                            line.to_ascii_lowercase().strip_prefix("content-length:").map(|v| v.trim().parse().unwrap())
+                        }).unwrap();
+                        if data.len() >= pos + 4 + length { break; }
+                    }
+                }
+                requests.push(String::from_utf8(data).unwrap());
+                write!(stream, "HTTP/1.1 {status} Test\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+            }
+            requests
+        });
+        (url, worker)
+    }
+
+    fn organ(url: &str) -> Arc<Mutex<Option<SelectiveMemory>>> {
+        let mut mem = SelectiveMemory::new(EntityProfile::new("Claire"));
+        mem.set_llm(url, "local-mock", Some("dummy-secret".into())).unwrap();
+        Arc::new(Mutex::new(Some(mem)))
+    }
+
+    #[test]
+    fn provider_failure_is_an_http_error_and_next_turn_can_recover() {
+        let (url, worker) = provider(vec![
+            (401, r#"{"error":{"message":"Invalid key dummy-secret"}}"#),
+            (200, r#"{"choices":[{"message":{"content":"Hello from the configured model."}}]}"#),
+        ]);
+        let mem = organ(&url);
+        let failed = dispatch_unlocked(&mem, "POST", "/turn", "", r#"{"text":"Hello"}"#, false).unwrap();
+        assert_eq!(failed.status, 502);
+        assert!(failed.body.contains("HTTP 401"));
+        assert!(!failed.body.contains("dummy-secret"));
+        assert!(!failed.body.contains("\"reply\""));
+        {
+            let slot = mem.lock().unwrap(); let g = slot.as_ref().unwrap();
+            assert!(!g.mouth_held()); assert!(g.talk.turns.is_empty());
+        }
+        let success = dispatch_unlocked(&mem, "POST", "/turn", "", r#"{"text":"Try again"}"#, false).unwrap();
+        assert_eq!(success.status, 200);
+        assert!(success.body.contains("Hello from the configured model."));
+        let slot = mem.lock().unwrap(); let g = slot.as_ref().unwrap();
+        assert_eq!(g.talk.turns.len(), 1);
+        assert!(!g.talk.render().contains("Invalid key"));
+        assert_eq!(worker.join().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn unreadable_and_rate_limited_replies_never_become_rules_chat() {
+        for response in [(429, r#"{"error":{"message":"Rate limit exceeded"}}"#),
+            (200, "not JSON"), (200, r#"{"choices":[{"message":{"content":""}}]}"#)] {
+            let (url, worker) = provider(vec![response]); let mem = organ(&url);
+            let result = dispatch_unlocked(&mem, "POST", "/speak", "", r#"{"text":"Hello"}"#, false).unwrap();
+            assert_eq!(result.status, 502); assert!(result.body.contains("LLM request failed"));
+            assert!(!result.body.contains("I am Claire"));
+            assert!(mem.lock().unwrap().as_ref().unwrap().talk.turns.is_empty());
+            worker.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn public_chat_requires_setup_before_opening_a_turn() {
+        let mem = Arc::new(Mutex::new(Some(SelectiveMemory::new(EntityProfile::new("Claire")))));
+        let result = dispatch_unlocked(&mem, "POST", "/turn", "", r#"{"text":"Hello"}"#, true).unwrap();
+        assert_eq!(result.status, 400); assert!(result.body.contains("please configure it in options"));
+        let slot = mem.lock().unwrap(); let g = slot.as_ref().unwrap();
+        assert!(!g.mouth_held()); assert!(g.talk.is_empty());
+    }
 }

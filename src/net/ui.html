@@ -224,6 +224,12 @@
       <label class="row"><span class="name">merge similarity</span><span class="val" data-for="merge_similarity"></span>
         <input type="range" id="merge_similarity" min="0.10" max="0.80" step="0.01"></label>
     </fieldset>
+    <fieldset>
+      <legend>co-recall</legend>
+      <p class="hint">Memories recalled together can develop associations that influence later reconstructions. Switching these off keeps the learned links for later use.</p>
+      <label class="check"><input type="checkbox" id="associations_learn"> learn associations</label>
+      <label class="check"><input type="checkbox" id="associations_reconstruct"> use associations in reconstruction</label>
+    </fieldset>
     <details>
       <summary>lab — cuts and grounding</summary>
       <p class="hint">Cuts are runtime only (not in the vault). P0 n=5: recon and ground did not carry the late probe; ladder did.</p>
@@ -387,6 +393,7 @@ const SLIDERS = [
   'ground_strikes','reconsolidation_eta','time_scale'
 ];
 const CUTS = ['cut_reconsolidate','cut_ground','cut_ladder'];
+const CHECKBOXES = [...CUTS, 'associations_learn', 'associations_reconstruct'];
 let optsApplying = false;
 let optsTimer = 0;
 
@@ -415,7 +422,7 @@ function fillOptsFrom(p) {
   SLIDERS.forEach(id => {
     if (p[id] != null) document.getElementById(id).value = p[id];
   });
-  CUTS.forEach(id => {
+  CHECKBOXES.forEach(id => {
     if (typeof p[id] === 'boolean') document.getElementById(id).checked = p[id];
   });
   if (p.name) document.getElementById('opt-name').value = p.name;
@@ -451,7 +458,7 @@ async function fillOpts() {
 function readOpts() {
   const body = {};
   SLIDERS.forEach(id => { body[id] = Number(document.getElementById(id).value); });
-  CUTS.forEach(id => { body[id] = document.getElementById(id).checked; });
+  CHECKBOXES.forEach(id => { body[id] = document.getElementById(id).checked; });
   return body;
 }
 async function saveOpts(extra) {
@@ -569,7 +576,7 @@ document.getElementById('close-opts').onclick = () => setOptsOpen(false);
 SLIDERS.forEach(id => {
   document.getElementById(id).addEventListener('input', () => { paintVals(); scheduleSave(); });
 });
-CUTS.forEach(id => {
+CHECKBOXES.forEach(id => {
   document.getElementById(id).addEventListener('change', scheduleSave);
 });
 document.querySelectorAll('#opts [data-preset]').forEach(btn => {
@@ -618,6 +625,8 @@ document.getElementById('f').onsubmit = async (e) => {
     refresh();
   } catch (err) {
     add('her', '<span class="drop">' + escapeHtml(err.message) + '</span>');
+    // Keep a failed message available for retry after fixing the LLM settings.
+    if (!document.getElementById('text').value) document.getElementById('text').value = text;
   } finally {
     busy('send', false);
     document.getElementById('text').focus();
