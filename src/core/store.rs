@@ -4,6 +4,7 @@ use crate::core::model::{ArchiveRecord, Channel, IdentityAxiom, MemoryTrace, Sch
 
 #[derive(Default)]
 pub struct MemoryStore {
+    pub associations: super::association::AssociationGraph,
     pub traces: HashMap<String, MemoryTrace>,
     pub archives: HashMap<String, ArchiveRecord>,
     pub axioms: HashMap<String, IdentityAxiom>,
@@ -181,6 +182,7 @@ impl MemoryStore {
             }
         }
         let trace = self.traces.remove(id)?;
+        self.associations.remove_trace(id);
         self.edges.remove(id);
         for neigh in self.edges.values_mut() {
             neigh.remove(id);

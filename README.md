@@ -15,6 +15,8 @@ SelMem goal is not more memory, but path-dependent memory: selection, reconstruc
 **Benches:** experiments/REPORT.md — same sentence, then method and tables. Locked next run: experiments/REPRO.md. Replay from experiments/README.md.\
 **Knobs:** [PARAMETERS.md](PARAMETERS.md) — exploratory, not fitted.
 
+**Co-recall:** [Learned associations](docs/CO_RECALL_ASSOCIATIONS.md) — optional organ-level contextual reconstruction, with unchanged retrieval scores and persisted audits.
+
 Rust 1.75. SQLite via system `libsqlite3` (macOS SDK or Linux).
 
 ```

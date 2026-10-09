@@ -47,6 +47,21 @@ pub trait Narrator: Send + Sync {
         LlmCallLog::default()
     }
     fn reconstruct(&self, trace: &MemoryTrace, mood: &Mood, query: &str) -> String;
+    /// Whether this backend can consume structured associative context.
+    fn supports_associations(&self) -> bool {
+        false
+    }
+    /// Optional co-recall context. Implementations without this capability keep
+    /// their existing reconstruction; association is not a new fact source.
+    fn reconstruct_associated(
+        &self,
+        trace: &MemoryTrace,
+        mood: &Mood,
+        query: &str,
+        _associates: &[crate::core::association::AssociativeCue],
+    ) -> String {
+        self.reconstruct(trace, mood, query)
+    }
     fn distill_axiom(&self, traces: &[&MemoryTrace]) -> Option<String>;
     /// Live event only — never an archive. Default: none (caller uses lexicon + identity).
     fn interpret(&self, event: &str, mood: &Mood, axioms: &[String]) -> Option<Interpretation> {

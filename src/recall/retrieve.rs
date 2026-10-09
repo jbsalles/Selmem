@@ -4,6 +4,7 @@
 //! Live recall can write the book (rehearsal, grounding, reconsolidation).
 //! Isolated probes use `RecallWrite::ReadOnly` and must not.
 
+use crate::core::association::{AssociationChange, AssociativeCue};
 use crate::core::model::{now_secs, Mood, OrganCut, RecalledMemory, TraceStatus};
 use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
@@ -11,6 +12,13 @@ use crate::dream::drift::apply_reconsolidation;
 use crate::encode::embed::Embedder;
 use crate::encode::scoring::{recall_score_emb, refresh_access};
 use crate::recall::narrator::Narrator;
+
+#[derive(Clone, Debug)]
+pub struct AssociationUse {
+    pub target: String,
+    pub cues: Vec<AssociativeCue>,
+    pub accepted: bool,
+}
 
 /// Whether this recall may mutate traces, access, or mood-facing write-backs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -49,6 +57,8 @@ impl ScoredTrace {
 
 #[derive(Clone, Debug, Default)]
 pub struct RetrievalDump {
+    pub associations_used: Vec<AssociationUse>,
+    pub associations_reinforced: Vec<AssociationChange>,
     pub candidates: Vec<ScoredTrace>,
     pub selected: Vec<String>,
     pub pulled: u32,
@@ -262,6 +272,54 @@ pub fn recall_with(
 
     let chosen_ids = apply_bias(&eligible, store, bias, marked, profile.max_recall);
 
+    // Freeze all cue content and weights before the first trace can write back.
+    let before: Vec<_> = chosen_ids
+        .iter()
+        .map(|id| store.traces[id].clone())
+        .collect();
+    let now = now_secs();
+    let mut cues = std::collections::BTreeMap::new();
+    if store.associations.reconstruct && cut.reconstruct && narrator.supports_associations() {
+        for target in &before {
+            if target.attribution == crate::core::model::Attribution::External
+                || target.channel.verbatim()
+                || target.core.is_empty()
+            {
+                continue;
+            }
+            let mut selected: Vec<_> = before
+                .iter()
+                .filter(|other| {
+                    other.id != target.id
+                        && !other.suppressed
+                        && other.status != TraceStatus::Latent
+                        && other.observation_id.as_deref().unwrap_or(&other.id)
+                            != target.observation_id.as_deref().unwrap_or(&target.id)
+                })
+                .filter_map(|other| {
+                    let weight = store.associations.weight(&target.id, &other.id, now);
+                    if weight < 0.05 {
+                        return None;
+                    }
+                    Some(AssociativeCue {
+                        trace_id: other.id.clone(),
+                        gist: other.gist.clone(),
+                        attribution: other.attribution,
+                        weight,
+                    })
+                })
+                .collect();
+            selected.sort_by(|a, b| {
+                b.weight
+                    .total_cmp(&a.weight)
+                    .then(a.trace_id.cmp(&b.trace_id))
+            });
+            selected.truncate(2);
+            cues.insert(target.id.clone(), selected);
+        }
+    }
+    let failures_before = narrator.failure_log().failures;
+    let mut associations_used = Vec::new();
     let mut recalled = Vec::new();
     let mut pulled_n = 0u32;
     let mut recon_n = 0u32;
@@ -271,6 +329,8 @@ pub fn recall_with(
             (trace.channel, trace.gist.clone(), trace.schema.clone())
         };
 
+        let associates = cues.get(trace_id).map(Vec::as_slice).unwrap_or(&[]);
+        let mut association_accepted = false;
         let (narrative, disclaimer, fidelity, pulled, reconsolidated) = if channel.verbatim() {
             (
                 gist,
@@ -281,10 +341,45 @@ pub fn recall_with(
             )
         } else {
             speak_self(
-                store, profile, narrator, query, mood, cut, write, trace_id, scorer,
+                store,
+                profile,
+                narrator,
+                query,
+                mood,
+                cut,
+                write,
+                trace_id,
+                scorer,
+                associates,
+                &mut association_accepted,
             )
         };
 
+        if live && association_accepted && !pulled {
+            let original = before.iter().find(|t| t.id == *trace_id).unwrap();
+            if original.gist != narrative {
+                if let Some(trace) = store.traces.get_mut(trace_id) {
+                    trace.record_operation(crate::core::model::MemoryOperation {
+                        kind: "associative-reconstruction".into(),
+                        at: now,
+                        source_trace_ids: associates.iter().map(|c| c.trace_id.clone()).collect(),
+                        source_axiom_ids: Vec::new(),
+                        source_center: None,
+                        before: original.gist.clone(),
+                        after: narrative.clone(),
+                        confidence: original.confidence,
+                        origin: crate::core::model::EvidenceOrigin::Reconstruction,
+                    });
+                }
+            }
+        }
+        if !associates.is_empty() {
+            associations_used.push(AssociationUse {
+                target: trace_id.clone(),
+                cues: associates.to_vec(),
+                accepted: association_accepted,
+            });
+        }
         if live {
             let operational = store
                 .traces
@@ -317,9 +412,62 @@ pub fn recall_with(
             reconsolidated,
         });
     }
+    let associations_reinforced = if live
+        && cut.reconstruct
+        && bias == RecallBias::Observed
+        && narrator.failure_log().failures == failures_before
+    {
+        let active: Vec<_> = before
+            .iter()
+            .filter_map(|trace| {
+                if trace.suppressed
+                    || trace.status == TraceStatus::Latent
+                    || trace.channel.verbatim()
+                {
+                    return None;
+                }
+                let recalled = recalled.iter().find(|r| r.trace_id == trace.id)?;
+                if recalled.pulled_toward_core || recalled.narrative.trim().is_empty() {
+                    return None;
+                }
+                let judgment = crate::recall::judge::judge_against_core(
+                    &recalled.narrative,
+                    &trace.core,
+                    scorer,
+                );
+                // An unchanged gist also counts as an observed activation, without
+                // interpreting an unknown proposition as corroborated evidence.
+                if recalled.narrative != trace.gist
+                    && (judgment.kind.is_miss()
+                        || judgment.kind == crate::recall::judge::DetachKind::Unjudged)
+                {
+                    return None;
+                }
+                let relevance = topic_relevance(query, &trace.core);
+                if relevance <= 0.0 {
+                    return None;
+                }
+                let activation = relevance.clamp(0.0, 1.0)
+                    * crate::encode::scoring::access_value(trace, profile).clamp(0.0, 1.0);
+                Some((
+                    trace.id.clone(),
+                    trace
+                        .observation_id
+                        .clone()
+                        .unwrap_or_else(|| trace.id.clone()),
+                    activation,
+                ))
+            })
+            .collect();
+        store.associations.reinforce(&active, now)
+    } else {
+        Vec::new()
+    };
     RecallOutcome {
         memories: recalled,
         dump: RetrievalDump {
+            associations_used,
+            associations_reinforced,
             candidates: ranked,
             selected: chosen_ids,
             pulled: pulled_n,
@@ -422,6 +570,8 @@ fn speak_self(
     write: RecallWrite,
     trace_id: &str,
     scorer: &dyn crate::recall::PropositionScorer,
+    associates: &[AssociativeCue],
+    association_accepted: &mut bool,
 ) -> (String, String, f32, bool, bool) {
     let live = write == RecallWrite::Live;
     if !cut.reconstruct {
@@ -437,7 +587,22 @@ fn speak_self(
 
     let generated = {
         let trace = store.traces.get(trace_id).unwrap();
-        narrator.reconstruct(trace, mood, query)
+        if associates.is_empty() {
+            narrator.reconstruct(trace, mood, query)
+        } else {
+            let proposed = narrator.reconstruct_associated(trace, mood, query, associates);
+            let judgment = crate::recall::judge::judge_against_core(&proposed, &trace.core, scorer);
+            let licensed = !judgment.kind.is_miss()
+                && judgment.kind != crate::recall::judge::DetachKind::Unjudged
+                && (judgment.kind != crate::recall::judge::DetachKind::Hold
+                    || judgment.overlap >= profile.ground_min_overlap);
+            *association_accepted = licensed;
+            if licensed {
+                proposed
+            } else {
+                trace.gist.clone()
+            }
+        }
     };
 
     if !live {

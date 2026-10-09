@@ -272,6 +272,7 @@ pub fn save(
             ("last_deep", deep.as_str()),
             ("merges_refused", &store.merges_refused.to_string()),
             ("pending", &store.pending_night.join("\t")),
+            ("associations", &store.associations.encode()),
             ("clock", &format!("{clock_jump} {clock_scale} {} {clock_origin}", if clock_detached { 1 } else { 0 })),
             (
                 "cut",
@@ -530,6 +531,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let mut refused_s = String::new();
     let mut pending_s = String::new();
     let mut clock_s = String::new();
+    let mut associations_s = String::new();
     let mut cut_s = String::new();
     let mut measures_s = String::new();
     for row in meta {
@@ -544,6 +546,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             "merges_refused" => refused_s = row[1].clone(),
             "pending" => pending_s = row[1].clone(),
             "clock" => clock_s = row[1].clone(),
+            "associations" => associations_s = row[1].clone(),
             "cut" => cut_s = row[1].clone(),
             "measures" => measures_s = row[1].clone(),
             _ => {}
@@ -552,6 +555,10 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let profile = parse_profile(&name, &params_s)?;
     let mood = parse_mood(&mood_s)?;
     let mut store = MemoryStore::new();
+    if !associations_s.is_empty() {
+        store.associations = crate::core::association::AssociationGraph::decode(&associations_s)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    }
     if !last_deep_s.is_empty() && last_deep_s != "-" {
         store.last_deep_at = last_deep_s.parse().ok();
     }

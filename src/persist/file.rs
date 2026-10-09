@@ -104,6 +104,7 @@ pub fn save(
             flag(cut.util_to_strength),
             flag(cut.merge_support_veto),
         )?;
+        writeln!(w, "associations {}", store.associations.encode())?;
         writeln!(w, "measures {}", store.measures.len())?;
         for (id, label) in &store.measures {
             writeln!(w, "measure {id} {label}")?;
@@ -227,6 +228,10 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
                             clock_origin = p[3].parse().unwrap_or(0);
                         }
                     }
+                } else if let Some(rest) = line.strip_prefix("associations ") {
+                    store.associations =
+                        crate::core::association::AssociationGraph::decode(rest)
+                            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
                 } else if let Some(rest) = line.strip_prefix("measures ") {
                     let n: usize = rest.trim().parse().unwrap_or(0);
                     for _ in 0..n {

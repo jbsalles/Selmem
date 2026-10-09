@@ -285,6 +285,21 @@ impl SelectiveMemory {
         self.live_with(ev)
     }
 
+    /// Independent co-recall cuts. Existing experiments remain off by default.
+    pub fn set_associations(&mut self, learn: bool, reconstruct: bool) {
+        self.store.associations.learn = learn;
+        self.store.associations.reconstruct = reconstruct;
+    }
+
+    /// Start a new training episode explicitly instead of waiting for a
+    /// conversational gap (10 minutes) or the two-hour episode limit.
+    pub fn begin_association_episode(&mut self) {
+        let _clock = self.enter_clock();
+        self.store
+            .associations
+            .begin_episode(crate::core::model::now_secs());
+    }
+
     pub fn detach_clock(mut self) -> Self {
         self.clock = self.clock.detach();
         self

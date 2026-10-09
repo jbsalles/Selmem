@@ -123,16 +123,29 @@ fn token_cap_field(url: &str, model: &str) -> &'static str {
 }
 
 impl Narrator for HttpNarrator {
+    fn supports_associations(&self) -> bool {
+        true
+    }
     fn failure_log(&self) -> LlmCallLog {
         self.log.lock().map(|g| g.clone()).unwrap_or_default()
     }
 
     fn reconstruct(&self, trace: &MemoryTrace, mood: &Mood, query: &str) -> String {
+        self.reconstruct_associated(trace, mood, query, &[])
+    }
+
+    fn reconstruct_associated(
+        &self,
+        trace: &MemoryTrace,
+        mood: &Mood,
+        query: &str,
+        associates: &[crate::core::association::AssociativeCue],
+    ) -> String {
         if trace.status == crate::core::model::TraceStatus::Latent {
             return crate::lexicon::rule().latent.clone();
         }
         let system = &crate::lexicon::prompts().reconstruct;
-        let user = format!(
+        let mut user = format!(
             "gist: {}\nschema: {}\nvalence: {:.2} arousal: {:.2} disgust: {:.2} fidelity: {:.2}\ncurrent mood: v={:.2} a={:.2} d={:.2}\nrecall cue: {}",
             trace.gist,
             trace.schema.as_deref().unwrap_or("-"),
@@ -145,6 +158,9 @@ impl Narrator for HttpNarrator {
             mood.disgust,
             query
         );
+        if !associates.is_empty() {
+            user.push_str(&association_context(trace, associates));
+        }
         match self.chat(system, &user) {
             Ok(s) if !s.trim().is_empty() => s,
             Ok(_) => self.fallback.reconstruct(trace, mood, query),
@@ -496,4 +512,26 @@ impl crate::encode::semantic::SemanticInterpreter for HttpNarrator {
             Err(err) => Err(err),
         }
     }
+}
+
+/// These cues are separate, fallible context, never clauses of the target core.
+fn association_context(
+    trace: &MemoryTrace,
+    associates: &[crate::core::association::AssociativeCue],
+) -> String {
+    use crate::core::model::Attribution;
+    if trace.attribution == Attribution::External || trace.channel.verbatim() {
+        return String::new();
+    }
+    let mut out = format!("\nTarget core (event identity remains fixed): {}\nCo-recalled context may change tone or interpretation, but does not establish causality, factual support, shared participants or a shared event. Do not add its facts to the target memory. External observations are not your biography.\n", trace.core);
+    for cue in associates.iter().take(2) {
+        out.push_str(&format!(
+            "Associated observation [id={}, attribution={:?}, weight={:.3}]: {}\n",
+            cue.trace_id,
+            cue.attribution,
+            cue.weight,
+            crate::net::httpx::json_esc(&cue.gist)
+        ));
+    }
+    out
 }

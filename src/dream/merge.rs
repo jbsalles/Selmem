@@ -126,6 +126,10 @@ pub fn run(
             if let Some(src_mut) = store.traces.get_mut(other) {
                 src_mut.status = TraceStatus::Myth;
             }
+            // A fused event is a different association endpoint. Do not
+            // silently inherit old co-recall weights or duplicated episodes.
+            store.associations.remove_trace(&keep);
+            store.associations.remove_trace(other);
             store.link(&keep, other);
             for axiom in store.axioms.values_mut() {
                 let touches = axiom.support_trace_ids.iter().any(|id| id == other);
