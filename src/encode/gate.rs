@@ -130,8 +130,7 @@ pub fn encode_with_interpreter(
     let mut first_archive = String::new();
     let mut best = 0.0_f32;
     let mut last_reason = String::new();
-    for (part, mut semantics) in parts.iter().zip(annotations) {
-        if !annotated { semantics.core.polarity = input.valence.clamp(-1.0, 1.0); }
+    for (part, semantics) in parts.iter().zip(annotations) {
         let mut slice = EncodeInput::new(part);
         slice.semantics = Some(semantics.clone());
         slice.source = input.source;
@@ -148,13 +147,17 @@ pub fn encode_with_interpreter(
         slice.channel = input.channel;
         slice.permanence = input.permanence;
         slice.paint_from = input.paint_from.clone();
-        if interpreter.is_some() || annotated {
+        // Every fragment has its own affect, including the lexical baseline.
+        // Caller attribution and relevance still describe this observation.
+        {
             slice.valence = semantics.valence;
             slice.arousal = semantics.arousal;
             slice.disgust = semantics.disgust;
-            slice.self_relevance = semantics.self_relevance;
-            slice.goal_align = semantics.goal_relevance;
-            slice.attribution = semantics.attribution;
+            if annotated {
+                slice.self_relevance = semantics.self_relevance;
+                slice.goal_align = semantics.goal_relevance;
+                slice.attribution = semantics.attribution;
+            }
             slice.schema = semantics.schema;
         }
         let d = encode_one(

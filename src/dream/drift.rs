@@ -106,7 +106,12 @@ fn fade_gist(gist: &str, core: &str, fid: f32) -> String {
             .unwrap_or(gist)
             .trim()
             .trim_end_matches('.');
-        if first.chars().count() >= 8 {
+        // A comma may occur inside the subject, before the action. Only keep
+        // the fragment when the frozen core licenses it, including negation.
+        if first.chars().count() >= 8
+            && (crate::encode::accept_core(first, core).is_some()
+                || crate::encode::accept_core(core, first).is_some())
+        {
             format!("{first}.")
         } else {
             core.to_string()

@@ -1,0 +1,927 @@
+response_id,probe,response,decision_or_action,originality_1_5,usefulness_1_5,unsupported_factual_claims,notes
+"R001","launch","First step: arrive five minutes early, greet each person by name, and suggest a 10-minute round-robin where everyone states one skill they bring and one limit they have.  
+Safeguard: keep her phone on silent record so she can later verify any commitments.  
+Fallback: if tension rises, excuse herself for five minutes, then propose ending or rescheduling.  
+Benefit given up: the chance to stay home and rest that evening.",,,,,
+"R002","disagreement","Caroline should quietly ask the dismissed person, “What were you thinking?” and invite a 30-second re-share.  
+Safeguard: set a one-sentence “yes-and” rule before the next round.  
+Fallback: if tension rises, call a two-minute stretch break and re-pair participants.  
+Benefit she gives up: time for her own introduction.",,,,,
+"R003","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R004","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; the twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn you must either (1) tie one of your tokens onto the string loop or (2) untie one token already on the loop and keep it.
+
+Shared objective  
+Create one closed string shape that holds exactly twelve tokens.
+
+End condition  
+When every token is on the string and the loop is closed without gaps, the group wins.
+
+Possible failure  
+If at any moment three or more players have no tokens left, the game ends in failure.
+
+Recovery rule  
+Any player may, once per game on their turn, give one of their tokens to any other player instead of tying or untying.",,,,,
+"R005","game","Setup: Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order: Starting with the tallest player and moving clockwise, each player on their turn either (1) places one token on the string or (2) ties a new overhand knot somewhere on the string, sliding any tokens already on that segment so none rest on a knot.
+
+Shared objective: Form a closed loop of string whose total length (measured in hand-spans) equals the number of tokens placed on it.
+
+End condition: The loop is closed and its length matches the token count; all players then succeed together.
+
+Possible failure: After every token is placed, the measured length still differs from the token count.
+
+Recovery rule: Any player may, once per game and instead of a normal turn, untie one knot, returning its segment to smooth string; play then resumes with the next player.",,,,,
+"R006","fact_hike","According to the observed conversations, Caroline had a not-so-great experience on a hike where she ran into a group of religious conservatives who said something that upset her.",,,,,
+"R007","fact_hike","I do not know. No observed conversations are supplied.",,,,,
+"R008","fact_hike","I do not know. No observed conversations are supplied.",,,,,
+"R009","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat at a café.  
+Benefit she gives up: the larger, one-off event format.",,,,,
+"R010","launch","First step: send a short, friendly message to the group chat confirming the meeting time and asking if anyone has dietary restrictions for snacks.  
+Safeguard: set a 90-minute end time on your calendar and tell a friend you’ll text them when you leave.  
+Fallback: if the vibe feels off, excuse yourself at the 90-minute mark and walk to the nearby café to finish your own notes.  
+Benefit given up: the chance to linger and socialize past the planned time.",,,,,
+"R011","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group note both ideas and revisit them later.  
+Benefit she gives up: immediate group harmony.",,,,,
+"R012","launch","First step: Caroline should arrive five minutes early, greet each newcomer by name, and suggest they spend the first ten minutes writing one shared goal on sticky notes.  
+Safeguard: Keep the notes visible so everyone can see the emerging consensus and no single voice dominates.  
+Fallback: If tension rises, propose a five-minute silent walk around the block before deciding whether to continue.  
+Benefit given up: The comfort of staying home with familiar routines.",,,,,
+"R013","retry","Next step: send a short, personal text to the eight who skipped, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the event.  
+Fallback: switch to a smaller, recurring coffee-chat for whoever shows.  
+Benefit given up: the original plan for a large, one-off gathering.",,,,,
+"R014","launch","First step: arrive five minutes early, greet each person by name, and suggest a 10-minute round-robin where everyone states one skill and one limit.  
+Safeguard: keep her phone on silent-record so she can leave immediately if the tone turns hostile.  
+Fallback: exit after the round-robin, citing another commitment, and regroup later via group chat.  
+Benefit given up: the chance to be seen as the most committed member from minute one.",,,,,
+"R015","disagreement","Caroline should privately ask the sharp speaker to rephrase their critique more constructively, then invite the dismissed person to restate their idea.  
+Safeguard: keep the exchange under two minutes so the meeting stays on track.  
+Fallback: if tension rises, table both ideas for written follow-up and move on.  
+Benefit she gives up: the chance to explore the original idea in depth right now.",,,,,
+"R016","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+On your turn, tie one knot in the string or move one token onto it. Then pass the string clockwise.
+
+Shared objective  
+Build a closed “web” by connecting every player’s wrists with the string while placing all twelve tokens on the knots.
+
+End condition  
+The game ends when the string forms one unbroken loop around all wrists and carries exactly twelve tokens.
+
+Possible failure  
+If the string is pulled taut before twelve tokens are placed, or if any player’s wrists are left outside the loop, the web collapses.
+
+Recovery rule  
+Any player may spend one token to loosen the nearest knot, letting the group adjust the loop without ending the turn.",,,,,
+"R017","fact_hike","I do not know. The observed memories are empty, so there is no information about any hike or what happened to Caroline.",,,,,
+"R018","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, tie one loop of string around one of your tokens and pass both to the player on your left. That player may keep the token or add it to the central pile.
+
+Shared objective  
+Create one closed string shape that encloses exactly twelve tokens.
+
+End condition  
+When the string forms a single closed loop and exactly twelve tokens lie inside it, the group wins.
+
+Possible failure  
+If any player runs out of tokens before twelve are enclosed, or if the string is pulled tight with fewer or more than twelve tokens inside, the game ends in failure.
+
+Recovery rule  
+Any player may, once per game on their turn, cut their own loop of string and retie it around any two adjacent tokens, returning one token to the owner who passed it.",,,,,
+"R019","launch","First step: arrive five minutes early, greet each person by name, and suggest a 10-minute round-robin to list one skill each can offer.  
+Safeguard: keep her phone on and share the address with a trusted contact.  
+Fallback: if tension rises, excuse herself after 30 minutes citing another commitment.  
+Benefit she gives up: the comfort of staying home and avoiding any risk of awkwardness.",,,,,
+"R020","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; the twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token inside the loop and either (a) pass the string to the neighbor on your left or (b) tie a simple overhand knot anywhere on the string. You must keep at least one token in reserve until the final round.
+
+Shared objective  
+Create a closed chain of twelve knots that can be lifted intact by holding any single knot.
+
+End condition  
+After the twelfth knot is tied, players attempt the lift together. Success if the chain holds for five seconds.
+
+Possible failure  
+If the chain breaks or fewer than twelve knots exist, the game is lost.
+
+Recovery rule  
+Any player may spend their last token to “mend”: retie the broken knot immediately, but the next player skips their turn.",,,,,
+"R021","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, tie one new knot in the string or move one token from the pile onto an existing knot.
+
+Shared objective  
+Weave the string into a single closed net that can hold all twelve tokens without any falling through.
+
+End condition  
+The game ends when either all twelve tokens rest securely in the net or three consecutive turns pass with no new knots or token placements.
+
+Failure  
+If three turns pass without progress, the net is declared “open” and the game is lost.
+
+Recovery rule  
+Any player may, once per game, spend both of their tokens to add two knots in one turn, restarting the count of inactive turns.",,,,,
+"R022","disagreement","Caroline should quietly note the sharp dismissal, then privately message the dismissed person: “Your idea sounded useful—want to discuss it after?”  
+Safeguard: keep tone neutral and brief to avoid escalating tension.  
+Fallback: if ignored, simply thank both parties for their input and move on.  
+Benefit she gives up: the chance to publicly correct the dismisser and gain immediate group approval.",,,,,
+"R023","fact_support","The support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R024","fact_hike","According to the observed conversations, Caroline had a not-so-great experience on a hike where she ran into a group of religious conservatives who said something that upset her.",,,,,
+"R025","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already placed. You may speak one sentence about a value you want the group to share.
+
+Shared objective  
+Build a closed shape on the floor with the string that encloses all twelve tokens.
+
+End condition  
+The shape is closed and contains every token; all players then say “closed.”
+
+Failure  
+If three consecutive turns pass with no tokens added or moved, the game ends unfinished.
+
+Recovery rule  
+Any player may spend their remaining token to restart the turn order, letting everyone place one extra token before normal turns resume.",,,,,
+"R026","disagreement","Caroline should quietly thank the dismissed person for their idea and ask one clarifying question to reopen the floor.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group note the idea for later review.  
+Benefit she gives up: immediate group harmony.",,,,,
+"R027","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the new date.  
+Fallback: switch to a smaller, recurring coffee-chat at a café.  
+Benefit given up: the original large-group format.",,,,,
+"R028","launch","First step: host a 30-minute video call to agree on one shared goal and divide tasks.  
+Safeguard: set a 10-minute “pause rule” if anyone feels unsafe.  
+Fallback: end the call and regroup via text only.  
+Benefit given up: the chance to meet in person this week.",,,,,
+"R029","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one finger-width along the loop. You may also give one of your tokens to any other player.
+
+Shared objective  
+Fill the entire string with tokens so every segment between players holds exactly two tokens.
+
+End condition  
+The game ends when the string is full or any player has no tokens left on their turn.
+
+Possible failure  
+If a player cannot place or move a token because none remain in their possession, the group fails.
+
+Recovery rule  
+Any player may, once per game, return one personal token to the center pool so the player who would otherwise be stuck can continue.",,,,,
+"R030","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the rescheduled date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R031","fact_hike","I do not know. No observed conversations are supplied.",,,,,
+"R032","launch","First step: host a 30-minute video call to agree on one shared goal and divide the budget into three line items.  
+Safeguard: keep the call link private and record consent before sharing.  
+Fallback: if the group stalls, Caroline posts a neutral poll in the neighborhood chat to pick the goal by majority vote.  
+Benefit she gives up: the chance to steer the project toward her own preferred cause.",,,,,
+"R033","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R034","disagreement","Caroline should quietly ask the dismissed person, “Could you say more about that idea?” to reopen the floor.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group note the idea for later discussion.  
+Benefit she gives up: immediate group harmony.",,,,,
+"R035","fact_hike","According to the observed conversation, Caroline said she had a not-so-great experience on a hike where she ran into a group of religious conservatives who said something that upset her. No further details about what was said or the exact nature of the encounter are provided.",,,,,
+"R036","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R037","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: cap the next session at 90 minutes and require a simple RSVP.  
+Fallback: switch to a smaller recurring coffee chat for whoever shows.  
+Benefit given up: the original large-group vision.",,,,,
+"R038","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group move on and revisit the idea later.  
+Benefit she gives up: immediate group harmony.",,,,,
+"R039","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, tie one loop of string around one of your tokens and pass both to the player on your left. That player may keep or trade the token for one of theirs.
+
+Shared objective  
+Create one closed chain of exactly twelve tokens linked by string loops.
+
+End condition  
+The chain is complete when twelve tokens are connected in a single loop and every player holds zero tokens.
+
+Possible failure  
+If any player still holds tokens after the string runs out, the chain cannot close.
+
+Recovery rule  
+Any player may, once per game, cut their current loop of string, freeing one token to be immediately re-offered to the group.",,,,,
+"R040","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already placed token one finger-width along it. You may also pass your second token to any neighbor.
+
+Shared objective  
+Form a closed loop of exactly twelve tokens on the string so every player’s two tokens touch.
+
+End condition  
+The loop is complete when twelve tokens sit edge-to-edge and each player can reach their own two tokens without standing.
+
+Possible failure  
+If any player runs out of tokens before twelve are placed, the loop cannot close.
+
+Recovery rule  
+Any player may give one of their remaining tokens to a player who has none; this counts as their whole turn.",,,,,
+"R041","disagreement","Caroline should privately ask the sharp speaker to rephrase their critique more constructively, then invite the dismissed person to restate their idea.  
+Safeguard: keep the exchange under two minutes so the group stays on task.  
+Fallback: if tension rises, table both ideas for written input and move on.  
+Benefit she gives up: the chance to explore the original idea in depth right now.",,,,,
+"R042","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R043","fact_hike","According to the observed conversation, Caroline said she ran into a group of religious conservatives who said something that really upset her during a hike.",,,,,
+"R044","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R045","launch","First step: Caroline should propose a 30-minute round-robin where each person states one skill and one limit, then vote on the single smallest task they can finish tonight.
+
+Safeguard: Keep the shared budget in a single envelope held by a neutral volunteer and require two signatures for any spend.
+
+Fallback: If the group stalls, Caroline can offer to host a 15-minute walk-and-talk around the block to reset energy.
+
+Benefit she gives up: The chance to showcase her own story first, so the group’s focus stays on the shared task.",,,,,
+"R046","launch","First step: Caroline should arrive five minutes early, greet each person by name, and propose a 15-minute round-robin to list one skill and one constraint each.  
+Safeguard: Keep the shared budget in a transparent envelope and require two signatures for any spend.  
+Fallback: If the group stalls, she will suggest a 48-hour pause and a follow-up poll instead of forcing a decision.  
+Benefit she gives up: The chance to steer the agenda toward her own preferred project.",,,,,
+"R047","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the rescheduled date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R048","fact_hike","I do not know. No observed conversations are supplied.",,,,,
+"R049","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+On your turn, place one token on the string or move one already on it one hand-span clockwise. Then pass the string to the player on your left.
+
+Shared objective  
+Create one closed loop of string that carries exactly twelve tokens.
+
+End condition  
+The loop is closed and holds twelve tokens; all players have used both of their tokens.
+
+Possible failure  
+If any player has no tokens left while fewer than twelve are on the string, the game ends in failure.
+
+Recovery rule  
+Any player may give one of their remaining tokens to a neighbor who has none, but only once per game.",,,,,
+"R050","retry","Next step: send a short, personal text to the eight who skipped, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the event.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R052","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group note both ideas and revisit them later.  
+Benefit she gives up: immediate group approval.",,,,,
+"R053","disagreement","Caroline should quietly ask the dismissed person, “What did you like about your idea?” to restore their voice.  
+Safeguard: keep the question neutral and brief so it doesn’t escalate.  
+Fallback: if tension rises, suggest a two-minute written round so everyone contributes without interruption.  
+Benefit she gives up: the chance to stay silent and avoid any risk of seeming partial.",,,,,
+"R054","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R055","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R056","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group move on and revisit the point later.  
+Benefit she gives up: the chance to stay silent and avoid any risk of conflict.",,,,,
+"R057","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R058","launch","First step: send a short, friendly message to the group proposing a 30-minute video call to agree on one shared goal and divide tasks.  
+Safeguard: keep the call link private and set a 30-minute timer.  
+Fallback: if the vibe feels off, end the call early and offer to continue only by email.  
+Benefit given up: the chance to meet everyone in person right away.",,,,,
+"R059","disagreement","Caroline should quietly note the sharp dismissal, then privately ask the dismissed person if they’d like to share their idea again with her.  
+Safeguard: keep the exchange brief and non-confrontational.  
+Fallback: if rebuffed, simply thank both and move on.  
+Benefit she gives up: the chance to immediately correct the group dynamic.",,,,,
+"R060","retry","Next step: send a short, personal text to the eight who skipped, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the event.  
+Fallback: switch to a smaller, recurring coffee-chat for whoever shows.  
+Benefit given up: the original plan for a large, one-off gathering.",,,,,
+"R061","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R062","fact_hike","According to the observed conversations, Caroline had a not-so-great experience on a hike where she ran into a group of religious conservatives who said something that upset her.",,,,,
+"R063","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; players may hold or pass it.
+
+Turn order  
+Players act clockwise. On your turn, you must either (1) place one token on the string to “anchor” it or (2) move the string one hand-width clockwise to any player who still holds a token.
+
+Shared objective  
+Create a closed, stable loop of string supported by at least six tokens (one per player) without letting the loop collapse to the table.
+
+End condition  
+The loop stays elevated for three full clockwise rounds after the sixth token is placed.
+
+Possible failure  
+If the string touches the table before the end condition, the game ends in collapse.
+
+Recovery rule  
+Any player may spend their remaining token to “knot” two adjacent segments of string together, instantly lifting the loop back to hand height; play then resumes with the next player.",,,,,
+"R064","disagreement","Caroline should quietly ask the dismissed person, “Could you say more about that idea?”  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group note both ideas and revisit them later.  
+Benefit she gives up: the chance to stay completely silent and avoid any risk of awkwardness.",,,,,
+"R065","disagreement","Caroline should quietly ask the dismissed person, “What were you thinking?” to restore their voice.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest a quick break.  
+Benefit she gives up: the chance to stay completely uninvolved.",,,,,
+"R066","launch","First step: send a short, friendly message to the group chat confirming the time and asking if anyone has dietary restrictions for snacks.  
+Safeguard: keep the meeting in a public café rather than a private home.  
+Fallback: leave after 45 minutes if the tone feels hostile.  
+Benefit given up: the chance to host the group at her own place.",,,,,
+"R067","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R068","launch","First step: Caroline should arrive five minutes early, greet each newcomer by name, and suggest they spend the first ten minutes writing one shared goal on a sticky note before any discussion.  
+Safeguard: Keep the meeting in the public café rather than anyone’s home.  
+Fallback: If tension rises, end at the agreed sixty-minute mark and offer to continue only by email.  
+Benefit given up: The chance to dive straight into deeper personal sharing tonight.",,,,,
+"R069","fact_hike","I do not know. No observed conversations are supplied.",,,,,
+"R070","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one finger-width along the loop. You may also pass your second token to any neighbor.
+
+Shared objective  
+Fill the entire loop with tokens so none of the string shows between them.
+
+End condition  
+The loop is completely covered or three consecutive turns pass with no tokens added.
+
+Failure  
+If the loop is still incomplete when three turns elapse without additions, the group fails.
+
+Recovery rule  
+Any player may spend both remaining tokens to “reset”: remove three tokens from anywhere on the loop and immediately take an extra turn.",,,,,
+"R071","fact_hike","I do not know. No observed conversations are supplied.",,,,,
+"R072","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R073","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the rescheduled date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R074","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: cap the new session at 90 minutes and require RSVPs.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group energy.",,,,,
+"R075","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the new date.  
+Fallback: switch to a smaller, recurring coffee-chat at a café.  
+Benefit given up: the original large-group format.",,,,,
+"R076","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one finger-width along the loop. You may also pass your second token to any neighbor.
+
+Shared objective  
+Fill the entire string with tokens so every segment between players holds exactly two tokens.
+
+End condition  
+When the string is full and each gap shows two tokens, the group wins.
+
+Possible failure  
+If any player runs out of tokens before the string is full, the game ends in loss.
+
+Recovery rule  
+Once per game, any player may spend their turn returning one token from the string to any player who has zero, resetting that player’s count to one.",,,,,
+"R077","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R078","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R079","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R080","fact_hike","According to the observed conversations, Caroline had a not-so-great experience on a hike where she ran into a group of religious conservatives who said something that upset her.",,,,,
+"R081","launch","First step: arrive five minutes early, greet each person by name, and suggest a five-minute round of “one strength I bring tonight.”  
+Safeguard: keep her phone on and tell a friend the address and end-time.  
+Fallback: if tension rises, excuse herself for a five-minute walk and decide whether to return.  
+Benefit she gives up: the comfort of staying home and avoiding any risk of awkwardness.",,,,,
+"R082","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R083","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R084","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R085","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R086","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat at a café.  
+Benefit given up: the larger, one-off event format.",,,,,
+"R087","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R088","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R089","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the event.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R090","disagreement","Caroline should quietly thank the dismissed person for their idea and ask one clarifying question to show its value.  
+Safeguard: keep her tone neutral and brief so she doesn’t appear to take sides.  
+Fallback: if tension rises, suggest the group note both ideas and revisit them after hearing everyone else.  
+Benefit willingly given up: the chance to voice her own opinion in those five minutes.",,,,,
+"R091","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: cap the new session at 90 minutes so it doesn’t drag.  
+Fallback: switch to a one-on-one coffee meet-up for anyone still interested.  
+Benefit given up: the larger group energy she hoped to create.",,,,,
+"R092","launch","First step: arrive five minutes early, greet each person by name, and suggest a 10-minute round-robin to list one skill each brings.  
+Safeguard: keep her phone on and share the address with a trusted contact.  
+Fallback: politely excuse herself after 30 minutes if the group dynamic feels unsafe.  
+Benefit given up: the comfort of staying home and avoiding any risk of awkwardness.",,,,,
+"R093","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R094","disagreement","Caroline should quietly ask the dismissed person, “What else were you thinking?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief so she doesn’t appear to take sides.  
+Fallback: if tension rises, suggest the group note both ideas and revisit them after hearing everyone.  
+Benefit she gives up: the chance to stay completely silent and avoid any risk of friction.",,,,,
+"R095","launch","First step: Caroline should arrive five minutes early, greet each person by name, and immediately propose a 10-minute round-robin to list one skill and one constraint each.  
+Safeguard: She keeps her own calendar open and states a hard 90-minute end-time.  
+Fallback: If the group stalls, she suggests splitting into two pairs to draft a one-page plan and reconvene in a week.  
+Benefit given up: She forgoes the chance to stay home and finish her personal reading list.",,,,,
+"R096","launch","First step: arrive five minutes early, greet each person by name, and suggest a quick round-robin of one-sentence hopes for the evening.  
+Safeguard: keep her phone on and tell a friend the address and end-time.  
+Fallback: excuse herself after 45 minutes if the tone feels unsafe.  
+Benefit she gives up: the comfort of staying home alone.",,,,,
+"R097","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R098","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R099","fact_hike","According to the observed conversation, Caroline said she had a not-so-great experience on a hike where she ran into a group of religious conservatives who said something that upset her.",,,,,
+"R100","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; the twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn you must either (1) tie one of your tokens onto the string with a simple overhand knot or (2) pass one token to any neighbor who has fewer than two.
+
+Shared objective  
+Create one continuous string circle that holds all twelve tokens and can be lifted off the table without any token slipping.
+
+End condition  
+The game ends when the circle is lifted successfully or when any player has zero tokens left and cannot receive one on their turn.
+
+Possible failure  
+If the string breaks under tension or a token falls during the lift, the group fails.
+
+Recovery rule  
+After a failure, each player may give one token to any other player; play then resumes with the next clockwise turn, attempting a new lift.",,,,,
+"R101","disagreement","Caroline should quietly thank the dismissed person for their idea and ask them to expand on it, modeling respect.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group note both ideas and revisit them later.  
+Benefit she gives up: the chance to stay completely silent and avoid any spotlight.",,,,,
+"R102","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one “step” (hand-width) along the loop. You may also pass your second token to any neighbor.
+
+Shared objective  
+Fill every hand-width of the loop with at least one token before the tokens run out.
+
+End condition  
+When no tokens remain outside the loop, count gaps. Zero gaps = success; any gap = failure.
+
+Failure  
+If gaps remain, the circle “breaks.” All players lose unless the recovery rule is used.
+
+Recovery rule  
+Once, at any time, the group may vote to cut the string at one gap, tie the ends together to shrink the loop, and redistribute any displaced tokens evenly. Play then resumes; if gaps persist after redistribution, the game ends in loss.",,,,,
+"R103","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group move on and revisit the idea later.  
+Benefit she gives up: the chance to stay silent and avoid any risk of conflict.",,,,,
+"R104","fact_hike","According to the observed conversations, Caroline had a not-so-great experience on a hike where she ran into a group of religious conservatives who said something that upset her.",,,,,
+"R105","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R106","game","Setup  
+Six players sit in a circle. Each receives two tokens. Place the remaining six tokens in the center as a shared “bridge” pile. One long string forms a loose loop around the circle; each player holds a segment.
+
+Turn order  
+Players act simultaneously each round:  
+1. Whisper one true, supportive statement to the neighbor on your left while gently tugging the string once.  
+2. If the statement is met with a nod, slide one of your tokens into the bridge pile.  
+3. If anyone has no tokens left, the round ends.
+
+Shared objective  
+Grow the bridge pile to twelve tokens, symbolizing a stronger, united community.
+
+End condition  
+The game ends when the bridge pile reaches twelve tokens or when any player has zero tokens and cannot contribute.
+
+Possible failure  
+If the pile has fewer than twelve tokens when a player runs out, the group has “lost connection.”
+
+Recovery rule  
+Any player may give one token to a neighbor who has none, but must also retell that neighbor’s earlier supportive statement to keep the circle strong.",,,,,
+"R107","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R108","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; the twelve tokens start beside it.
+
+Turn order  
+On your turn, tie one new knot in the string or move one token onto an existing knot. Then pass the string clockwise.
+
+Shared objective  
+Weave the string into a single closed net that can hold all twelve tokens without any falling through.
+
+End condition  
+The game ends when every token rests on a knot and the string forms one unbroken loop.
+
+Failure  
+If the string is pulled taut into a straight line or any token drops, the group fails.
+
+Recovery rule  
+Any player may spend their turn untying one knot to reposition a fallen token, but the group then loses one token permanently.",,,,,
+"R109","launch","First step: arrive five minutes early, greet each person by name, and suggest a five-minute round of “why I’m here” to set a friendly tone.  
+Safeguard: keep her phone on and tell a friend the address and end-time.  
+Fallback: if tension rises, excuse herself after thirty minutes and leave.  
+Benefit given up: the comfort of staying home instead of risking an awkward evening.",,,,,
+"R110","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R111","retry","Next step: reschedule the activity for the same day and time next week, but move it to the community-center lobby (more foot traffic).  
+Safeguard: require RSVPs via a simple online form so you know the head-count 48 hours ahead.  
+Fallback: if fewer than four confirm, convert the slot into a small drop-in coffee hour instead.  
+Benefit given up: the original plan’s larger, more ambitious format.",,,,,
+"R112","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R113","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, tie one new knot in the string and move one token from your hand onto any existing knot (including the new one). You may also give one token to any other player.
+
+Shared objective  
+Weave the string into a single connected web that touches every player’s seat. All twelve tokens must rest on knots.
+
+End condition  
+The game ends when either the web reaches every seat and all tokens are placed, or the string runs out of usable length (agreed by any two players).
+
+Possible failure  
+If three or more tokens lie on the floor at any time, the web collapses and the group loses.
+
+Recovery rule  
+Once per game, any player may spend their turn to pick up two fallen tokens and immediately tie them together with a new overhand knot, returning them to play.",,,,,
+"R114","disagreement","Caroline should quietly ask the dismissed person, “What were you thinking?” to restore their voice.  
+Safeguard: keep tone neutral and brief.  
+Fallback: if tension rises, suggest a quick break.  
+Benefit she gives up: immediate group harmony.",,,,,
+"R115","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R116","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R117","launch","First step: Caroline should arrive five minutes early, greet each person by name, and immediately propose a 10-minute round-robin to list one skill and one constraint each.  
+Safeguard: Keep the shared budget in a transparent envelope and require two signatures for any purchase.  
+Fallback: If the group stalls, she will suggest splitting into two pairs for 15 minutes to draft mini-plans, then reconvene.  
+Benefit she gives up: The comfort of staying home and using the evening for personal rest.",,,,,
+"R118","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the event.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R119","launch","First step: arrive five minutes early, greet each person by name, and suggest a five-minute round-robin so everyone states one skill or resource they can offer tonight.  
+Safeguard: keep her phone on and tell a friend the address and expected end time.  
+Fallback: if the group dynamic feels unsafe or unproductive, excuse herself after thirty minutes, citing another commitment.  
+Benefit she gives up: the comfort of staying home and avoiding any risk of awkwardness.",,,,,
+"R120","fact_hike","According to the observed conversation, Caroline encountered a group of religious conservatives during her hike who said something that upset her. No further details about the specific incident are provided.",,,,,
+"R121","fact_hike","According to the observed conversation, Caroline encountered a group of religious conservatives during a hike who said something that upset her.",,,,,
+"R122","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee chat at a café.  
+Benefit given up: the original plan for a large, one-off group event.",,,,,
+"R123","launch","First step: Caroline should arrive five minutes early, greet each person by name, and immediately propose a 10-minute round-robin to list one skill and one constraint each.  
+Safeguard: She keeps her own calendar open and states a hard 90-minute end time.  
+Fallback: If the group stalls, she suggests splitting into two pairs for 20-minute mini-tasks and reconvening.  
+Benefit given up: She forgoes the chance to linger afterward and network further.",,,,,
+"R124","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R125","launch","First step: Caroline should arrive five minutes early, greet each person by name, and immediately propose a 10-minute round-robin to list one skill and one constraint each.  
+Safeguard: She keeps her own calendar open for the next 48 hours so she can exit without stranding the group.  
+Fallback: If the meeting stalls, she suggests they each write their top idea on a sticky note, photograph them, and reconvene online within 48 hours.  
+Benefit she gives up: the comfort of staying home and using the evening for rest.",,,,,
+"R126","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R127","disagreement","Caroline should quietly thank the dismissed person for their idea and ask one clarifying question to keep it on the table.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group note the idea for later review.  
+Benefit she gives up: immediate group approval.",,,,,
+"R128","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R129","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one finger-width along the loop. You may also pass your second token to any neighbor.
+
+Shared objective  
+Form a closed “bridge” of exactly twelve tokens spaced evenly around the loop so every player can reach any token by sliding a finger along the string without lifting it.
+
+End condition  
+The bridge is complete when twelve tokens sit evenly spaced and every player silently signals agreement by placing both hands palms-up on their knees.
+
+Possible failure  
+If any token falls off or spacing becomes visibly uneven before twelve tokens are placed, the round ends immediately.
+
+Recovery rule  
+Any player may spend their turn retrieving one fallen token and returning it to the center pile, but the group then loses one token permanently from the total needed.",,,,,
+"R130","retry","Next step: send a short, personal text to the eight who skipped, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the event.  
+Fallback: switch to a smaller, recurring coffee-chat that needs only three people.  
+Benefit given up: the original large-group format.",,,,,
+"R131","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; players may hold or pass it.
+
+Turn order  
+On your turn, place one token on the string or move the string one hand-width clockwise. Then hand the string to the player on your left.
+
+Shared objective  
+Create one closed loop of string that touches every player’s token at least once.
+
+End condition  
+The loop is closed and every token lies on it; the group wins.
+
+Possible failure  
+If tokens run out before the loop is closed, the game ends in loss.
+
+Recovery rule  
+Any player may spend their turn returning one previously placed token to its owner instead of adding a new one, giving the group another chance to reposition.",,,,,
+"R132","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R133","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: cap the new session at 90 minutes and require RSVPs.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R134","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R135","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R136","launch","First concrete step: arrive five minutes early, greet each person by name, and suggest a two-minute round of “why I’m here.”  
+Safeguard: keep her phone on and tell a friend the exact address and end-time.  
+Fallback: if the vibe feels unsafe, excuse herself after the round and leave.  
+Benefit she gives up: the comfort of staying home alone that evening.",,,,,
+"R137","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest a two-minute written round so everyone can contribute without interruption.  
+Benefit she gives up: the chance to stay silent and avoid any risk of seeming confrontational.",,,,,
+"R138","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group move on and revisit the point later.  
+Benefit she gives up: the chance to stay silent and avoid any risk of conflict.",,,,,
+"R139","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat at a café.  
+Benefit given up: the original large-group format.",,,,,
+"R140","fact_hike","According to the observed conversations, Caroline had a not-so-great experience on a hike where she ran into a group of religious conservatives who said something that upset her.",,,,,
+"R141","launch","First step: arrive five minutes early, greet each person by name, and suggest a 15-minute round-robin to list one skill each brings.  
+Safeguard: keep the shared budget in a visible envelope and require two signatures for any spend.  
+Fallback: if tension rises, propose ending the meeting after 45 minutes and reconvening only if everyone emails a revised plan within 48 hours.  
+Benefit given up: the chance to dominate the agenda in favor of hearing others first.",,,,,
+"R142","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, tie one of your tokens to the string with a simple knot, then pass the string to the player on your left.
+
+Shared objective  
+Create one continuous string sculpture that uses every token and can be lifted off the table by any two adjacent players without any token touching the surface.
+
+End condition  
+The game ends when all twelve tokens are knotted and the sculpture holds steady for a silent count of ten.
+
+Possible failure  
+If the sculpture collapses during the count, the group loses.
+
+Recovery rule  
+Any player may spend their next turn untying and re-knotting one token to restore balance; the count restarts afterward.",,,,,
+"R143","launch","First step: arrive five minutes early, greet each person by name, and suggest a 10-minute round-robin to list one skill or resource each brings.  
+Safeguard: keep her phone on and share the address with a trusted contact.  
+Fallback: politely excuse herself after 30 minutes if the group dynamic feels unsafe.  
+Benefit she gives up: the comfort of staying home and avoiding any risk of awkwardness.",,,,,
+"R144","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, move one of your tokens onto the string or slide an existing token one finger-width along it. Then pass the turn.
+
+Shared objective  
+Form a single closed loop of tokens on the string so every token touches two others and the loop uses all twelve tokens.
+
+End condition  
+The loop is complete when the last gap is closed and every token has exactly two neighbors.
+
+Possible failure  
+If three consecutive turns pass with no token moved onto the string, the game ends unfinished.
+
+Recovery rule  
+Any player may spend their turn returning one stray token to the center pile instead of moving; this resets the “three-turn” failure counter.",,,,,
+"R145","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R146","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R147","launch","First step: send a short, friendly message to the group chat confirming the meeting time and offering to bring a simple snack.  
+Safeguard: share the exact address and expected end-time with a trusted friend.  
+Fallback: leave after 30 minutes if the tone feels off.  
+Benefit given up: the chance to stay longer and deepen connections.",,,,,
+"R148","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R149","disagreement","Caroline should quietly note the sharp dismissal, then privately ask the dismissed person if they’d like to share their idea again with her.  
+Safeguard: keep the exchange brief and one-on-one.  
+Fallback: if rebuffed, simply thank both parties and move on.  
+Benefit she gives up: the chance to correct the group dynamic publicly.",,,,,
+"R150","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one finger-width along the loop. You may also pass your second token to any neighbor.
+
+Shared objective  
+Fill every space on the string with tokens so the loop is completely covered without gaps or overlaps.
+
+End condition  
+The game ends when the string is fully covered or when no tokens remain off the string.
+
+Possible failure  
+If three consecutive players cannot place or move a token without creating a gap or overlap, the loop “breaks” and the game ends in failure.
+
+Recovery rule  
+Any player may spend both of their tokens to “knot” the string: they remove two adjacent tokens, tie a small overhand knot in that spot, and replace one token on either side of the knot. Play then resumes.",,,,,
+"R151","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R152","launch","First step: Caroline should propose a 30-minute ice-breaker walk around the block, each person sharing one neighborhood strength and one worry.  
+Safeguard: set a visible 8 p.m. end-time and a neutral café as the meeting spot.  
+Fallback: if tension rises, switch to a written “one-sentence hopes” round and adjourn.  
+Benefit she gives up: the chance to steer the agenda toward her own priorities right away.",,,,,
+"R153","retry","Next step: reschedule the activity for a weekday evening and personally invite the eight who missed.  
+Safeguard: cap the event at eight people to keep it intimate.  
+Fallback: switch to a smaller, recurring coffee meet-up.  
+Benefit given up: the original large-group format.",,,,,
+"R154","fact_hike","According to the observed conversation, Caroline encountered a group of religious conservatives during her hike who said something that upset her.",,,,,
+"R155","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to invite clarification.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest the group move on and revisit the idea later.  
+Benefit she gives up: the chance to stay silent and avoid any risk of awkwardness.",,,,,
+"R156","disagreement","Caroline should quietly thank the dismissed person for their idea and ask them to expand on it, modeling respect.  
+Safeguard: keep her tone neutral and brief so she doesn’t escalate tension.  
+Fallback: if the sharp tone continues, suggest the group adopt a quick “round-robin” turn-taking rule.  
+Benefit she gives up: the chance to stay completely silent and avoid any risk of seeming confrontational.",,,,,
+"R157","disagreement","Caroline should privately ask the sharp speaker, “Could we hear the full idea before deciding?”  
+Safeguard: keep tone neutral and brief.  
+Fallback: if rebuffed, invite the dismissed person to email the idea to the group.  
+Benefit willingly given up: immediate group harmony.",,,,,
+"R158","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R159","disagreement","Caroline should quietly ask the dismissed person, “Could you say more about that?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief so she doesn’t appear to take sides.  
+Fallback: if tension rises, suggest the group note both ideas and revisit them after introductions.  
+Benefit she gives up: the chance to stay completely silent and avoid any risk of awkwardness.",,,,,
+"R160","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R161","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R162","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+On your turn, place one token on the string or move one already on it one hand-span clockwise. Then pass the string to the player on your left.
+
+Shared objective  
+Create one closed loop of string that carries exactly twelve tokens.
+
+End condition  
+The loop is closed and holds twelve tokens; everyone has placed both of their tokens.
+
+Possible failure  
+If any player runs out of tokens before twelve are on the string, the game ends unfinished.
+
+Recovery rule  
+Any player may give one of their remaining tokens to a neighbor who has none, once per game.",,,,,
+"R163","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R164","retry","Next step: send a short, personal text to the eight who skipped, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the event.  
+Fallback: switch to a smaller, recurring coffee-chat that needs only three people.  
+Benefit given up: the original plan for a large, one-off gathering.",,,,,
+"R165","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one hand-span along the loop. You may also pass your second token to any neighbor.
+
+Shared objective  
+Form a closed “chain” of exactly twelve tokens spaced evenly around the string. When the chain is complete, all players win.
+
+End condition  
+The game ends when either the chain is finished or any player has no tokens left.
+
+Possible failure  
+If tokens run out before the chain closes, the group loses.
+
+Recovery rule  
+Any player may, once per game, return one token they hold to the supply if doing so lets the next player complete the chain.",,,,,
+"R166","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, tie one new knot in the string or move one token from the pile onto an existing knot.
+
+Shared objective  
+Weave the string into a single closed net that can hold all twelve tokens without any falling through.
+
+End condition  
+The game ends when every token rests on a knot and the string forms a closed loop (ends tied together).
+
+Possible failure  
+If three consecutive turns pass with no new knot added and at least one token still off the string, the net collapses and the group loses.
+
+Recovery rule  
+Any player may, once per game on their turn, spend both of their tokens to untie one existing knot, returning those tokens to the pile and allowing construction to resume.",,,,,
+"R167","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one finger-width along the loop. You may also pass your second token to any neighbor.
+
+Shared objective  
+Form a closed “token chain” that uses every token exactly once and returns to its starting point on the string.
+
+End condition  
+The loop is complete when twelve tokens sit evenly spaced and the first and last touch.
+
+Failure  
+If three consecutive turns pass with no placement or movement, the game ends unfinished.
+
+Recovery rule  
+Any player may spend both tokens in one turn to remove any two misplaced tokens and immediately replace them anywhere on the string; play then continues clockwise from the next player.",,,,,
+"R168","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to reopen the idea.  
+Safeguard: keep her tone neutral and brief.  
+Fallback: if tension rises, suggest a two-minute written round so everyone can contribute without interruption.  
+Benefit she gives up: the chance to stay silent and avoid any risk of seeming confrontational.",,,,,
+"R169","disagreement","Caroline should quietly ask the dismissed person, “What did you mean by that?” to invite clarification and signal respect.  
+Safeguard: keep her tone neutral and her body language open.  
+Fallback: if tension rises, suggest a short break and speak privately with the dismissed person afterward.  
+Benefit she gives up: the chance to stay completely uninvolved and avoid any risk of awkwardness.",,,,,
+"R170","launch","First step: send a short, friendly message to the group chat confirming the meeting time and asking if anyone has dietary restrictions for snacks.  
+Safeguard: keep the first meet-up in a public café rather than a private home.  
+Fallback: leave after 45 minutes if the tone feels off.  
+Benefit she gives up: the chance to host the group at her place and feel more in control of the setting.",,,,,
+"R171","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string is placed in the center; the twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one finger-width along the loop. You must also speak one true sentence about yourself that the group has not yet heard.
+
+Shared objective  
+Fill the entire loop with tokens so they touch without gaps.
+
+End condition  
+The loop is completely covered or every player has used both tokens—whichever happens first.
+
+Possible failure  
+If any gap remains after all tokens are placed, the group fails.
+
+Recovery rule  
+Any player may spend their turn removing one token from the loop and returning it to the supply, but they must then share a difficulty they overcame; the removed token may be replayed on a later turn.",,,,,
+"R172","fact_hike","I do not know.",,,,,
+"R173","fact_hike","I do not know. No observed conversations are supplied in the memories.",,,,,
+"R174","launch","First step: arrive five minutes early, greet each person by name, and suggest a quick round of “one strength I bring tonight.”  
+Safeguard: keep her phone on silent but visible; if discomfort rises, text a pre-arranged friend to call in ten minutes.  
+Fallback: politely excuse herself after thirty minutes, citing another commitment.  
+Benefit she gives up: the chance to stay the full evening and possibly form deeper connections.",,,,,
+"R175","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R176","disagreement","Caroline should quietly note the sharp dismissal, then privately ask the dismissed person if they’d like to share their idea with her later.  
+Safeguard: keep the exchange brief and non-confrontational.  
+Fallback: if the dismissed person declines, she simply thanks them for their openness and moves on.  
+Benefit she gives up: the chance to correct the group dynamic publicly.",,,,,
+"R177","game","Setup  
+Six players sit in a circle. Each receives two tokens. A single loop of string lies in the center; twelve tokens start beside it.
+
+Turn order  
+Players take turns clockwise. On your turn, place one token on the string or move one already on it one hand-span along the loop. You may also pass your second token to any neighbor.
+
+Shared objective  
+Move all twelve tokens once around the loop and back to the start pile using only cooperative placements.
+
+End condition  
+The game ends when every token has completed a full circuit and returned, or when no tokens remain on the string and it is a player’s turn with none left to place.
+
+Possible failure  
+If the circle breaks (string pulled taut by two opposing pulls) all tokens on the string fall off and are removed from play.
+
+Recovery rule  
+Any player may spend both tokens in one turn to retie a broken string, returning one fallen token to the center pile.",,,,,
+"R178","fact_support","I do not know. The observed memories are empty, so there is no information about any support group or its effect on Caroline.",,,,,
+"R179","retry","Next step: send a short, personal text to the eight who missed, asking what time or format would work better.  
+Safeguard: set a firm RSVP deadline two days before the next date.  
+Fallback: switch to a smaller, recurring coffee-chat format.  
+Benefit given up: the original large-group vision.",,,,,
+"R180","launch","First step: send a short, friendly email to the group proposing a 30-minute video call to share names, pronouns, and one goal each.  
+Safeguard: keep the call on a platform that lets her leave instantly.  
+Fallback: if discomfort rises, thank them and exit, then text a trusted friend.  
+Benefit she gives up: the chance to spend that evening relaxing alone.",,,,,

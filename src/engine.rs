@@ -800,6 +800,13 @@ impl SelectiveMemory {
         }
         let empty = WorkingTalk::default();
         let talk = if hold { &self.talk } else { &empty };
+        let scoped_reading = crate::recall::reading::ReadingProfile::for_query(
+            &self.store, &self.mood, user, &dump.selected);
+        let external_axiom_allowed = |a: &crate::core::model::IdentityAxiom| {
+            let external = a.support_trace_ids.iter().filter_map(|id| self.store.traces.get(id))
+                .any(|t| t.attribution == crate::core::model::Attribution::External);
+            !external || scoped_reading.axioms.contains(&a.statement)
+        };
         // Isolated probes: retrieved scenes + living axioms.
         // Stance-without-scene lives in recall/stance.rs (ablation only).
         let (memories, axioms) = if hold {
@@ -820,6 +827,7 @@ impl SelectiveMemory {
             axioms.extend(
                 self.who_am_i()
                     .into_iter()
+                    .filter(|a| external_axiom_allowed(a))
                     .take(4)
                     .map(|a| a.statement.clone()),
             );
@@ -835,6 +843,7 @@ impl SelectiveMemory {
                 .who_am_i()
                 .into_iter()
                 .filter(|a| {
+                    if !external_axiom_allowed(a) { return false; }
                     if drop_ax
                         && crate::recall::retrieve::axiom_supported_by_lineage(
                             &a.support_trace_ids,
@@ -872,6 +881,10 @@ impl SelectiveMemory {
             };
             (memories, axioms)
         };
+        let mut axioms = axioms;
+        for interpretation in scoped_reading.axioms.iter().filter(|s| s.starts_with("Tentative observed interpretation;")) {
+            if !axioms.contains(interpretation) { axioms.push(interpretation.clone()); }
+        }
         MouthDraft {
             user: user.to_string(),
             memories,

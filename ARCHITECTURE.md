@@ -6,7 +6,10 @@ questions, not generic Service / Port / Adapter layers.
 How does an hour enter? How is a telling judged? How does a trace weather?
 How is the book saved? Those are four directories.
 
-Behaviour is unchanged: same order, same knobs, same benches.
+The memory organ is frozen at the supplied baseline: same order, rules and
+constants. The active experiment is [LoCoMo strategy](docs/LOCOMO_STRATEGY.md).
+[Source hashes](docs/ORGAN_BASELINE.json) identify the frozen organ; historical
+benchmarks remain separate regression fixtures.
 
 ## Questions
 
@@ -58,7 +61,7 @@ src/
     file.rs                 SELMEM1 bytes
     sqlite.rs               rows
   net/, config.rs, lexicon.rs
-  bin/                      selmemd, selmem-chat
+  bin/                      selmemd, selmem-chat, selmem-witness, selmem-locomo/
 ```
 
 ## Encode
@@ -221,3 +224,15 @@ This change separates event interpretation at intake. Narrative reconstruction,
 core grounding guards and the rule narrator still contain language-dependent
 fallbacks; they are not a claim of language-independent learned behavior. Learned
 interpretation requires empirical evaluation against the lexical baseline.
+
+## Active experiment adapter
+
+`src/bin/selmem-locomo/` holds the sole LoCoMo strategy launcher. `memory.rs`
+prepares six snapshots and read-only query contexts. `context.rs` packs whole
+items within the budget; `preflight.rs` checks that transfer has usable inputs.
+`reasoning.rs` validates settings and snapshot reuse. `sampling.rs` summarizes
+response variation; `strategy_report.rs` produces blind review and the original
+source-turn control. These modules orchestrate the experiment and do not alter
+the frozen organ. Provider errors remain missing observations and do not stop
+later calls. The original source-turn control reads the dataset outside the
+organ, not the sealed archive.

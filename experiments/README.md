@@ -1,8 +1,28 @@
 # Experiments
 
+## Active: LoCoMo strategy
+
+The organ is frozen. [Protocol and local commands](../docs/LOCOMO_STRATEGY.md),
+[retained observations](RESULTS.md), and [baseline](../docs/ORGAN_AUDIT_FIXES.md).
+
+- `strategy-grok/`: 179 successful answers from 180 requested calls.
+- `strategy-gpt/`: 180/180 successful answers with matched contexts.
+- `strategy-check/`: retained technical rehearsal; no model answers.
+
+The strategy experiment has ten conditions and six English probes. Earlier
+LoCoMo futures protocols and strategy pilots have been removed. Saved evidence
+in the retained directories is unchanged; historical revision labels are
+preserved for checksum verification. Current evaluation does not establish
+improved creativity or individuality.
+
+## Historical benches
+
+The sections below document older, separate experiments and their original
+replay instructions. They are not the active strategy protocol.
+
 Published report: [**REPORT.md**](REPORT.md) (method, tables, four excerpts from pair `001`).
 
-Locked next run: [**REPRO.md**](REPRO.md). `--p4` cells = C1 / C2Static / C2NoSleep / C2 / C3 at the same k. Soft column scored. Runner `experiments/p4.sh grok` then `luna`. External page [EXTERNAL.md](EXTERNAL.md). Markers [MARKERS.md](MARKERS.md).
+Historical P4 replay protocol: [**REPRO.md**](REPRO.md). `--p4` cells = C1 / C2Static / C2NoSleep / C2 / C3 at the same k. Soft column scored. Runner `experiments/p4.sh grok` then `luna`. External page [EXTERNAL.md](EXTERNAL.md). Markers [MARKERS.md](MARKERS.md).
 
 This folder is the public record of the SelMem benches. The white paper states the organ and the conclusions. Numbers, scripts, and how to replay a cell live here.
 

@@ -1,5 +1,11 @@
 # P4 locked bench
 
+Historical record of separate benchmarks. The active LoCoMo strategy protocol
+and retained runs are in [../docs/LOCOMO_STRATEGY.md](../docs/LOCOMO_STRATEGY.md)
+and [RESULTS.md](RESULTS.md). Instructions and numbers below belong to their
+original benchmark; they are not the current experiment.
+
+
 2–4 weeks. Lever #1. Not a feature.
 
 **Claim:** After an hour retained on one side only, two copies of the same model do not stay interchangeable once the following stream is identical. Measured on the book, retrieve, and the mouth.

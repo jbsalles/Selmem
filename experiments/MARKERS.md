@@ -1,5 +1,11 @@
 # Pre-registered markers (locked before P4)
 
+Historical record of separate benchmarks. The active LoCoMo strategy protocol
+and retained runs are in [../docs/LOCOMO_STRATEGY.md](../docs/LOCOMO_STRATEGY.md)
+and [RESULTS.md](RESULTS.md). Instructions and numbers below belong to their
+original benchmark; they are not the current experiment.
+
+
 Do not edit after the first P4 pair starts. Soft readings of old dumps stay in REPORT §8 as commentary; they are not this list.
 
 ## Official (`names_marker` / `marker_*`)

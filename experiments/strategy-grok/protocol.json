@@ -1,0 +1,61 @@
+{
+  "version": "locomo-strategy-v1-en",
+  "sample_id": "conv-26",
+  "dataset_url": "https://raw.githubusercontent.com/snap-research/locomo/main/data/locomo10.json",
+  "dataset_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "support_id": "D1:7",
+  "disappointment_id": "D12:1",
+  "event_valences": {
+    "D1:7": 0.7,
+    "D12:1": -0.5
+  },
+  "repetitions": 5,
+  "context_chars": 6000,
+  "max_completion_tokens": 500,
+  "temperature": 0.7,
+  "system": "You are Claire, an assistant accompanying Caroline. You observe conversations between Caroline and Melanie; their experiences are not your biography. Your supplied memories and interpretations are fallible. Respond only in English. For past factual questions, use only the supplied memories, distinguish the exact person or group asked about from related people or groups, and state when information is missing. For new situations, advise Caroline using only relevant observations: the current participants and circumstances are defined by the question. Do not add Melanie or other remembered people as participants unless the question includes them. Do not recite your memory or reading profile. Choose a concrete action and explain its tradeoff, rather than only proposing to evaluate or discuss. For invented games, produce playable rules and do not claim they are historical events. No strategy is prescribed: caution, openness and revision can each be appropriate.",
+  "probes": [
+    {
+      "id": "launch",
+      "kind": "transfer",
+      "text": "Caroline has been invited to help launch a neighborhood initiative with six people she has never met. They have one free evening and a small shared budget. Recommend her first concrete step, one safeguard, and a fallback if the attempt goes badly. State one benefit she is willing to give up for this choice. Do not merely propose a discussion. Answer in no more than 140 words.",
+      "retrieval_text": "Caroline has been invited to help launch a neighborhood initiative with six people she has never met. They have one free evening and a small shared budget. Recommend her first concrete step, one safeguard, and a fallback if the attempt goes badly. State one benefit she is willing to give up for this choice. Do not merely propose a discussion. Answer in no more than 140 words."
+    },
+    {
+      "id": "disagreement",
+      "kind": "transfer",
+      "text": "At the first meeting of a new volunteer team, one participant dismisses another person’s idea sharply. Caroline has not worked with either person before. Recommend what she should do in the next five minutes, one safeguard, and a fallback if her intervention fails. State one benefit she is willing to give up for this choice. Answer in no more than 140 words.",
+      "retrieval_text": "At the first meeting of a new volunteer team, one participant dismisses another person’s idea sharply. Caroline has not worked with either person before. Recommend what she should do in the next five minutes, one safeguard, and a fallback if her intervention fails. State one benefit she is willing to give up for this choice. Answer in no more than 140 words."
+    },
+    {
+      "id": "retry",
+      "kind": "transfer",
+      "text": "Caroline helped organize a new neighborhood activity, but only two of ten expected participants attended. There is enough time and budget for one more attempt. Recommend her next concrete step, one safeguard, and a fallback if attendance remains low. State one benefit she is willing to give up for this choice. Answer in no more than 140 words.",
+      "retrieval_text": "Caroline helped organize a new neighborhood activity, but only two of ten expected participants attended. There is enough time and budget for one more attempt. Recommend her next concrete step, one safeguard, and a fallback if attendance remains low. State one benefit she is willing to give up for this choice. Answer in no more than 140 words."
+    },
+    {
+      "id": "game",
+      "kind": "creative",
+      "text": "Design an original cooperative game for six strangers using paper, string, and twelve tokens. Explain setup, turn order, a shared objective, an end condition, a possible failure, and one recovery rule. Make the rules playable without a facilitator. Answer in no more than 220 words.",
+      "retrieval_text": "Design an original cooperative game for six strangers using paper, string, and twelve tokens. Explain setup, turn order, a shared objective, an end condition, a possible failure, and one recovery rule. Make the rules playable without a facilitator. Answer in no more than 220 words."
+    },
+    {
+      "id": "fact_support",
+      "kind": "fact",
+      "text": "According to the observed conversations, what effect did the support group have on Caroline? If you do not know, say so.",
+      "evidence_ids": [
+        "D1:7"
+      ],
+      "retrieval_text": "According to the observed conversations, what effect did the support group have on Caroline? If you do not know, say so."
+    },
+    {
+      "id": "fact_hike",
+      "kind": "fact",
+      "text": "According to the observed conversations, what happened to Caroline during the hike? If you do not know, say so.",
+      "evidence_ids": [
+        "D12:1"
+      ],
+      "retrieval_text": "According to the observed conversations, what happened to Caroline during the hike? If you do not know, say so."
+    }
+  ]
+}

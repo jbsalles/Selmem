@@ -127,6 +127,16 @@ fn unframed_core(event: &str) -> String {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .collect();
+    // A short event can combine an occurrence with a negated consequence.
+    // Selecting only the negative sentence discards the occurrence; selecting
+    // only the occurrence drops the constraint. Keep the complete bounded
+    // observation in that case, rather than changing either proposition.
+    if event.split_whitespace().count() <= 64
+        && candidates.iter().any(|s| has_neg(s))
+        && candidates.iter().any(|s| !has_neg(s))
+    {
+        return event.trim().to_string();
+    }
     let best = candidates
         .iter()
         .enumerate()

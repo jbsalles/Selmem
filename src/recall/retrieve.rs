@@ -158,6 +158,9 @@ pub fn recall_with(
             }
             let relevance = topic_relevance(query, &trace.core);
             let base_score = score;
+            let transfer = if crate::recall::interpretation::subject_matches(store, trace, query) {
+                crate::recall::interpretation::for_query(trace, query)
+            } else { None };
             let anchor = if trace.attribution == crate::core::model::Attribution::External
                 && relevance <= 0.0
             {
@@ -171,6 +174,23 @@ pub fn recall_with(
                 score = 0.0;
             } else {
                 score *= anchor;
+            }
+            // An explicit cue can evoke a deliberately retained own episode
+            // even after a long unused interval. Recency still ranks diffuse
+            // associations; it must not erase a precise, accessible match.
+            let (cue_hits, _) = topic_overlap(query, &trace.core);
+            if anchor > 0.0 && trace.permanence >= 0.8 && trace.anchor >= 0.8
+                && trace.attribution != crate::core::model::Attribution::External
+                && cue_hits >= 2 && relevance >= 0.5
+            {
+                // Access already includes fidelity. Multiplying it again
+                // would penalize detail loss twice, although the core is frozen.
+                score = score.max(0.5 * relevance * access);
+            }
+            if let Some(i) = &transfer {
+                // Evidence confidence and retained accessibility determine the
+                // score. Keep the normal .08/.12 gates; no eligibility floor.
+                score = score.max(0.65 * i.confidence * trace.fidelity * access);
             }
             // Bonuses require topic evidence independent of the context cloud.
             // A singleton motif cannot manufacture eligibility.
@@ -204,12 +224,17 @@ pub fn recall_with(
                 }
             }
             // Schema names are metadata, not query evidence.
+            if trace.attribution == crate::core::model::Attribution::External
+                && (!crate::recall::interpretation::subject_matches(store, trace, query)
+                    || !crate::recall::interpretation::factual_relation_matches(query, &trace.core)) {
+                score = 0.0;
+            }
             Some(ScoredTrace {
                 trace_id,
                 score,
                 status: trace.status,
                 base_score,
-                anchor,
+                anchor: transfer.as_ref().map_or(anchor, |i| anchor.max(i.confidence)),
             })
         })
         .collect();
@@ -633,6 +658,11 @@ fn cloud_anchor(
 /// Query-topic overlap, excluding task boilerplate and the observed speaker.
 /// This lexical check deliberately does not trust hash collisions.
 pub fn topic_relevance(query: &str, core: &str) -> f32 {
+    let (hits, total) = topic_overlap(query, core);
+    if total == 0 { 0.0 } else { hits as f32 / total as f32 }
+}
+
+fn topic_overlap(query: &str, core: &str) -> (usize, usize) {
     let subject = core.split_once(" said:").map(|(s, _)| s.to_lowercase());
     let tokens = |text: &str| {
         crate::encode::scoring::token_set(text)
@@ -700,7 +730,13 @@ pub fn topic_relevance(query: &str, core: &str) -> f32 {
                         | "safeguard"
                         | "fallback"
                         | "state"
+                        | "people"
                         | "benefit"
+                        // Temporal/connective and instruction words do not
+                        // establish a relation between observed episodes.
+                        | "before" | "after" | "either" | "both" | "another"
+                        | "own" | "next" | "first" | "last" | "than"
+                        | "willing" | "give" | "choice" | "minutes"
                 ) && subject
                     .as_ref()
                     .map_or(true, |s| !s.split_whitespace().any(|p| p == w))
@@ -710,8 +746,8 @@ pub fn topic_relevance(query: &str, core: &str) -> f32 {
     let q = tokens(query);
     let c = tokens(core);
     if q.is_empty() || c.is_empty() {
-        return 0.0;
+        return (0, 0);
     }
     let hits = q.iter().filter(|t| c.contains(t)).count();
-    hits as f32 / q.len().min(c.len()) as f32
+    (hits, q.len().min(c.len()))
 }

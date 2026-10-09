@@ -52,6 +52,12 @@ impl ReadingProfile {
                 if !selected.contains(id) {
                     continue;
                 }
+                if !crate::recall::interpretation::subject_matches(store, t, query) { continue; }
+                if crate::recall::interpretation::for_query(t, query).is_some() {
+                    // The observed hypothesis is supplied below. Do not turn
+                    // its speaker's affect into Claire's personal disposition.
+                    continue;
+                }
                 let Some((speaker, _)) = t.core.split_once(" said:") else {
                     continue;
                 };
@@ -74,8 +80,14 @@ impl ReadingProfile {
                 scoped.axioms.insert(id.clone(), a.clone());
             }
         }
+        let mut interpretations: Vec<_> = selected.iter().filter_map(|id| store.traces.get(id))
+            .filter(|t| crate::recall::interpretation::subject_matches(store, t, query))
+            .filter_map(|t| crate::recall::interpretation::for_query(t, query).map(|i| i.render(t)))
+            .collect();
+        interpretations.sort();
+        interpretations.dedup();
         if scoped.traces.is_empty() {
-            return Self::empty();
+            return Self { axioms: interpretations, ..Self::empty() };
         }
         let observed_only = scoped
             .traces
@@ -84,6 +96,7 @@ impl ReadingProfile {
         let neutral = Mood::default();
         let scoped_mood = if observed_only { &neutral } else { mood };
         let mut reading = Self::from_book(&scoped, scoped_mood);
+        reading.axioms.extend(interpretations);
         let weight: f32 = reading.salient.iter().map(|m| m.fidelity * m.access).sum();
         if weight > 0.0 {
             reading.valence_bias = reading

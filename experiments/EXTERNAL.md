@@ -1,5 +1,11 @@
 # External long-memory page
 
+Historical record of separate benchmarks. The active LoCoMo strategy protocol
+and retained runs are in [../docs/LOCOMO_STRATEGY.md](../docs/LOCOMO_STRATEGY.md)
+and [RESULTS.md](RESULTS.md). Instructions and numbers below belong to their
+original benchmark; they are not the current experiment.
+
+
 **SelMem is not a long-context QA store. These numbers are expected to lose to last-k.**
 
 That sentence is the claim on this page. It does not touch the persist claim. Do not submit a leaderboard row. Do not fold these numbers into P4.

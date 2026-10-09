@@ -20,3 +20,4 @@ pub use retrieve::{
     recall, recall_cut, recall_with, RecallBias, RecallOutcome, RecallWrite, RetrievalDump,
     ScoredTrace,
 };
+pub mod interpretation;

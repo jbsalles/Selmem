@@ -1443,6 +1443,11 @@ fn live_marked(mem: &mut SelectiveMemory, line: &str, pin: bool, schema: Option<
         input.utility = 0.55;
         input.schema = Some("hearth".into());
     }
+    // Explicit protocol retention must be requested before the gate. Pinning
+    // only after encoding cannot rescue an hour the gate already discarded.
+    if pin {
+        input.permanence = 0.95;
+    }
     let d = mem.live_with(input);
     if let (Some(s), Some(id)) = (schema, d.trace_id.as_ref()) {
         if let Some(t) = mem.store.traces.get_mut(id) {

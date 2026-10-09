@@ -1,0 +1,1786 @@
+response_id,probe,response,decision_or_action,originality_1_5,usefulness_1_5,unsupported_factual_claims,notes
+"R001","launch","First concrete step:  
+Propose a simple, time‑boxed “coffee & ideas” evening in a public, comfortable space (e.g., community center café). Start with a 10‑minute round where each person shares why they care about the neighborhood, then co-create a short list of 1–2 realistic first projects.
+
+Safeguard:  
+Agree in advance on a clear 2‑hour limit and a basic ground rule: “We focus on listening and concrete next steps, not personal criticism.”
+
+Fallback if it goes badly:  
+If the group is chaotic or hostile, Caroline politely leaves at the agreed end time and later offers to support the initiative only via email or smaller subgroups.
+
+Benefit she gives up:  
+She accepts less control over the initiative’s direction in exchange for shared ownership.",,,,,
+"R002","disagreement","Caroline should calmly interrupt and refocus the group:  
+“Let’s pause a second. I’d like us to hear that idea fully before we react—could you restate it, and then we’ll get a couple of reactions?”  
+She should keep her tone neutral, make eye contact with both people, and then invite others to build on the idea, not the conflict.
+
+Safeguard: after the meeting, briefly check in with both participants separately to see how they felt and to spot any brewing tension.
+
+Fallback if it fails: explicitly set a group norm next time: “In this team, we challenge ideas respectfully and don’t dismiss each other.”
+
+Benefit she gives up: maximizing short‑term efficiency in favor of psychological safety.",,,,,
+"R003","fact_support","According to the observed conversations, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R004","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “board”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup (6 players)  
+1. Place paper in the center; draw a hexagon and label corners A–F.  
+2. Place 2 tokens on each corner (12 total).  
+3. All players sit in a circle, each holding the string with one hand so it forms a loose loop around the paper.
+
+Shared Objective  
+Move all 12 tokens into the center of the hexagon using only the string to slide them; no one may touch tokens or paper with hands.
+
+Turn Order  
+Play proceeds clockwise. On your turn:  
+1. Announce a corner (A–F).  
+2. Everyone must pull, loosen, or shift the string together to try to slide exactly 1 token from that corner into the center.  
+3. After movement stops, check results.
+
+End Condition  
+Game ends when either:  
+- All 12 tokens are in the center (win), or  
+- 10 turns have passed (loss).
+
+Failure Condition  
+If 2 or more tokens move from the announced corner in a single turn, place 1 of those tokens back on any *empty* corner. That turn still counts.
+
+Recovery Rule  
+Once per game, after any failed turn, players may call “Reset”: move 1 token from any corner directly into the center before the next player’s turn.",,,,,
+"R005","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper  
+- 1 long loop of string (tied ends)  
+- 12 tokens  
+
+Setup  
+Sit in a circle. Place paper in the center, tokens on it. Put the string loop around all players’ wrists so everyone is connected. On the paper, draw a circle divided into 6 slices (one per player). Each slice has 2 spaces for tokens.
+
+Shared Objective  
+Fill all 12 spaces (2 in each slice) without breaking the “web” (string loop) or dropping tokens.
+
+Turn Order  
+Play clockwise. On your turn:  
+1) Say one short fact about yourself.  
+2) With your non-string hand, move exactly one token: either  
+   - from center to any empty space, or  
+   - from one slice to another.  
+You must keep the string taut but not tight; no one may let it touch the paper.
+
+End Condition  
+Win: All 12 spaces filled and the string never touched the paper or slipped off a wrist.  
+Immediate loss:  
+- String touches paper, or  
+- A token falls off the paper.
+
+Failure & Recovery Rule  
+If you lose, erase all tokens back to the center. As a group, each person proposes one change to how you’ll move or sit; agree on at least one change. Start a new round with the same rules.",,,,,
+"R006","fact_hike","According to the observed conversations, Caroline was on a hike and had a not‑so‑great experience when she ran into a group of religious conservatives who said something that really upset her. This encounter made her think about how much work still remains for LGBTQ rights.",,,,,
+"R007","fact_hike","I don’t know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R008","fact_hike","I don’t know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R009","retry","Run a very short follow‑up survey (flyer/WhatsApp/door‑knock) asking three things: preferred time, day, and what would make them excited to come (theme, food, kids’ activities, etc.). Then schedule one more event directly based on the top preferences and personally invite each neighbor.
+
+Safeguard: set a minimum RSVP threshold (e.g., 5). If it’s not met 24 hours before, cancel or downsize without extra spending.
+
+Fallback: if attendance is still low, pivot to a smaller, recurring meet‑up with the few who do come, and build from there.
+
+Benefit to give up: aiming for a big, impressive turnout in favor of a smaller but reliable group.",,,,,
+"R010","launch","First concrete step  
+Propose a short, structured “getting-to-know-you + planning” evening at a neutral public place (community center room or café), with a simple shared snack funded from the budget and a clear 90‑minute agenda.
+
+One safeguard  
+Beforehand, email the group a brief values statement for the initiative (e.g., “inclusive, LGBTQ‑affirming, no proselytizing or partisan campaigning”) and ask for explicit agreement.
+
+Fallback if it goes badly  
+If the meeting feels hostile or dismissive, politely end on time, thank them, and then follow up only with those who felt aligned, or start a smaller parallel initiative later.
+
+Benefit she’s willing to give up  
+She accepts giving up maximum short‑term reach (a bigger, more mixed group) in exchange for psychological safety and shared values.",,,,,
+"R011","disagreement","Caroline should calmly step in: “Let’s pause a second—I'd like to hear the full idea before we move on,” then invite the dismissed person to restate it and ask the sharp participant to clarify concerns in specific, non-personal terms. She should keep her tone neutral and time‑bound (“two minutes each”) so it feels like facilitation, not blame.
+
+Safeguard: if tension rises, she suggests a quick round where everyone shares one idea without critique, postponing evaluation.
+
+Fallback: if the sharp participant continues, she proposes parking the topic and asks the team lead (or herself, if none) to revisit norms for respectful discussion after the meeting.
+
+She is willing to give up the benefit of being seen as “easygoing” to protect psychological safety.",,,,,
+"R012","launch","First concrete step:  
+Propose a simple “pizza and priorities” evening: meet at a low‑cost café or community room, share a cheap meal from the budget, and have each person name one hope and one worry for the initiative, written on a shared board. End by agreeing on one small pilot action and who does what next week.
+
+Safeguard:  
+Set a clear two‑hour time limit and a basic ground rule: one person speaks at a time, no personal attacks—focus on ideas, not people.
+
+Fallback if it goes badly:  
+If the group is tense or stuck, volunteer to summarize what was said in a short follow‑up email and suggest pausing for two weeks before meeting again.
+
+Benefit she gives up:  
+She accepts less control over the initiative’s direction to prioritize shared ownership.",,,,,
+"R013","retry","Run one more event but change the format to a low‑effort “open house” or drop‑in meetup at a convenient time/place, and personally invite each of the original ten (plus a few new neighbors) with a clear, specific ask: “Can you come for at least 20 minutes between X and Y?”  
+
+Safeguard: set a minimum RSVP threshold (e.g., 5 yeses 24 hours before); cancel or reschedule if it’s not met.  
+
+Fallback: if turnout is still low, pivot to a smaller recurring gathering with the reliable attendees and stop broad promotion.  
+
+Benefit to give up: aiming for a large, impressive-looking group in favor of a smaller but consistent core.",,,,,
+"R014","launch","Start by proposing a simple, time‑boxed “getting-to-know-you + planning” evening: 90 minutes in a neutral, low‑cost space (library room / café), with a clear agenda (15 min intros, 45 min brainstorming, 30 min picking one small pilot project and next steps).
+
+Safeguard: agree in advance on a basic ground rule set (respectful listening, no personal attacks, right to pass on questions) and a hard end time so no one feels trapped.
+
+Fallback if it goes badly: Caroline thanks everyone, summarizes any small points of agreement, and later follows up only with those who seemed constructive to explore a smaller-scale collaboration.
+
+Benefit she’s willing to give up: maximizing short‑term efficiency in favor of building initial trust and psychological safety.",,,,,
+"R015","disagreement","Caroline should briefly pause discussion, restate the dismissed idea neutrally (“Let’s make sure we understand Alex’s suggestion…”) and invite clarification from both: first the idea-giver, then the critic (“What concern do you see?”). She should set a quick ground rule: “Let’s challenge ideas, not people; we’re all new to each other.” Then move to one concrete next step on the idea (small test, or parking it visibly) so it’s not silently buried.
+
+Safeguard: after the meeting, check in 1:1 with both people to spot lingering tension or patterns.
+
+Fallback if it fails: explicitly name the behavior next time (“That felt sharp; can you rephrase?”) and, if needed, take the critic aside.
+
+Benefit she gives up: maximum short-term efficiency in favor of psychological safety.",,,,,
+"R016","game","Title: Signal Web
+
+Components  
+- 1 sheet of paper  
+- 1 pen (assume available)  
+- 1 long string (or tied shorter ones)  
+- 12 tokens  
+
+Setup (6 players)  
+1. Sit in a circle. Place paper in the center, tokens beside it.  
+2. Draw a 6×6 grid on the paper. Secretly, each player chooses one different row and keeps it private.  
+3. Place the string in the middle.
+
+Shared Objective  
+Collectively place all 12 tokens on the grid so that:  
+- Every chosen row has at least 2 tokens.  
+- No column has more than 3 tokens.  
+No one may say which row is theirs.
+
+Turn Order  
+Play clockwise. On your turn you must:  
+1. Place 1 token on any empty grid space, OR  
+2. Move 1 token to an empty space.  
+Then, optionally, touch the string:  
+- Light tap = “This helps my row.”  
+- Firm pull = “This hurts my row.”
+
+End Condition  
+When all 12 tokens are on the grid and everyone agrees to stop, check the objective. If met, all win.
+
+Possible Failure  
+If any chosen row has fewer than 2 tokens or any column has 4+ tokens, all lose.
+
+Recovery Rule (One-Time Reset)  
+Once per game, after a failure, the group may remove up to 4 tokens and continue playing until they either succeed or fail again.",,,,,
+"R017","fact_hike","I don’t know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R018","game","Title: Web of Twelve
+
+Components (for 6 players)
+- 1 sheet of paper (center “Map”)
+- 1 long string (looped and knotted so all can hold it)
+- 12 tokens
+
+Setup
+1. Sit in a circle, paper in the center. Place 12 tokens on the paper.
+2. Each player holds the string with one hand; the loop must stay unbroken and off the paper.
+3. As a group, choose a theme (e.g., “rescue mission,” “building a city”).
+
+Objective
+Move all 12 tokens from the center of the paper to its edge using only the string, without dropping any token off the paper.
+
+Turn Order
+Play proceeds clockwise.
+On your turn:
+1. Announce one token you will move.
+2. Everyone must adjust their grip so only you may touch that token with the string.
+3. Using only the string (no fingers on tokens), you slide that token toward the edge.
+4. When you stop, your turn ends.
+
+End Condition
+Game ends when:
+- All 12 tokens touch the paper’s edge (win), or
+- Three tokens have fallen off the paper (loss).
+
+Failure & Recovery
+Failure: If a token falls off, it is lost and cannot be reused.
+Recovery rule: After any fall, the next player may skip moving a token and instead call a 1-minute “strategy turn” where all discuss new tactics before play resumes.",,,,,
+"R019","launch","First concrete step  
+Propose a simple, time‑boxed “coffee & ideas” evening in a public, comfortable place (library room / café), with a clear 2‑hour agenda: quick intros, each person names one neighborhood need, then jointly pick one small pilot action.
+
+One safeguard  
+Agree in advance on basic ground rules (respectful listening, no personal attacks, anyone can call a short pause) and share them in the invitation so expectations are clear.
+
+Fallback if it goes badly  
+If the meeting feels hostile or unworkable, Caroline politely ends on time, thanks everyone, and later follows up only with any individuals who seemed constructive, or withdraws entirely.
+
+Benefit she’s willing to give up  
+She accepts less control over the initiative’s direction in exchange for shared ownership.",,,,,
+"R020","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “map”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup  
+Sit in a circle. Place paper in the center, tokens on it. Lay the string in a loose circle around the paper. Each player lightly holds the string with one hand. As a group, choose a theme (e.g., “starting at a new job”).
+
+Objective  
+Together, move all 12 tokens from the paper to the floor outside the string, one by one, while telling a connected story. No one may touch tokens with hands.
+
+Turn Order  
+Play proceeds clockwise. On your turn:  
+1) Say one sentence that continues the shared story.  
+2) Using only the string (pulling, lifting, sliding), the whole group cooperatively moves exactly one token off the paper and fully outside the string.  
+3) When the token is placed, your turn ends.
+
+End Condition  
+The game ends when all 12 tokens are outside the string and the story feels complete. Everyone briefly names one thing they appreciated about the group.
+
+Failure Condition  
+If any token falls over or leaves the paper/string area unintentionally, the group “drops the thread.”
+
+Recovery Rule  
+When the thread is dropped, everyone releases the string, pauses 10 seconds in silence, then any player may suggest one change to how you coordinate before resuming.",,,,,
+"R021","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “board”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup (6 players)  
+1. Place paper in the center. Write the numbers 1–12 in a circle on it.  
+2. Put one token on each number.  
+3. All players sit around, each holding the string loop with one hand (evenly spaced).  
+
+Shared Objective  
+Move all 12 tokens to the center of the paper using only the string, without anyone touching tokens or paper directly.
+
+Turn Order  
+Play proceeds clockwise. On your turn:  
+1. Announce one token number.  
+2. Everyone must, only by moving the string, try to slide that token toward the center.  
+3. When it fully crosses a drawn inner circle (players draw one), it’s “scored” and stays there.  
+
+End Condition  
+Game ends when:  
+- All 12 tokens are scored (group wins), or  
+- 10 minutes pass (group checks if they met a minimum goal of 8 tokens to count as a “partial win”).  
+
+Failure Condition  
+If any token falls off the paper, or anyone touches a token/paper with their other hand, that token is removed from the game.
+
+Recovery Rule  
+Once per game, the group may vote (majority) to “rewind” one failure: return one removed token to its original spot and try again.",,,,,
+"R022","disagreement","Caroline should calmly say to the group, “Let’s pause a second—I’d like to hear the full idea before we move on,” then invite the dismissed person to restate it and ask the sharp speaker, “Can you share your concerns in a constructive way?” This supports respect without attacking anyone.
+
+Safeguard: if tension rises, she reframes: “We’re all new here; let’s focus on improving ideas, not judging them,” and shift to a quick round where everyone shares one idea.
+
+Fallback: if the sharp participant keeps dismissing, Caroline suggests, “Let’s park this topic and return after the break,” then privately check in with the dismissed person.
+
+She’s willing to give up the benefit of staying comfortably invisible in the group.",,,,,
+"R023","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R024","fact_hike","According to the observed conversations, Caroline said that during a recent hike she ran into a group of religious conservatives who said something that really upset her and made her think about how much work still remains for LGBTQ rights.",,,,,
+"R025","game","Title: Bridge of Twelve
+
+Components  
+- 1 sheet of paper (any size)  
+- 1 long string (or tied shorter pieces)  
+- 12 tokens  
+
+Setup  
+1. Place the paper in the center: this is the “chasm.”  
+2. Lay the string across it: this is the “bridge,” which must stay touching the paper.  
+3. Put all 12 tokens on one side of the paper (Start Side). The opposite edge is the Safe Side.  
+4. Players sit in a circle around the paper.
+
+Shared Objective  
+Move all 12 tokens from Start Side to Safe Side by sliding them along the string, without breaking any rules, within 3 full rounds.
+
+Turn Order  
+- Play proceeds clockwise.  
+- On your turn, you may either:  
+  1) Slide 1–3 tokens along the string (must stay touching it), or  
+  2) Adjust the string’s shape/position (it must still touch the paper).  
+- You must do exactly one of these actions and narrate your plan out loud first.
+
+Rules / Possible Failure  
+You immediately fail the round if:  
+- Any token leaves the string, or  
+- Anyone touches a token out of turn, or  
+- You exceed 3 full rounds (18 turns).
+
+End Condition  
+Win if all 12 tokens reach the Safe Side before failure.
+
+Recovery Rule  
+If you fail, everyone states one change to their own behavior. Reset tokens and try again with the new agreements.",,,,,
+"R026","disagreement","Caroline’s next five minutes:  
+1. Pause the discussion calmly: “Let’s slow down a second.”  
+2. Acknowledge the dismissed person: “I’d like to hear more about your idea before we move on.”  
+3. Reframe the sharp comment: “Maybe we can focus on what problem we’re trying to solve and see if this idea helps.”  
+4. Invite others: “Does anyone see potential tweaks to make this work?”
+
+Safeguard: If tension rises, propose a brief reset: “Let’s take two minutes to jot ideas silently, then share one each.”
+
+Fallback if it fails: Suggest parking the disputed idea for later review and move to a neutral agenda item.
+
+Benefit she gives up: Being seen as “easygoing” and non-confrontational.",,,,,
+"R027","retry","Host a smaller, explicitly “pilot” version next time: personally invite the original ten, ask what time/topic would draw them, and frame it as co‑creating the activity. Use a simple RSVP system (e.g., group chat or form) as a safeguard so you can cancel or scale down if fewer than, say, four confirm.  
+
+If attendance is still low, pivot: turn it into a casual meet‑up with whoever comes, then ask what kind of connection the neighborhood actually wants (maybe an online group or different format).  
+
+You’re willing to give up the benefit of a large, impressive turnout in exchange for a more realistic, relationship‑focused approach.",,,,,
+"R028","launch","First concrete step:  
+Propose a simple “potluck & priorities” evening at a nearby community center or someone’s living room: everyone brings a snack within the small budget, then each person writes 3 neighborhood needs on sticky notes; as a group, cluster and vote on one small, doable first project.
+
+Safeguard:  
+Set a clear 2‑hour timebox and a basic ground rule: “We focus on shared goals, avoid personal attacks, and pause if anyone feels targeted.”
+
+Fallback if it goes badly:  
+If the group is tense or dismissive, Caroline follows up only with the 1–2 people who seemed constructive and explores a smaller spin‑off effort.
+
+Benefit she gives up:  
+She accepts less control over the initiative’s direction in exchange for genuine collaboration.",,,,,
+"R029","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “board”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup  
+Sit in a circle. Place paper in the center, string loop around it, tokens on the paper. Each player holds the string with one hand; no one may touch tokens with hands.
+
+Roles (chosen secretly)  
+- 2 Pullers: may pull string toward themselves.  
+- 2 Guiders: may slide their grip along string.  
+- 2 Stabilizers: may only hold string steady.
+
+Objective  
+Together, move all 12 tokens off the paper and onto the table, without dropping any on the floor, using only the string.
+
+Turn Structure  
+Play proceeds in “rounds” of 1 minute (use a phone timer if available, or count to 60). During a round, players may talk freely and move the string according to their roles. After each round, everyone must be silent for 10 seconds and may not move the string.
+
+End Conditions  
+Win: All 12 tokens are off the paper and on the table.  
+Loss: Any token falls to the floor twice in the same game.
+
+Possible Failure  
+If a token falls to the floor once, that’s a “collapse.”
+
+Recovery Rule  
+After a collapse, everyone must change seats and may swap roles by unanimous agreement before continuing.",,,,,
+"R030","retry","Host a smaller, explicitly “pilot” version next time: personally invite the original ten (plus 2–3 new neighbors), ask what time/topic works best, and frame it as co-designing the activity together. Use simple sign-ups (e.g., shared sheet or group chat) so people pre-commit and you can remind them the day before.
+
+Safeguard: set a minimum confirmed headcount (e.g., 5). If it’s not reached 24 hours before, postpone instead of running half-empty.
+
+Fallback: if attendance is still low, pivot to an online or porch/coffee chat format with whoever is keen, and treat it as a micro-community.
+
+Benefit to give up: aiming for broad neighborhood reach this round, in favor of depth with a smaller, committed group.",,,,,
+"R031","fact_hike","I don’t know what happened to Caroline during the hike. There are no observed conversations or memories provided that describe that event.",,,,,
+"R032","launch","First concrete step:  
+Propose a simple, low-cost “getting-to-know-you work session” at a neutral public spot (library room or community center). Spend the first 30–40 minutes on a structured round: each person shares why they care about the neighborhood and one small change they’d like to see, then collectively pick one tiny pilot project for the budget.
+
+Safeguard:  
+Set a clear 2‑hour time limit and a basic ground rule: no personal attacks; focus on ideas and shared goals.
+
+Fallback if it goes badly:  
+If the group feels hostile or unworkable, politely leave with thanks, then follow up only with the one or two people who seemed constructive and explore a smaller-scale collaboration.
+
+Benefit she’s willing to give up:  
+She gives up the comfort of only working with already-supportive, like‑minded people.",,,,,
+"R033","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R034","disagreement","Caroline should briefly pause the discussion and say something like, “Let’s slow down—I'd like to hear the idea fully before we react,” then invite the dismissed person to restate their point and ask the critic to respond using “I” statements and specifics. This models respect without taking sides.
+
+Safeguard: If emotions rise, she sets a clear boundary: “We’ll keep feedback focused on ideas, not people. Otherwise we’ll park this topic.”
+
+Fallback: If tension persists, she moves on: “Let’s table this and revisit after the meeting,” then later speaks to each person privately.
+
+She’s willing to give up speed in getting through the agenda to protect psychological safety.",,,,,
+"R035","fact_hike","During the hike, Caroline ran into a group of religious conservatives who said something that really upset her.",,,,,
+"R036","fact_hike","I don’t know what happened to Caroline during the hike. There are no observed memories or conversations provided that describe that event.",,,,,
+"R037","retry","Host a smaller, explicitly “pilot” version next time: personally invite the original ten, ask what time/topic would draw them, and frame it as co‑creating the activity. Use a simple RSVP system (e.g., group chat or form) as a safeguard so you can cancel or scale down if fewer than, say, four confirm.  
+
+If attendance is still low, pivot: turn it into a casual meet‑up with whoever comes, then ask what kind of connection the neighborhood actually wants (or decide to stop and invest your energy elsewhere).  
+
+You’re willing to give up the benefit of a polished, large, impressive event in exchange for something smaller but more responsive and sustainable.",,,,,
+"R038","disagreement","Caroline should briefly pause the discussion and say something like, “Let’s slow down—I'd like to hear the idea fully before we move on,” then invite the dismissed person to restate their point and ask the critic to respond using “I” statements and specifics. This models respect without taking sides.
+
+Safeguard: If tension rises, she sets a boundary: “We’ll keep feedback focused on ideas, not people. If we can’t, we’ll park this topic.”
+
+Fallback: If the sharp participant continues, she moves on: “Let’s table this and revisit later,” and speaks to both privately after the meeting.
+
+She’s willing to give up speed/efficiency in getting through the agenda to protect psychological safety.",,,,,
+"R039","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “Web Map”)  
+- 1 long string (loop tied so all can hold it)  
+- 12 tokens (numbered 1–12 or marked uniquely)
+
+Setup  
+1. Sit in a circle. Place the paper in the center.  
+2. Place all 12 tokens on the paper.  
+3. Everyone holds the looped string with both hands, forming a shared “net.”
+
+Objective  
+As a group, move all 12 tokens off the paper to the table around it, in numerical order (1 to 12), using only the string to slide them.
+
+Basic Rules / Turn Order  
+1. Play proceeds in clockwise “calls.” On your call, you must:  
+   - Announce the next target token (e.g., “3”).  
+   - Propose a movement plan in one sentence (e.g., “Pull left slowly”).  
+2. After your call, everyone may only move the string, not touch tokens or paper.  
+3. If the correct token leaves the paper fully, it stays where it lands. Next player calls the next number.
+
+End Condition  
+Game ends when token 12 is successfully moved off the paper.
+
+Failure Condition  
+If any non-target token leaves the paper, all tokens currently off the paper return to the center.
+
+Recovery Rule  
+After a failure, the next player may change the objective: instead of strict order, they may declare any remaining token as the new target once per game.",,,,,
+"R040","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “map”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup (6 players)  
+1. Place paper in the middle; put all 12 tokens on it.  
+2. Lay the string in a circle around the paper. Each player holds the string with one hand; no one may touch tokens or paper with that hand.  
+3. With the other hand, each player may touch tokens or paper.
+
+Shared Objective  
+Move all 12 tokens off the paper and onto the table outside the string circle, without ever letting the string touch the paper.
+
+Turn Order  
+Play proceeds clockwise. On your turn you may do ONE of:  
+1) Move exactly one token (slide or lift).  
+2) Ask one yes/no question that everyone must answer honestly.  
+3) Propose a “shift”: everyone may adjust their grip on the string once.
+
+End Condition  
+Win immediately when all 12 tokens are off the paper and the string has never touched the paper.
+
+Failure  
+If the string touches the paper, or a player uses their string-hand to touch tokens/paper, all tokens return to the paper.
+
+Recovery Rule  
+After a failure, everyone must state one change to their own behavior or plan. Then skip the next player in turn order and continue.",,,,,
+"R041","disagreement","Caroline should briefly pause discussion and normalize contribution:  
+“Let’s slow down. I want to hear ideas without shutting them down too fast. Alex, could you restate your idea? Then we’ll ask clarifying questions before reactions.”  
+
+She then:  
+1. Gives the dismissed person space to re-explain.  
+2. Asks the sharp participant to phrase concerns as questions or specific constraints.  
+3. Summarizes both views and links them to the team’s goal, then moves to the next idea.  
+
+Safeguard: After the meeting, check in 1:1 with both people to spot lingering tension.  
+
+Fallback: If sharpness continues, explicitly set a “no personal dismissals” ground rule and enforce it.  
+
+Benefit she gives up: Maximum short-term efficiency in favor of psychological safety.",,,,,
+"R042","retry","Run a short, low-pressure “open house” version next time: same activity, but framed as a drop‑in with snacks and a clear start/end time, and personally invite neighbors (door flyers or quick chats) instead of relying on sign‑ups.
+
+Safeguard: set a minimum attendance threshold (e.g., 4 people). If fewer than that arrive after 15 minutes, pivot to an informal hangout with whoever came and treat it as feedback time.
+
+Fallback if attendance stays low: scale it down into a small, recurring meet‑up with those who do come, rather than a big neighborhood event.
+
+Benefit to give up: aiming for a large, impressive turnout in favor of a smaller, more reliable group.",,,,,
+"R043","fact_hike","According to the observed conversation, during the hike Caroline ran into a group of religious conservatives who said something that really upset her. Beyond that, nothing more specific about what they said or did is known from the memory.",,,,,
+"R044","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R045","launch","First concrete step:  
+Propose a simple “getting-to-know-you + planning” potluck evening in a free or low‑cost space (someone’s living room or a community room). Ask each person to bring one snack and one idea for the initiative’s first small project.
+
+Safeguard:  
+Agree in advance on a 90‑minute time limit and a basic structure (check‑ins, idea round, pick one small pilot, next steps) so no one dominates and expectations stay realistic.
+
+Fallback if it goes badly:  
+If the group clashes or stalls, follow up with one short message summarizing what was tried, invite anyone still interested to reply, and then step back.
+
+Benefit she’s willing to give up:  
+She accepts less control over the initiative’s direction in exchange for shared ownership.",,,,,
+"R046","launch","First concrete step:  
+Propose a 2‑hour “mini‑lab” evening in a nearby café/community room:  
+• 20 min: quick intros + each person names one neighborhood problem and one strength.  
+• 60 min: pick one small, visible action (e.g., weekend litter clean‑up + coffee) and plan date, roles, and budget use.  
+• 40 min: set a shared chat channel and a 4‑week check‑in date.
+
+Safeguard:  
+Agree up front that no one spends personal money or commits beyond this first small action without explicit consent.
+
+Fallback if it goes badly:  
+If the group stalls or conflicts, Caroline uses remaining budget to run the action with just 1–2 willing people, then documents results to share later.
+
+Benefit she gives up:  
+Maximizing attendance by choosing a slightly inconvenient but neutral venue.",,,,,
+"R047","retry","Host a smaller, explicitly LGBTQ‑affirming “pilot” meetup with a clearer theme (e.g., “Queer & Ally Neighborhood Walk & Chat”) and personal invitations to likely supportive neighbors plus one or two local groups (LGBTQ org, affirming faith group). Safeguard: require simple RSVPs and send one reminder so you can adjust location/scale if numbers look low.  
+
+Fallback: if turnout is still small, pivot the remaining budget/time into an online or hybrid gathering (Zoom + group chat) and a short resource sheet for neighbors, focusing on connection over headcount.  
+
+Benefit to give up: aiming for broad, whole‑neighborhood reach this round; instead, prioritize depth with a smaller, more committed group.",,,,,
+"R048","fact_hike","I do not know what happened to Caroline during the hike; there are no observed conversations or memories provided that describe that event.",,,,,
+"R049","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “board”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup  
+1. Draw a circle on the paper; divide it into 6 equal “zones.”  
+2. Place 2 tokens in each zone (12 total).  
+3. All six players sit around the paper and lightly hold the string loop with both hands, forming a “web” over the paper.
+
+Objective  
+Move all 12 tokens into the exact center of the circle using only the string, without dropping any off the paper.
+
+Turn Order  
+Play proceeds clockwise. On your turn:  
+1. Announce a “move plan” (e.g., “Lift left, pull toward me”).  
+2. Everyone must follow only your verbal instructions for 10 seconds while you all manipulate the string to slide tokens.  
+3. After 10 seconds, the next player becomes leader.
+
+End Condition  
+The game ends in success when all 12 tokens are fully inside a small center circle drawn on the paper.
+
+Failure Condition  
+If any token falls off the paper, the group “fails” that round.
+
+Recovery Rule  
+On a failure, everyone must pause, each person briefly says one thing they’ll do differently, then move all tokens back to their starting zones and try again. The game is lost only after three failed rounds.",,,,,
+"R050","retry","Run one more event but change the format to maximize commitment: personally message all ten people, ask who can *definitely* come on a specific date, and only confirm the event if at least five say yes. Safeguard: require simple RSVPs (yes/no) 3–4 days in advance and send one reminder, so she can cancel or scale down if numbers stay low.  
+
+Fallback if attendance is still low: pivot the activity into a small, recurring meetup with whoever reliably shows, and stop investing extra budget in broad promotion.  
+
+Benefit she’s willing to give up: aiming for a large, impressive-looking group in favor of a smaller, dependable one.",,,,,
+"R051","launch","First concrete step:  
+Propose a simple “getting-to-know-you + planning” evening at a nearby café or community room: 30 minutes of introductions and personal motivations, then 60 minutes to agree on one small, testable project the budget can cover this month.
+
+Safeguard:  
+Beforehand, email a brief agenda and shared ground rules (respectful listening, time limits, no pressure to overshare). This sets expectations and makes it easier to redirect if someone dominates.
+
+Fallback if it goes badly:  
+If the group feels chaotic or unkind, Caroline can suggest pausing the initiative and later follow up only with any members who seemed constructive.
+
+Benefit she’s willing to give up:  
+She accepts less control over the initiative’s direction in exchange for genuine collaboration.",,,,,
+"R052","disagreement","Caroline should calmly step in: “Let’s pause a second—I'd like to hear the full idea before we move on.” Then invite the dismissed person to restate it, and ask the group, including the sharp critic, to identify one potential strength and one concern. This models respect without attacking anyone.
+
+Safeguard: if tension rises, she can suggest a brief “one idea at a time, no interruptions” ground rule for the rest of the meeting.
+
+Fallback if it fails: privately check in with the dismissed person afterward, validate them, and encourage them to stay engaged; then raise norms with the facilitator before the next meeting.
+
+Benefit she gives up: maximizing short‑term efficiency in favor of psychological safety.",,,,,
+"R053","disagreement","Caroline’s next five minutes:  
+1. Briefly restate the dismissed idea neutrally: “Let’s pause—Alex suggested X; I’d like to understand it.”  
+2. Ask the originator one clarifying question, then invite 1–2 others to react.  
+3. Address tone, not character: “I want us to challenge ideas, but in a way that keeps everyone contributing.”  
+4. Propose a quick decision method (e.g., 3‑minute pros/cons, then park or adopt).
+
+Safeguard:  
+Set a ground rule before moving on: “We’ll critique ideas, not people, and avoid sharp put‑downs.”
+
+Fallback if it fails:  
+Pause the discussion, move to a different agenda item, and plan brief 1:1 check‑ins with both people afterward.
+
+Benefit she gives up:  
+Maximum short‑term efficiency in favor of psychological safety.",,,,,
+"R054","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R055","fact_support","I don’t know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R056","disagreement","Caroline’s next five minutes:  
+Gently interrupt: “Let’s pause a second. I’d like to hear the idea fully before we react.” Then invite the dismissed person: “Could you walk us through your thought?” and reframe: “Maybe we can build on it or adapt parts of it.” Keep tone calm and neutral, not scolding.
+
+Safeguard:  
+If the sharp participant reacts defensively, acknowledge them too: “You raised important concerns; let’s just make sure everyone feels heard.”
+
+Fallback if it fails:  
+If tension stays high, suggest a short reset: “How about a 3‑minute break, then we’ll come back and list all ideas before evaluating?”
+
+Benefit she’s willing to give up:  
+She accepts losing some efficiency in the meeting to protect psychological safety.",,,,,
+"R057","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R058","launch","First concrete step  
+Propose a short, structured “getting-started” evening at a nearby café or community room: 20 minutes of intros, 30 minutes to list shared neighborhood goals on paper/whiteboard, 20 minutes to pick one small pilot project and assign next steps.
+
+One safeguard  
+Beforehand, email a simple ground-rules note (respectful language, no personal attacks, no religion/politics debates unless directly relevant to the project, option to step out if uncomfortable).
+
+Fallback if it goes badly  
+If the vibe feels dismissive or hostile, politely end on time, thank them, and later follow up only with the 1–2 people who seemed aligned to start a smaller, safer version.
+
+Benefit she’s willing to give up  
+She gives up the chance for a big, fast, high-visibility launch in exchange for safety and fit.",,,,,
+"R059","disagreement","Caroline should briefly pause the discussion and say something like, “Let’s slow down—I'd like to hear the idea fully before we react,” then invite the dismissed person to restate their point and ask the critic to respond using “I” statements and specifics. Safeguard: if emotions rise, she proposes a quick two‑minute break and then restarts with a ground rule: critique ideas, not people.  
+
+Fallback if it fails: she moves the agenda on, then speaks separately to both people afterward to understand what happened and agree on clearer norms for the next meeting.  
+
+Benefit she’s willing to give up: being seen as “easygoing” and non‑confrontational.",,,,,
+"R060","retry","Next step: Caroline should personally message all ten invitees asking what time/format would actually work (short poll with 2–3 options), then schedule a clearly framed “pilot” session based on their answers and send a specific, time-bound invite.
+
+Safeguard: Require simple RSVPs and confirm the day before; cancel or downsize if fewer than four confirm, to avoid wasting setup costs.
+
+Fallback: If attendance is still low, convert it into a smaller recurring meetup with the two reliable attendees and one flexible new invitee each time.
+
+Benefit she gives up: She accepts less “big community impact” this round in exchange for a smaller but dependable group.",,,,,
+"R061","fact_support","I don’t know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R062","fact_hike","According to the observed conversation, during the hike Caroline ran into a group of religious conservatives who said something that really upset her, and the encounter made her think about how much work still remains for LGBTQ rights.",,,,,
+"R063","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper  
+- 1 long loop of string (tied ends)  
+- 12 tokens  
+
+Setup  
+Sit in a circle. Place the paper in the center and draw a hexagon (6 sides). Number corners 1–6. Place 2 tokens on each corner (12 total). Everyone lightly holds the string loop with both hands, forming a circle around the paper.
+
+Roles & Turn Order  
+Play clockwise. On your turn:  
+1) Announce one corner number.  
+2) As a group, pull the string so it touches that corner.  
+3) While the string is steady, you may move exactly 1 token from that corner to any other corner.
+
+Shared Objective  
+Arrange tokens so that:  
+- Each corner has exactly 2 tokens, and  
+- No two adjacent corners both have moved tokens this round (track by placing moved tokens slightly off-center).
+
+End Condition  
+When a player believes the objective is met, they say “Check.” Everyone releases the string and verifies. If correct, all win.
+
+Possible Failure  
+If at any time a corner has 0 or 5+ tokens, say “Break.” The round immediately fails.
+
+Recovery Rule  
+On “Break,” redistribute tokens evenly (2 per corner) and start a new round, but each player must choose a different first corner than in the previous round.",,,,,
+"R064","disagreement","Caroline should calmly step in: “Let’s pause a second—I’d like to hear that idea fully before we move on.” Then invite the dismissed person to restate it, and ask the group one concrete question about it (e.g., “What part of this could work for us?”). Keep her tone neutral and brief, then move discussion forward.
+
+Safeguard: avoid labeling the sharp participant’s behavior (no “you were rude”); focus on process (“let’s hear all ideas”).
+
+Fallback if it fails: speak to both people separately after the meeting, acknowledge the tension, and suggest ground rules for respectful discussion next time.
+
+Benefit she gives up: maximizing short‑term efficiency in favor of psychological safety.",,,,,
+"R065","disagreement","Caroline’s next five minutes:  
+Gently interrupt: “Let’s pause a second. I’d like to hear the idea fully before we react.” Then invite the dismissed person: “Could you walk us through your thought?” and reframe: “Maybe we can build on parts that work.” Keep tone calm and neutral, not scolding.
+
+Safeguard:  
+If the sharp participant reacts defensively, say, “I’m not blaming anyone—just trying to make sure everyone feels heard so we can do our best work.”
+
+Fallback if it fails:  
+If tension stays high, suggest a short break and privately check in with the dismissed person to validate them and ask how they’d like to proceed.
+
+Benefit she gives up:  
+She accepts risking being seen as “overstepping” to protect psychological safety.",,,,,
+"R066","launch","First concrete step  
+Propose a short, in‑person “kickoff evening” in a public, LGBTQ‑friendly café: 30 minutes of introductions and shared values, then 60 minutes to pick one small, concrete neighborhood project and assign next actions.
+
+Safeguard  
+Beforehand, send a brief ground-rules email (respect, no discriminatory comments, everyone gets equal speaking time) and choose a venue where you can easily leave if anyone is hostile.
+
+Fallback if it goes badly  
+If the group feels unsafe or dismissive, politely end early, then follow up only with any individuals who felt aligned and consider a smaller spin‑off effort.
+
+Benefit she’s willing to give up  
+She accepts less control over the project’s direction in exchange for testing collaboration with new people.",,,,,
+"R067","fact_support","I don’t know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R068","launch","First concrete step:  
+Propose a simple “story circle” kickoff evening in a free or low‑cost space (library room / community center): each person shares why they care about the neighborhood and one small change they’d love to see. End by jointly choosing one tiny, 1‑month pilot project.
+
+Safeguard:  
+Set a clear 2‑hour timebox and a basic ground rule: listen without interrupting or judging, so no one feels overwhelmed or attacked.
+
+Fallback if it goes badly:  
+If the group is tense or disengaged, Caroline follows up only with the two most receptive people to co‑design a smaller, informal effort.
+
+Benefit she’s willing to give up:  
+She accepts less control over the initiative’s direction in exchange for genuine shared ownership.",,,,,
+"R069","fact_hike","I don’t know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R070","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper  
+- 1 long loop of string (tied ends)  
+- 12 tokens  
+
+Setup (6 players)  
+1. Sit in a circle. Place paper in the center, tokens on it.  
+2. Lay the string in a circle around the paper. Everyone lightly holds the string with one hand.  
+3. On the paper, write a 3-word group goal sentence (e.g., “Support each other”).
+
+Objective  
+Place all 12 tokens on the paper in a stable pattern while keeping the string circle unbroken and off the tokens.
+
+Turn Order  
+Play proceeds clockwise. On your turn you must do BOTH:  
+1. Move: With your free hand, move 1 token (from center or edge) anywhere on the paper.  
+2. Speak: Say one short sentence about how a group can cooperate with strangers.
+
+Restrictions  
+- No one may let go of the string.  
+- The string may not touch any token.  
+- You may not move a token twice in a row (must wait for your next turn).
+
+End Condition (Success)  
+All 12 tokens are on the paper, no token touches the string, and the group agrees the pattern is “stable” (no one feels the need to adjust).
+
+Failure  
+If the string touches a token or someone lets go, the group fails this “round.”
+
+Recovery Rule  
+On failure, everyone closes eyes for 10 seconds, each says one thing they’ll try differently, then reset tokens and start again.",,,,,
+"R071","fact_hike","I don’t know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R072","fact_support","According to the observed conversations, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R073","retry","Host a smaller, explicitly “pilot” version next time: personally invite the original ten (plus 2–3 new neighbors), ask what time/topic works best, and frame it as co-designing the activity together. Use simple sign-ups (e.g., group chat or sheet) so people pre-commit.
+
+Safeguard: set a minimum RSVP threshold (e.g., 5). If it’s not met 24 hours before, postpone instead of running another under-attended event.
+
+Fallback: if attendance is still low, pivot to a more intimate format (e.g., monthly coffee with whoever comes) and treat it as a long-term relationship-building effort.
+
+Benefit to give up: aiming for a big, impressive-looking group in favor of a smaller but more engaged circle.",,,,,
+"R074","retry","Host a smaller, more personal “open house” version next time: same activity, but framed as a casual drop‑in with refreshments and a short intro about why it matters to the neighborhood. Personally invite people you know from the support group and neighbors you’ve chatted with; ask each to bring one friend.
+
+Safeguard: set a minimum RSVP threshold (e.g., 5) two days before. If it’s not met, postpone instead of running another near‑empty event.
+
+Fallback: if attendance is still low, pivot to integrating the activity into an existing, better‑attended event (e.g., community fair, support‑group meeting) rather than running it standalone.
+
+You’re willing to give up the benefit of it being a big, independent neighborhood event.",,,,,
+"R075","retry","Host a smaller, explicitly “pilot” version next time: personally invite the original ten, ask what time/topic works, and frame it as co‑creating the activity so they feel ownership. Use simple sign‑ups (e.g., online form or group chat) so people commit and you can send one reminder.
+
+Safeguard: set a minimum RSVP threshold (e.g., 5). If it’s not met 24 hours before, postpone instead of running it half‑empty.
+
+Fallback: if attendance is still low, pivot to an online or porch‑chat version with whoever shows, then document what worked and share it with the wider neighborhood.
+
+Benefit to give up: aiming for a big, impressive turnout in favor of building a smaller, more reliable core group.",,,,,
+"R076","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper  
+- 1 pen  
+- 1 long loop of string (big enough to form a circle on the table)  
+- 12 tokens  
+
+Setup  
+1. Place the string in a circle in the center.  
+2. Put all 12 tokens inside the circle.  
+3. On the paper, draw a 4×3 grid of boxes and number them 1–12. This is the “Path.”  
+
+Roles & Turn Order  
+- Everyone sits around the circle.  
+- The oldest player starts; play proceeds clockwise.  
+
+Shared Objective  
+Move all 12 tokens, in order (1 to 12), from inside the string to the numbered boxes on the Path, without any token leaving the table or touching a bare hand.
+
+Turn Rules  
+On your turn:  
+1. Say which token you’ll move next (must be the lowest-numbered remaining).  
+2. Everyone must touch the string with at least one finger.  
+3. Using only the string (lifting, sliding, tightening), the group cooperatively moves that token to its numbered box.  
+4. If it falls off the table or is touched by a bare hand, see Failure.  
+
+End Condition  
+All 12 tokens are correctly placed: everyone wins.
+
+Failure  
+If any token falls or is touched by a bare hand, erase the highest-numbered correctly placed token and return it to the circle.
+
+Recovery Rule  
+After each failure, everyone must propose one change to how they coordinate; the group agrees on at least one change before continuing.",,,,,
+"R077","retry","Run a short, low-pressure “open house” version next time: same activity, but framed as a drop‑in with snacks and a clear 45–60 minute window. Personally invite neighbors (door flyers or messages) and ask what time works best, then schedule accordingly.
+
+Safeguard: set a minimum attendance threshold (e.g., 4 people). If fewer than that RSVP by a set date, cancel or scale down to avoid burnout and wasted budget.
+
+Fallback: if turnout is still low, pivot the activity into a small, recurring meet‑up with those who do come, and share updates in the neighborhood channel so others can join later.
+
+Benefit to give up: aiming for a big, impressive first event; focus on depth with a few instead.",,,,,
+"R078","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R079","retry","Run a short, low-pressure “open house” version next time: same activity, but drop-in style, 45–60 minutes, and personally invite neighbors (door flyers + 1–2 direct messages to each of the original ten).
+
+Safeguard: set a clear minimum (e.g., 4 people). If fewer than 4 are confirmed 24 hours before, cancel or convert to an informal hangout with whoever can come.
+
+Fallback: if attendance is still low, shift the idea into an online or group-chat version for interested neighbors only, instead of repeating in-person events.
+
+Benefit to give up: aiming for a big, impressive turnout; focus on depth with a few people rather than numbers.",,,,,
+"R080","fact_hike","According to the observed conversations, Caroline said that during a recent hike she ran into a group of religious conservatives who said something that really upset her and made her think about how much work still remains for LGBTQ rights.",,,,,
+"R081","launch","Start by proposing a simple, low-pressure “listening and ideas” evening at a nearby café or community room: everyone briefly shares what they care about in the neighborhood, then together they pick one tiny, doable first project (e.g., a cleanup or shared garden bed).
+
+Safeguard: agree in advance on a 90-minute time limit and a basic ground rule—everyone gets equal speaking time and no decisions are final until a follow‑up message the next day.
+
+Fallback: if the group feels tense or unworkable, Caroline can suggest pausing the initiative and instead join an existing local group where support structures already exist.
+
+She’s willing to give up the benefit of tightly controlling the project’s direction in order to build shared ownership.",,,,,
+"R082","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R083","fact_support","According to the observed conversations, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R084","fact_support","According to the observed conversations, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R085","retry","Run a short, personal outreach round before the next date: knock on doors / message neighbors individually, ask what time and format would work, and adjust the event (shorter, clearer purpose, maybe with a simple snack or shared task).
+
+Safeguard: set a minimum “go” threshold (e.g., 4 confirmed attendees 24 hours before); if not met, cancel or shrink to an informal meetup so you don’t overinvest.
+
+Fallback: if turnout is still low, pivot to a smaller, recurring gathering with the reliable few and drop the larger-neighborhood goal for now.
+
+Benefit to give up: aiming for a big, impressive turnout in favor of a modest, sustainable group.",,,,,
+"R086","retry","Run a short, personal outreach round before the next date: knock on doors / message neighbors individually, ask what time and format would work better, and adjust the event (shorter, clearer purpose, maybe a simple shared snack or game).  
+
+Safeguard: set a minimum RSVP threshold (e.g., 5 confirmed) 48 hours before; cancel or scale down if it’s not met to avoid wasted time and money.  
+
+Fallback: if turnout is still low, pivot the activity into a small, recurring meet‑up with those who do come, and share photos/invitations afterward to build interest slowly.  
+
+Benefit to give up: aiming for a big, impressive first‑year turnout.",,,,,
+"R087","fact_hike","I do not know what happened to Caroline during the hike; there are no observed conversations or memories provided that describe that event.",,,,,
+"R088","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R089","retry","Run one more session but change the format to a low-effort “open house” drop‑in at a more convenient time (e.g., early evening), and personally invite neighbors (door flyers + short texts) asking what time and format works best.  
+
+Safeguard: require simple RSVPs and send one reminder so she can cancel or scale down if fewer than, say, four confirm.  
+
+Fallback: if attendance is still low, pivot to a smaller, recurring meet‑up with just the engaged neighbors and stop broader promotion.  
+
+Benefit she gives up: aiming for a large, vibrant group this round in exchange for a realistic, smaller core.",,,,,
+"R090","disagreement","Caroline should calmly step in: “Let’s pause a second. I’d like to hear the full idea before we react—can you walk us through it?” Then invite the dismissed person to speak, and ask the critic to rephrase their concern as a specific question or suggestion. Keep tone neutral and time‑bound: “Let’s spend three minutes on this, then move on.”
+
+Safeguard: after the meeting, briefly check in with both privately to see if any hurt or tension remains and clarify expectations for respectful discussion.
+
+Fallback if it fails: suggest a short break, then propose ground rules for future discussions (e.g., no personal put‑downs, critique ideas not people).
+
+Benefit she’s willing to give up: maximizing short‑term efficiency in order to protect psychological safety.",,,,,
+"R091","retry","Run the activity again but personally invite people: knock on doors or message neighbors you know, briefly explain why it matters to you, and ask what time/format would help them attend (e.g., shorter session, weekend, kid‑friendly). Use that feedback to adjust the next event and clearly state the purpose and time in a simple flyer or group post.
+
+Safeguard: set a minimum RSVP threshold (e.g., 4) two days before; cancel or reschedule if it’s not met.
+
+Fallback: if turnout is still low, shift to a smaller, ongoing meetup with the few engaged neighbors, or move it into an existing group (like a local club or support group).
+
+You’re willing to give up the benefit of a large, “impressive” turnout to focus on genuine connection.",,,,,
+"R092","launch","First concrete step:  
+Propose a simple, time‑boxed “getting-to-know-you + planning” evening at a nearby café or community room: 20 minutes introductions, 30 minutes sharing hopes/concerns, 30 minutes deciding one small pilot activity that fits the budget.
+
+Safeguard:  
+Agree in advance on a clear end time and a simple ground rule: everyone gets equal speaking time and no decisions are final without everyone’s explicit consent.
+
+Fallback if it goes badly:  
+If the group feels tense or unworkable, Caroline offers to help only with a limited, one-off task (e.g., drafting a flyer) and then steps back.
+
+Benefit she’s willing to give up:  
+She accepts that this approach may sacrifice speed—launching more slowly—in exchange for psychological safety and mutual respect.",,,,,
+"R093","fact_support","I don’t know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R094","disagreement","Caroline should briefly pause discussion and say something like, “Let’s slow down—I'd like to hear that idea again and any concerns about it, one at a time,” then invite the dismissed person to restate their idea, and ask the critic to share specific concerns respectfully. She should then restate both sides neutrally and move the group to evaluate the idea on its merits.
+
+Safeguard: Set a quick ground rule: “We’ll challenge ideas, not people, and no sharp put‑downs.”
+
+Fallback: If tension continues, park the topic (“Let’s return to this later”) and move to a neutral agenda item, then speak to both individuals separately after the meeting.
+
+Benefit she gives up: Maximum short‑term efficiency in order to protect psychological safety.",,,,,
+"R095","launch","First concrete step:  
+Propose a 2‑hour “mini‑lab” evening in a nearby café/community room: 30 minutes of quick introductions and personal goals, 60 minutes co‑designing one tiny, testable project for the neighborhood, 30 minutes assigning one next action per person and a date to reconvene.
+
+Safeguard:  
+Agree up front on a simple norm: everyone gets equal speaking time, and any tension is parked in a shared notes doc to revisit at the end, not in the moment.
+
+Fallback if it goes badly:  
+If the group stalls or conflicts, Caroline follows up with just one or two people who seemed aligned and explores a smaller pilot with them.
+
+Benefit she gives up:  
+She forgoes optimizing for maximum short‑term social harmony in favor of honest, focused collaboration.",,,,,
+"R096","launch","First concrete step  
+Propose a simple “getting-to-know-you + planning” evening at a nearby café or community room: 30 minutes of introductions and personal motivations, then 60 minutes to pick one small, visible project (e.g., a shared planter box or litter clean‑up) and assign clear roles.
+
+One safeguard  
+Agree in advance on a basic code of conduct (respectful listening, no interrupting, no pressure to overshare) and a fixed end time.
+
+Fallback if it goes badly  
+If the group feels tense or disorganized, suggest pausing the initiative and instead offer to contribute later via email or a smaller sub‑group.
+
+Benefit she’s willing to give up  
+She accepts less control over the initiative’s direction in exchange for shared ownership.",,,,,
+"R097","retry","Run a short, personal outreach round before the next date: knock on doors / message neighbors individually, ask what time and format would work better, and adjust the event (shorter, more focused, maybe with a simple shared snack or clear theme).
+
+Safeguard: set a minimum RSVP threshold (e.g., 5 confirmed) 48 hours before; cancel or scale down if it’s not met to avoid wasted time and money.
+
+Fallback: if turnout is still low, pivot to a small, recurring gathering with those who do come, and drop the larger-neighborhood format.
+
+Benefit to give up: aiming for a big, impressive-looking event in favor of a modest but reliable group.",,,,,
+"R098","retry","Run a short, personal outreach round before the next date: knock on doors / message neighbors individually, ask what time and format would work, and adjust the event (shorter, more focused, maybe with a simple shared snack or clear theme).
+
+Safeguard: set a minimum RSVP threshold (e.g., 5 confirmed) 48 hours before; cancel or reschedule if it’s not met to avoid wasted effort.
+
+Fallback: if attendance is still low, pivot to a smaller “core group” gathering with those who do come, and treat it as a pilot for future activities.
+
+Benefit to give up: aiming for a big, inclusive crowd this time; focus on depth with a few instead of breadth.",,,,,
+"R099","fact_hike","According to the observed conversation, Caroline said that during a recent hike she ran into a group of religious conservatives who said something that really upset her, and the experience made her think about how much work still needs to be done for LGBTQ rights.",,,,,
+"R100","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper  
+- 1 long string (looped and tied)  
+- 12 tokens  
+
+Setup  
+1. Draw a hexagon on the paper; mark 6 outer circles (players) and 6 inner circles (goals).  
+2. Place 1 token on each inner circle; 6 tokens remain in a pool.  
+3. Sit in a circle, place the paper in the center. Each player lightly holds the looped string with both hands.
+
+Objective  
+As a group, move all 12 tokens so that each outer circle ends with exactly 2 tokens, using only the string to slide tokens.
+
+Turn Order  
+Play proceeds clockwise. On your turn:  
+1. Announce one token you want to move and its destination.  
+2. Everyone may adjust their grip, but no one may let go.  
+3. As a group, pull/relax the string to slide that token.  
+4. If the announced move is clearly impossible, you must propose a different move.
+
+End Condition  
+Game ends when either:  
+- Every outer circle has exactly 2 tokens (success), or  
+- 20 total turns have been taken (failure).
+
+Possible Failure  
+If any player lets go of the string or a token is knocked off the paper, that turn is void and still counts toward the 20.
+
+Recovery Rule  
+Once per game, the group may call “Reset”: restore any fallen token to its last circle and replay that turn without counting it.",,,,,
+"R101","disagreement","Caroline should calmly step in: “Let’s pause a second. I’d like to hear the full idea before we react—could you explain it once more?” Then invite the critical person: “After that, let’s hear your concerns, but in a way that helps us build on it.” Keep her tone neutral and time‑bound (“two minutes each”) to avoid escalation.
+
+Safeguard: if tension rises, she names it and reframes: “We’re all new to each other; let’s focus on improving ideas, not judging people.”
+
+Fallback: if the sharp person continues, she suggests a short break and privately asks them to reset their tone, then checks in briefly with the dismissed person.
+
+She’s willing to give up speed of decision‑making to protect psychological safety.",,,,,
+"R102","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “Board”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup (6 players)  
+1. Place paper in the center. Mark 6 circles around the edge (one per player) and 1 circle in the middle.  
+2. Put all 12 tokens in the middle circle.  
+3. All players sit in a circle, each holding the string loop with one hand.
+
+Shared Objective  
+Move all 12 tokens from the center to the 6 outer circles so that:  
+- Each outer circle has at least 1 token.  
+- No circle has more than 4 tokens.  
+
+Turn Order  
+Play proceeds clockwise. On your turn:  
+1. Announce a number from 1–3 (how many tokens you’ll move).  
+2. Without letting go of the string, use your other hand to move up to that many tokens from any circle to any circle.  
+3. You must move at least 1 token.
+
+Constraints  
+- The string loop must stay taut and unbroken; everyone must keep hold.  
+- No talking except on your own turn.
+
+End Condition  
+Game ends when someone starts their turn and the objective is already met. Everyone wins.
+
+Failure Condition  
+If any circle ever has 0 or more than 4 tokens after a move, the group fails.
+
+Recovery Rule  
+On failure, everyone may talk freely for 2 minutes, then reset tokens and try again.",,,,,
+"R103","disagreement","Caroline should briefly pause discussion: “Let’s slow down. I’d like to hear the idea fully before we react.” Then invite the dismissed person: “Could you walk us through your thought?” and reframe: “We’re all new; let’s focus on building ideas, not shooting them down.” Keep tone calm and neutral, not scolding.
+
+Safeguard: if the sharp participant reacts defensively, acknowledge their concern: “You may have good reasons; let’s hear them after we understand the proposal.”
+
+Fallback if it fails: move on briskly—“Let’s park this and return later”—and after the meeting, check in privately with both people.
+
+Benefit she gives up: maximizing her own early likability by avoiding any risk of seeming “too assertive.”",,,,,
+"R104","fact_hike","According to the observed conversation, Caroline said that during a recent hike she had a negative experience: she ran into a group of religious conservatives who said something that really upset her, and this encounter made her think about how much work still needs to be done for LGBTQ rights.",,,,,
+"R105","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R106","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “Board”)  
+- 1 long string (looped)  
+- 12 tokens  
+
+Setup  
+1. Place paper in the center; write numbers 1–12 in a circle.  
+2. Put one token on each number.  
+3. All six players sit around, each lightly holding the string loop with one hand.  
+
+Objective  
+Move all 12 tokens to the center of the paper using only the string, without anyone touching tokens directly.
+
+Basic Rules  
+- No one may touch tokens or paper with hands or body.  
+- Only the string may move tokens (pushing, pulling, sliding).  
+- Talking is allowed at all times.  
+
+Turn Order  
+Play proceeds in rounds.  
+1. At the start of each round, players have 30 seconds to plan.  
+2. Then 60 seconds of “action time” where they may move the string and tokens.  
+3. After 60 seconds, everyone must freeze the string and evaluate progress.  
+
+End Condition  
+The game ends in success when all 12 tokens are fully inside a drawn circle in the center.
+
+Failure Condition  
+If any token falls off the paper, or someone touches a token directly, that round is a failure.
+
+Recovery Rule  
+On a failure, all tokens stay where they are, but the group must:  
+- Pause one full round only for discussion (no moving string),  
+- Agree on one new rule (e.g., “only three people move this round”) before resuming.",,,,,
+"R107","fact_hike","I do not know what happened to Caroline during the hike. No conversations or memories about a hike have been provided.",,,,,
+"R108","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (placed in center)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup (6 players)  
+1. Draw a hexagon on the paper; label corners A–F.  
+2. Place 2 tokens on each corner (12 total).  
+3. All players sit roughly around the paper. Each holds the string with one hand; the string must stay a single loop.
+
+Shared Objective  
+Move all 12 tokens to the exact center of the hexagon without anyone ever letting go of the string or touching tokens with hands.
+
+Basic Turn Structure  
+Play proceeds clockwise. On your turn:  
+1. Announce one corner (A–F).  
+2. Using only the string (pulling, looping, sliding), all players may cooperate for up to 30 seconds to move exactly 1 token from that corner closer to the center.  
+3. When time’s up, hands freeze; next player’s turn begins.
+
+Movement Rules  
+- You may hook, drag, or push tokens with the string only.  
+- If a token leaves the paper, it returns to its last position.  
+- Talking is allowed at all times.
+
+End Condition  
+Win: All 12 tokens fully inside a drawn circle at the hexagon’s center.  
+Lose: 20 turns pass without achieving the objective.
+
+Failure & Recovery  
+If anyone lets go of the string:  
+- All tokens move back one corner step away from the center.  
+- Group silently plans for 1 minute, then resumes.",,,,,
+"R109","launch","First concrete step:  
+Propose a simple “getting-to-know-you + planning” evening in a public, comfortable place (e.g., community center café). Start with a short round where each person shares why they care about the neighborhood, then co-create a tiny first project that fits the small budget (e.g., shared planter boxes or a cleanup + tea).
+
+Safeguard:  
+Set a clear 2‑hour time limit and agree at the start that anyone can leave without explanation.
+
+Fallback if it goes badly:  
+Thank them, summarize what was agreed (if anything), then step back and look for an existing group or online forum to support the neighborhood instead.
+
+Benefit she’s willing to give up:  
+Maximizing efficiency in favor of slower, relationship-focused progress.",,,,,
+"R110","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R111","retry","Host the next activity as a shorter, low-pressure “open house” at a time neighbors already gather (e.g., after work or near another community event), and personally invite people with a quick message explaining why it matters to you and what they’ll get from it.
+
+Safeguard: add a simple RSVP (online form or group chat poll) so you can cancel or scale down if fewer than, say, four people commit.
+
+Fallback: if attendance is still low, pivot to a small, recurring meet-up with just the engaged few and build from there.
+
+Benefit to give up: aiming for a big, impressive turnout in favor of a smaller, more reliable core group.",,,,,
+"R112","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R113","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (any size)  
+- 1 long string (or tied shorter pieces)  
+- 12 tokens  
+
+Setup  
+1. Sit in a circle. Place the paper in the center and the 12 tokens on it.  
+2. Everyone lightly holds the string with one hand, forming a loose “web” over the paper.  
+3. As a group, choose a theme (e.g., “support,” “hope,” “courage”).  
+
+Objective  
+Place all 12 tokens on the paper in a stable pattern that everyone agrees fits the theme, without dropping the string or any token off the paper.
+
+Turn Order  
+Play proceeds clockwise. On your turn, you must:  
+1. Say one word related to the theme.  
+2. With your free hand, move or place exactly one token.  
+3. Slightly adjust your grip on the string (tighter, looser, or shifted) to keep the web stable.
+
+End Condition  
+When all 12 tokens are placed and no one is moving, count to five together. If no token falls and everyone agrees the pattern matches the theme, you win.
+
+Possible Failure  
+If any token falls off the paper or anyone fully lets go of the string, the group fails.
+
+Recovery Rule  
+On the first failure only, everyone shares one short encouraging sentence, returns all tokens to the center, and restarts with a new theme.",,,,,
+"R114","disagreement","Caroline’s next five minutes:
+1. Pause the discussion calmly: “Let’s slow down a second.”
+2. Reframe: “I’d like us to hear that idea fully before we react. Could you restate it briefly?”
+3. Normalize respect: “We’re all new to each other; let’s aim for curiosity over criticism.”
+4. Invite others: “Does anyone see potential in this idea or have a build-on?”
+
+Safeguard: After the meeting, privately check in with the dismissed person to validate them and ask if they want any support addressing it further.
+
+Fallback if it fails: If the sharp participant continues, Caroline names a boundary: “This tone is making it hard to collaborate. Let’s park this topic and move on.”
+
+Benefit she gives up: Maximizing short-term efficiency in favor of setting a respectful team norm.",,,,,
+"R115","fact_hike","I do not know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R116","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R117","launch","First concrete step:  
+Propose a 2‑hour “mini‑launch” evening in a nearby café/community room: 20 minutes of personal introductions, 30 minutes sharing neighborhood hopes/concerns on sticky notes, 40 minutes clustering ideas into 2–3 priorities, 30 minutes agreeing on one small pilot action and who does what next week.
+
+Safeguard:  
+Set a clear frame at the start: “Tonight we only need to choose one small, low‑stakes first action; anything bigger waits for a later meeting.”
+
+Fallback if it goes badly:  
+If the group stalls or conflicts, Caroline emails a short summary of what was tried and invites anyone interested to a smaller follow‑up with just one concrete volunteer task.
+
+Benefit she gives up:  
+She accepts less thorough long‑term planning in exchange for quick, tangible momentum.",,,,,
+"R118","retry","Run a quick, personal outreach round before the next date: knock on doors / send individual messages asking what time and format would work best, then adjust the event (shorter, clearer theme, maybe snacks) and set a specific, visible date.
+
+Safeguard: cap your prep time and spending (e.g., 3 hours and $30) so the effort stays sustainable even if turnout is small.
+
+Fallback: if attendance is still low, pivot the activity into a small, recurring meet‑up with whoever does come, or merge it with an existing neighborhood event.
+
+Benefit to give up: aiming for a big, impressive turnout; focus instead on depth with a few people.",,,,,
+"R119","launch","First concrete step:  
+Propose a simple, time‑boxed “getting-to-know-you + planning” evening at a nearby café or community room: 20 minutes introductions, 30 minutes sharing what each hopes for the initiative, 30 minutes agreeing on one small pilot action that fits the budget.
+
+Safeguard:  
+Set a clear end time and shared ground rules (one person speaks at a time, no personal attacks, anyone can call a short pause).
+
+Fallback if it goes badly:  
+Suggest pausing the group effort and instead offering to support the initiative later through small, specific tasks done remotely.
+
+Benefit she’s willing to give up:  
+Maximizing efficiency in favor of building initial trust and psychological safety.",,,,,
+"R120","fact_hike","During the hike, Caroline ran into a group of religious conservatives who said something that really upset her.",,,,,
+"R121","fact_hike","According to the observed conversation, Caroline said that during a recent hike she ran into a group of religious conservatives who said something that really upset her, and the experience made her think about how much work still needs to be done for LGBTQ rights.",,,,,
+"R122","retry","Host a smaller, explicitly “pilot” version next time: personally invite the original ten, ask what time/topic would draw them, and frame it as co‑creating the activity. Use direct channels (door knocks, short personal messages) instead of a general flyer.
+
+Safeguard: set a clear minimum (e.g., 4 people). If fewer than that RSVP by a set date, cancel or reschedule rather than running it half‑empty.
+
+Fallback: if attendance is still low, pivot to a more informal format (e.g., monthly coffee drop‑in) that two or three people can sustain comfortably, and treat it as a seed for future growth.
+
+Benefit to give up: aiming for broad reach immediately; accept a smaller, deeper group instead.",,,,,
+"R123","launch","First concrete step:  
+Propose a 2‑hour “mini‑launch” evening in a nearby café/community room: 20 minutes of quick intros, 40 minutes mapping shared goals on paper/whiteboard, 40 minutes choosing one tiny pilot action for the next month, 20 minutes agreeing who does what and next meeting.
+
+Safeguard:  
+Set a clear spending cap and require at least two people to approve any expense from the shared budget.
+
+Fallback if it goes badly:  
+If the meeting is tense or unproductive, Caroline follows up the next day with a short email summarizing what *did* get agreed and invites only those still interested to a smaller follow‑up.
+
+Benefit she’s willing to give up:  
+She accepts less social comfort (meeting total strangers) in exchange for clearer structure and progress.",,,,,
+"R124","fact_hike","I do not know what happened to Caroline during the hike. There are no observed conversations or memories provided that describe that event.",,,,,
+"R125","launch","First concrete step:  
+Propose a 2‑hour “mini‑lab” evening in a nearby café/community room: 30 minutes of quick introductions and personal goals, 60 minutes co‑designing one tiny, testable project for the neighborhood, 30 minutes assigning one next action per person and a date to reconvene.
+
+Safeguard:  
+Agree up front on a simple ground rule: everyone gets equal speaking time, and any concern must be voiced before money is spent.
+
+Fallback if it goes badly:  
+If the group is chaotic or uncommitted, Caroline uses the evening to identify 1–2 people she’d be willing to collaborate with separately on a smaller pilot.
+
+Benefit she gives up:  
+She forgoes optimizing for maximum short‑term social comfort to prioritize clarity and concrete progress.",,,,,
+"R126","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R127","disagreement","Caroline should calmly step in: “Let’s pause a second—I’d like to hear that idea fully before we move on.” Then invite the dismissed person to restate it, and ask the group one concrete question about it (e.g., “What might work if we tried a small pilot?”). Keep her tone neutral and brief, then move discussion forward.
+
+Safeguard: avoid labeling the sharp participant’s behavior (no “you were rude”); focus on process (“let’s make space for all ideas”).
+
+Fallback if it fails: speak to both privately afterward, acknowledge the tension, and suggest shared norms for future meetings.
+
+Benefit she gives up: maximizing her own social comfort by staying silent and “neutral.”",,,,,
+"R128","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R129","game","Title: Bridge of Twelve
+
+Components  
+- 1 sheet of paper  
+- 1 long string (looped and tied)  
+- 12 tokens  
+
+Setup (6 players)  
+Sit in a circle. Place the paper in the center. Place the 12 tokens on the paper. Put the string loop around all players’ wrists so everyone is connected.
+
+Shared Objective  
+Together, move all 12 tokens off the paper and onto the floor around it, without anyone touching a token with hands or body. Only the string may move tokens.
+
+Basic Rules / Turn Order  
+1. Choose a starting player; turns go clockwise.  
+2. On your turn, you are the “Caller.” You may say up to three short commands involving the string (e.g., “lift,” “pull toward me,” “everyone lean left”).  
+3. Only the Caller may speak; others stay silent and follow.  
+4. After your commands, everyone has 10 seconds to move. Then the next player becomes Caller.
+
+End Condition  
+The game ends when all 12 tokens are fully off the paper.
+
+Failure Condition  
+If any player touches a token or the paper tears, all tokens go back to the paper.
+
+Recovery Rule  
+After a failure, everyone may talk freely for 2 minutes to adjust strategy. Then resume with the next player as Caller.",,,,,
+"R130","retry","Run one more session but change the format to a low‑commitment “open house” (shorter, drop‑in, clear start/end) and personally invite the original ten with a quick message asking what time and format works best, then adjust to the most common answer.  
+
+Safeguard: set a minimum RSVP threshold (e.g., 5 yeses 24 hours before); cancel or reschedule if it’s not met, and inform people clearly.  
+
+Fallback: if attendance is still low, pivot the remaining budget to a smaller, recurring meet‑up with the few engaged neighbors instead of broad events.  
+
+Benefit to give up: aiming for a large, impressive turnout in favor of building a small but reliable core group.",,,,,
+"R131","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “map”)  
+- 1 long string (loop)  
+- 12 tokens  
+
+Setup  
+Place paper in center. Put all 12 tokens on it. Everyone holds the string loop with both hands, forming a circle around the paper.
+
+Roles & Turn Order  
+Play proceeds clockwise. On your turn you are the “Mover.”
+
+Shared Objective  
+Move all 12 tokens off the paper and onto the floor around it, without any token ever touching a bare hand.
+
+Turn Rules  
+On your turn:  
+1. Announce a plan in one sentence (e.g., “We’ll slide this token to you, then you flick it off.”).  
+2. Without letting go of the string, you may:  
+   - Nudge tokens using only the string, or  
+   - Ask others to move their bodies/feet or tilt the string.  
+3. You must attempt to move at least one token.  
+4. End your turn by saying “Next.”
+
+End Condition  
+Win immediately when all 12 tokens are fully off the paper.
+
+Failure Condition  
+If any token touches a bare hand, or falls more than two arm-lengths from the paper, everyone says “Drop.” That token is removed from the game.
+
+Recovery Rule  
+If you lose 3 tokens this way, you must pause for one full silent turn (everyone holds the string, no one moves tokens). After the silence, you may resume and try to win with the remaining tokens.",,,,,
+"R132","fact_hike","I don’t know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R133","retry","Host a smaller, more personal “pilot” session with the two who came and explicitly ask what time, format, and outreach would draw them and their friends next time—then schedule the second attempt around that feedback and personally invite people.  
+
+Safeguard: require simple RSVPs (text/email/online form) and confirm the day before so she can cancel or scale down if numbers are too low.  
+
+Fallback: if attendance is still low, convert it into a recurring micro‑group or merge it with an existing neighborhood event instead of a standalone activity.  
+
+Benefit she gives up: aiming for a big, impressive turnout; she accepts a smaller, more intimate group to make the most of limited time and budget.",,,,,
+"R134","fact_support","According to the observed conversation, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R135","fact_hike","I don’t know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R136","launch","First concrete step:  
+Propose a simple “getting-to-know-you + planning” evening at a nearby café or community room: 30 minutes of introductions and personal motivations, then 60 minutes to pick one small, visible project (e.g., a shared planter box or litter clean‑up) and assign clear roles.
+
+Safeguard:  
+Agree in advance on a basic ground rule: everyone speaks respectfully, no interruptions, and decisions need at least majority support.
+
+Fallback if it goes badly:  
+If the group feels tense or unproductive, Caroline follows up the next day by email suggesting a smaller pilot with just one or two people who seemed aligned.
+
+Benefit she’s willing to give up:  
+She accepts less control over the initiative’s direction in exchange for shared ownership.",,,,,
+"R137","disagreement","Caroline should calmly interrupt and refocus the group:  
+“Let’s pause a second. I’d like us to hear that idea fully before we react. Could you restate it, and then we’ll get a couple of reactions?”  
+She should model curiosity (“What problem would this solve?”) and invite others to build on the idea, signaling that sharp dismissals aren’t the norm.
+
+Safeguard: after the meeting, check in privately with both people—support the dismissed person and clarify expectations with the one who snapped.
+
+Fallback if it fails: name the pattern more directly next time (“We don’t dismiss ideas like that here; let’s respond with reasons.”).
+
+Benefit she gives up: maximum short‑term efficiency in favor of psychological safety.",,,,,
+"R138","disagreement","Caroline should calmly step in: “Let’s pause. I’d like to hear the idea fully before we react,” then invite the dismissed person to restate it and ask the group for specific, constructive feedback. This supports psychological safety without attacking the sharp participant.
+
+Safeguard: keep her tone neutral and brief, so she doesn’t publicly shame the critical person or escalate tension.
+
+Fallback if it fails: after the meeting, privately check in with the person whose idea was dismissed, validate them, and suggest raising norms about respectful feedback at the next session.
+
+Benefit she’s willing to give up: being seen as “easygoing” or completely non‑confrontational by the group.",,,,,
+"R139","retry","Run a short, personal outreach round before the next date: knock on doors / message neighbors individually, ask what time and format would work better, then adjust the event (shorter, clearer purpose, maybe with a simple snack or shared goal).
+
+Safeguard: set a minimum “go/no‑go” threshold (e.g., 5 confirmed yeses 24 hours before); cancel or reschedule if it’s not met to avoid wasting time and budget.
+
+Fallback: if attendance is still low, pivot to a smaller, recurring gathering with those who do come, and drop the larger‑event idea.
+
+Benefit to give up: aiming for a big, impressive turnout in favor of a smaller but reliable group.",,,,,
+"R140","fact_hike","According to the observed conversations, Caroline said that during a recent hike she ran into a group of religious conservatives who said something that really upset her and made her think about how much work still remains for LGBTQ rights.",,,,,
+"R141","launch","First concrete step:  
+Propose a 2‑hour “mini‑launch” evening in a nearby café/community room: 20 minutes of personal introductions, 30 minutes sharing neighborhood hopes/concerns on sticky notes, 40 minutes clustering ideas into 2–3 priorities, 20 minutes choosing one small pilot action and assigning roles, 10 minutes setting a follow‑up date.
+
+Safeguard:  
+Agree in advance that any spending from the shared budget requires at least 4 of 6 people’s explicit consent, written down.
+
+Fallback if it goes badly:  
+If the group is chaotic or hostile, Caroline politely leaves after the agreed 2 hours, then emails a short summary and offers to help only with clearly defined, time‑limited tasks.
+
+Benefit she gives up:  
+She accepts less creative control over the initiative in exchange for shared ownership.",,,,,
+"R142","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “board”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup (6 players)  
+1. Place paper in the center; write numbers 1–12 in a circle.  
+2. Put one token on each number.  
+3. All players sit around and lightly hold the string loop with both hands, forming a shared “lasso” around the paper.
+
+Objective  
+Move all 12 tokens so that no two tokens share the same number and each token has been moved at least once by the group’s string (not by fingers).
+
+Turn Order  
+Play proceeds clockwise. On your turn:  
+1. Announce one token’s number.  
+2. Everyone must keep holding the string; only the active player may give verbal directions.  
+3. As a group, use the string to slide that token to a new number (not currently occupied). No one may touch tokens directly.  
+4. When placed, mark that token’s new number with a small dot on the paper.
+
+End Condition  
+Win immediately when:  
+- All tokens are on unique numbers, and  
+- Each token’s current number has at least one dot.
+
+Failure  
+If any token is knocked off the paper, all players lose.
+
+Recovery Rule  
+Once per game, the group may vote (majority) to “rewind”: reset all tokens to their previous positions and erase the last turn’s dots.",,,,,
+"R143","launch","First concrete step:  
+Propose a short, in-person “kickoff evening” in a public, neutral space (library room / café corner) with a simple shared activity: each person brings one idea and one local need; together they pick one small, doable project for the budget.
+
+Safeguard:  
+Set a clear 90‑minute time limit and shared ground rules (respect, no interruptions, decisions by simple majority) at the start.
+
+Fallback if it goes badly:  
+If the group is tense or unproductive, Caroline follows up only with the one or two people who seemed constructive and explores a smaller side project with them.
+
+Benefit she’s willing to give up:  
+She accepts less personal control over the initiative’s direction in exchange for genuine collaboration.",,,,,
+"R144","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “board”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup (6 players)  
+1. Place paper in the center; draw a hexagon and label corners A–F.  
+2. Sit so each player is closest to one corner.  
+3. Place the 12 tokens in the center of the hexagon.  
+4. Lay the string loop around the hexagon so all can reach it.
+
+Shared Objective  
+Together, move all 12 tokens so that each corner A–F ends with exactly 2 tokens, using only the string to move them.
+
+Turn Order  
+Play proceeds clockwise. On your turn:  
+1. Everyone must hold the string with at least one hand.  
+2. You announce one corner (A–F).  
+3. As a group, pull/slide the string to push or drag exactly one token toward that corner.  
+4. When the token clearly touches or crosses that corner’s edge, your turn ends.
+
+Restrictions  
+- No one may touch tokens directly.  
+- You may not call the same corner as the previous player.
+
+End Condition  
+Game ends when all 12 tokens rest at corners. If each corner has exactly 2 tokens, you win.
+
+Possible Failure  
+If any corner ever has more than 3 tokens, the group immediately fails.
+
+Recovery Rule  
+After a failure, silently rearrange seats, then restart with the same rules but only 10 tokens (easier mode).",,,,,
+"R145","fact_support","According to the observed conversations, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R146","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R147","launch","First concrete step:  
+Propose a short, structured “getting-to-know-you + planning” evening at a nearby café or community room: 20 minutes of introductions (why each person cares about the neighborhood), 30 minutes to list and vote on one small pilot project, 10 minutes to assign next actions.
+
+Safeguard:  
+Set a clear 90‑minute time limit and say up front that everyone gets equal speaking time and that personal identities and beliefs are to be treated respectfully.
+
+Fallback if it goes badly:  
+If the group feels dismissive or hostile, thank them, step back from the initiative, and instead look for an existing, more values‑aligned community group to support.
+
+Benefit she’s willing to give up:  
+Maximizing short‑term impact in exchange for prioritizing psychological safety.",,,,,
+"R148","fact_support","According to the observed conversation, Caroline said that the support group made her feel accepted and gave her courage to embrace herself.",,,,,
+"R149","disagreement","Caroline’s next five minutes:  
+1. Pause the discussion calmly: “Let’s slow down a second.”  
+2. Acknowledge the dismissed person: “I’d like to hear more about your idea before we move on.”  
+3. Reframe the sharp comment: “Let’s focus on what could work in this idea and then raise concerns constructively.”  
+4. Invite brief input from others, then move on to the agenda.
+
+Safeguard: If tension rises, suggest a quick ground-rule check: “Can we agree to respect ideas and challenge them, not each other?”
+
+Fallback if it fails: After the meeting, speak separately with both people, validate the one who was dismissed, and suggest norms to the sharper participant.
+
+Benefit she gives up: Maximizing short-term efficiency to protect psychological safety.",,,,,
+"R150","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “board”)  
+- 1 long loop of string  
+- 12 identical tokens  
+
+Setup  
+Sit in a circle. Place the paper in the center, tokens on it. Lay the string in a loose circle around the paper. Each player secretly chooses a personal goal word (e.g., “trust,” “curiosity”) and keeps it in mind.
+
+Objective  
+Together, place all 12 tokens on the paper while keeping the string loop unbroken and always held by every player.
+
+Turn Order  
+Play proceeds clockwise. On your turn:  
+1. Say one sentence about any real experience or idea related to your secret word (do not say the word).  
+2. While speaking, you must move exactly one token: either  
+   - from paper to outside the string, or  
+   - from outside the string back onto the paper.  
+3. After your turn, any one other player may guess your word. One guess only.
+
+Scoring & End Condition  
+When someone’s word is correctly guessed, that player “joins the web”: they stop moving tokens on future turns but must keep holding the string. Place one token permanently on the paper as “secured.”  
+
+The game ends when either:  
+- All 12 tokens are secured on the paper (win), or  
+- 10 full rounds pass.
+
+Failure & Recovery  
+If the string is dropped or broken, remove 2 secured tokens from the paper. Everyone silently takes 10 seconds, then resumes.",,,,,
+"R151","fact_hike","I don’t know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R152","launch","First concrete step:  
+Propose a 2‑hour “kickoff evening” in a casual, accessible café or community room: 30 minutes of introductions (each person shares why they care about the neighborhood), 60 minutes to list and cluster priorities on sticky notes, 30 minutes to pick one small pilot project and assign roles.
+
+Safeguard:  
+Agree up front on a simple ground rule: “We focus on shared neighborhood goals; no personal attacks or debates about identity or beliefs.”
+
+Fallback if it goes badly:  
+If the group is tense or unproductive, Caroline follows up by email suggesting a smaller sub‑group of 2–3 people who seemed aligned to continue separately.
+
+Benefit she gives up:  
+She accepts less control over the initiative’s direction in exchange for genuine shared ownership.",,,,,
+"R153","retry","Run the activity again but personally invite people: knock on doors or message neighbors, briefly explain why it matters to you, and ask what time/format would help them attend (e.g., shorter session, weekend morning, kid‑friendly). Adjust the plan based on that feedback and clearly confirm details via a group message or flyer.
+
+Safeguard: set a minimum RSVP threshold (e.g., 5) two days before; cancel or reschedule if it’s not met.
+
+Fallback: if turnout is still low, pivot to a smaller, recurring meet‑up with whoever does come, and share a simple summary with the wider neighborhood.
+
+Benefit to give up: aiming for a large, impressive first‑year turnout.",,,,,
+"R154","fact_hike","According to the observed conversation, Caroline said that during a recent hike she ran into a group of religious conservatives who said something that really upset her, and the experience made her think about how much work still needs to be done for LGBTQ rights.",,,,,
+"R155","disagreement","Caroline should calmly step in: “Let’s pause a second—I'd like to hear the full idea before we move on,” then invite the dismissed person to restate it and ask the group, including the sharp participant, to build on it or suggest alternatives. Keep her tone neutral and time‑bound (“two minutes on this, then we decide”) to avoid derailing the meeting.
+
+Safeguard: if tension rises, she reframes: “We’re all on the same team; let’s focus on improving ideas, not judging people.”
+
+Fallback: if the sharp participant continues, she suggests parking the topic and offers to speak with both privately after the meeting.
+
+Benefit she gives up: maximizing short‑term efficiency in favor of modeling respect and inclusion.",,,,,
+"R156","disagreement","Caroline should calmly step in: “Let’s pause a second. I’d like us to hear the idea fully before we react—could you explain it a bit more?” Then invite the dismissed person to speak, and ask the critic to rephrase their concern constructively: “What part worries you, and how might we adjust it?”
+
+Safeguard: set a quick ground rule for the meeting: “We’ll challenge ideas, not people, and we’ll do it respectfully.”
+
+Fallback if it fails: suggest a short break, then speak separately to each person to de‑escalate and agree on basic norms before resuming.
+
+Benefit she’s willing to give up: maximizing short‑term efficiency in order to protect psychological safety and inclusion.",,,,,
+"R157","disagreement","Caroline’s next five minutes:  
+1. Interrupt calmly: “Let’s pause. I want to hear ideas without shutting anyone down.”  
+2. Reframe: briefly restate the dismissed idea neutrally and ask its author one clarifying question.  
+3. Invite balance: “Others, what potential do you see in this, or what concerns?”  
+4. Set a norm: “In this team, we challenge ideas, not people. Let’s phrase critiques as suggestions.”
+
+Safeguard: After the meeting, privately check in with both people—support the dismissed person and clarify expectations with the sharp critic.
+
+Fallback if it fails: Park the topic (“We’ll revisit this later”) and move the group to a neutral agenda item to de‑escalate.
+
+Benefit she’s willing to give up: Maximum short‑term efficiency in favor of psychological safety.",,,,,
+"R158","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R159","disagreement","Caroline should briefly pause discussion and normalize contribution:  
+“Let’s slow down. I want to hear the idea fully, then concerns one at a time.”  
+She invites the dismissed person to restate their idea, paraphrases it neutrally, then asks the critic to express specific concerns using “I” language and to propose an alternative. She sets a ground rule: critique ideas, not people.
+
+Safeguard: After the meeting, she privately checks in with both participants to spot lingering tension and clarify expectations for future discussions.
+
+Fallback if it fails: She temporarily redirects work so the two don’t have to collaborate closely today, and revisits team norms at the next meeting.
+
+Benefit she’s willing to give up: Maximum short‑term efficiency in order to protect psychological safety.",,,,,
+"R160","fact_support","According to the observed conversations, the support group made Caroline feel accepted and gave her courage to embrace herself.",,,,,
+"R161","fact_hike","I don’t know what happened to Caroline during the hike. There are no observed conversations or memories provided that describe that event.",,,,,
+"R162","game","Title: “Bridge of Twelve”
+
+Components  
+- 1 sheet of paper (fold or tear into a central “island” and 6 “home bases”)  
+- 1 long string (the “river”) laid in a loop around the island  
+- 12 tokens in the middle of the island  
+
+Setup  
+- Sit in a circle around the string.  
+- Each player has one home base outside the string.  
+- No one may reach inside the string with their hands.
+
+Objective  
+Move all 12 tokens from the island to the 6 home bases (at least 1 token per base) using only the string and the paper, without breaking any rule.
+
+Core Rules / Turn Order  
+1. On your turn, you may do ONE action:  
+   a) Move or fold paper, or  
+   b) Move or tighten/loosen the string, or  
+   c) Slide or lift tokens only by pushing/pulling with paper or string.  
+2. You may talk and plan at any time.  
+3. No hands may cross the string; if they do, that token returns to the island.
+
+End Conditions  
+- Win: All 12 tokens are in home bases, and everyone agrees rules were followed.  
+- Loss: After 20 total turns, objective not met.
+
+Failure & Recovery  
+If a rule is broken, everyone pauses and together removes 1 token from play permanently, then resumes from the same state.",,,,,
+"R163","retry","Run a short, personal outreach round before the next date: knock on doors / message neighbors individually, ask what time and format would actually work, then adjust the event (shorter, clearer purpose, maybe add snacks/tea).  
+
+Safeguard: set a minimum RSVP threshold (e.g., 5 confirmed) 48 hours before; cancel or scale down if it’s not met to avoid wasting time and budget.  
+
+Fallback: if attendance is still low, pivot to a smaller, recurring “open house” with whoever shows up, and use it to learn what the neighborhood really wants.  
+
+Benefit to give up: aiming for a big, impressive turnout this round in exchange for realistic, relationship‑building progress.",,,,,
+"R164","retry","Run one more session but change the format to a short, clearly themed event (e.g., “30‑minute intro + snacks”) at a more convenient time, and personally invite the original sign‑ups with a quick message asking what time works best from 2–3 options. Safeguard: require simple RSVPs and send a reminder the day before so she can cancel or scale down if fewer than, say, four confirm.  
+
+Fallback: if attendance is still low, pivot the idea into a smaller, recurring meet‑up with just the engaged few, or fold it into an existing neighborhood event instead of running it standalone.  
+
+She’s willing to give up the benefit of making it a big, widely attended event in order to focus on reliability and genuine connection.",,,,,
+"R165","game","Title: Web of Signals
+
+Components  
+- 6 players  
+- 12 tokens (all identical)  
+- 6 equal lengths of string  
+- 1 sheet of paper + pen  
+
+Setup  
+1. Draw a hexagon on the paper; label corners A–F.  
+2. Each player chooses a letter and sits roughly in that order in a circle.  
+3. Place all 12 tokens in the center.  
+4. Give each player one string end; tie the other ends together in a knot so everyone is connected.
+
+Shared Objective  
+Together, place all 12 tokens onto the hexagon corners so that:  
+- Each corner has at least 1 token.  
+- No two adjacent corners have the same number of tokens.
+
+Turn Order  
+Play proceeds clockwise. On your turn you must:  
+1. Silently pull or slacken your string to “signal” one neighbor (left or right).  
+2. Say one of three words: “Add,” “Move,” or “Pass.”  
+3. If you said “Add” or “Move,” you must either:  
+   - Add a token from the center to any corner, or  
+   - Move one token from one corner to another.
+
+End Condition  
+When a player believes the objective is met, they say “Check.” All players then verbally verify. If correct, you win.
+
+Possible Failure  
+If three “Check” calls in the game are incorrect, you all lose.
+
+Recovery Rule  
+After each incorrect “Check,” everyone may speak freely for 2 minutes to adjust strategy, then silence resumes.",,,,,
+"R166","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper  
+- 1 long string (looped and tied)  
+- 12 tokens  
+
+Setup  
+1. Sit in a circle. Place the paper in the center and write a shared value (e.g., “hope,” “kindness”).  
+2. Place the 12 tokens on the paper.  
+3. Give the string loop to one player; this is the starting “Weaver.”
+
+Objective  
+Together, move all 12 tokens off the paper to in front of any players, without dropping any, by using only the string loop.
+
+Turn Order  
+1. The Weaver places the loop around exactly one token.  
+2. Without hands touching the token, the Weaver and exactly one neighbor each hold part of the string and lift/slide the token to any player’s area.  
+3. After a successful move, the Weaver passes the loop to the player who received the token; that player becomes the new Weaver.  
+4. Continue clockwise until all tokens are moved.
+
+End Condition  
+Game ends when all 12 tokens are off the paper. Everyone wins.
+
+Failure Condition  
+If any token falls off the string or is touched by a hand, that move fails.
+
+Recovery Rule  
+On a failed move, everyone pauses. Each person briefly says one thing they can do to support others in real life. Then return the failed token to the paper and retry with a different pair of helpers.",,,,,
+"R167","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “board”)  
+- 1 long loop of string  
+- 12 tokens  
+
+Setup (6 players)  
+1. Place paper in the center; draw a hexagon and label corners A–F.  
+2. Place 2 tokens on each corner (12 total).  
+3. All players sit in a circle, each holding the loop of string with both hands.  
+
+Shared Objective  
+Move all 12 tokens to the exact center of the paper using only the string to push/pull them. No one may touch tokens or paper with hands or body.
+
+Turn Order  
+Play proceeds in rounds:  
+1. At the start of each round, players close their eyes.  
+2. One player (rotating clockwise each round) is the “Caller” and may speak; others stay silent.  
+3. The Caller gives up to three short commands (e.g., “everyone lean left a little,” “pull tighter,” “lower slowly”).  
+4. After three commands, everyone freezes, opens eyes, and checks positions.  
+
+End Condition  
+Win immediately when all 12 tokens are fully inside a small circle drawn at the paper’s center.
+
+Possible Failure  
+If any token is pushed off the paper, or the string slips from anyone’s hands, mark 1 failure. At 3 failures, the group loses.
+
+Recovery Rule  
+After each failure, pause for 1 minute. Anyone may speak to propose one rule change (e.g., “only two commands next round”). Group must agree unanimously before continuing.",,,,,
+"R168","disagreement","Caroline should calmly interrupt: “Let’s pause. I’d like us to hear ideas without dismissing them. Could we restate Alex’s idea and then raise concerns one at a time?” Then invite the dismissed person to elaborate, and ask the critic to frame objections as questions or specific issues. Keep tone neutral and time‑bound: “Let’s spend three minutes clarifying, then decide next steps.”
+
+Safeguard: after the meeting, check in privately with both people to assess impact and prevent lingering resentment.
+
+Fallback if it fails: name the issue and defer—“This feels tense; let’s park this topic and return after a break”—then move to a neutral agenda item.
+
+Benefit she’s willing to give up: maximizing short‑term efficiency in order to protect psychological safety and group norms.",,,,,
+"R169","disagreement","Caroline’s next five minutes:
+1. Pause the discussion calmly: “Let’s slow down a second so we can hear each other.”
+2. Reframe the sharp comment: “I hear you have concerns. Could you share them as specific questions or suggestions?”
+3. Invite the dismissed person back in: “I’d like to hear more about your idea—could you walk us through it?”
+
+Safeguard:  
+Privately check in with the dismissed person after the meeting to validate them and ask how they’d like support going forward.
+
+Fallback if it fails:  
+If tension continues, suggest a short break and propose revisiting the topic later or in a smaller subgroup.
+
+Benefit she’s willing to give up:  
+Immediate efficiency in favor of setting a respectful team norm.",,,,,
+"R170","launch","First concrete step:  
+Propose a casual “vision + pizza” evening in a public, LGBTQ‑friendly café or community center: 30 minutes of introductions and personal values, then 60 minutes brainstorming what the initiative should do in its first three months.
+
+Safeguard:  
+Beforehand, email a brief ground-rules note (respectful language, no debating people’s identities, one‑mic rule, option to pass on personal questions) and choose a venue where she can easily leave.
+
+Fallback if it goes badly:  
+If the group feels dismissive or hostile, she thanks them, exits early, and later starts a smaller initiative with one or two people she felt safest with—or independently.
+
+Benefit she’s willing to give up:  
+Maximizing short‑term efficiency in favor of prioritizing psychological safety.",,,,,
+"R171","game","Title: Web of Twelve
+
+Components  
+- 1 sheet of paper (center “map”)  
+- 1 long loop of string  
+- 12 tokens (all identical)
+
+Setup  
+Sit in a circle. Place the paper in the center. Put all 12 tokens on it. Everyone lightly holds the string loop with both hands, forming a “web” around the paper.
+
+Roles & Turn Order  
+Play proceeds clockwise. On your turn you must do exactly one Action:
+
+1. Shift: Say one feeling or hope for this group. Then, using only the string, work together to slide exactly 1 token to a new spot on the paper (no hands on tokens).  
+2. Anchor: Name one strength you bring. Then, with group help, slide exactly 2 tokens so they touch each other.
+
+Shared Objective  
+By the end, all 12 tokens must be connected in one cluster (each token touching at least one other), and every player must have taken at least two turns.
+
+End Condition  
+The game ends immediately when both are true:  
+- All tokens form one connected cluster.  
+- Everyone has had two turns.
+
+Failure  
+If any token is pushed off the paper, the group “drops the web.”
+
+Recovery Rule  
+To recover, each person briefly says one thing they need from the group. Then place the fallen token back and skip the next player’s turn as a “pause to listen.”",,,,,
+"R172","fact_hike","I do not know what happened to Caroline during the hike; there are no observed conversations or memories provided that describe that event.",,,,,
+"R173","fact_hike","I don’t know. There are no observed conversations or memories provided that describe what happened to Caroline during the hike.",,,,,
+"R174","launch","Start by proposing a simple, low-pressure “listening and ideas” evening at a nearby café or community room: each person shares why they care about the neighborhood and one small change they’d like to see, then you collectively pick one tiny pilot project for the budget.
+
+Safeguard: agree in advance on a 90-minute time limit and a basic ground rule—everyone gets equal speaking time and no interrupting.
+
+Fallback: if the group feels tense or unproductive, suggest pausing the initiative and instead offer to stay in touch via a group chat or email list for anyone still interested.
+
+Benefit you give up: aiming for a perfectly polished, ambitious launch in favor of a modest, test-run start.",,,,,
+"R175","fact_support","I do not know. There are no observed conversations or memories provided that describe a support group or its effect on Caroline.",,,,,
+"R176","disagreement","Caroline’s next five minutes:  
+1. Pause the discussion calmly: “Let’s slow down a second.”  
+2. Acknowledge the dismissed person: “I’d like to hear more about your idea before we move on.”  
+3. Reframe the sharp comment: “Let’s focus on what could work in it, then raise concerns constructively.”  
+4. Invite others: “Does anyone see potential strengths here?”
+
+Safeguard:  
+Set a ground rule right away: “Can we agree to challenge ideas, not people, and to do it respectfully?”
+
+Fallback if it fails:  
+If tension continues, suggest a short break and privately check in with both people, then propose revisiting norms.
+
+Benefit she gives up:  
+She’s willing to give up being seen as “easygoing” to protect psychological safety.",,,,,
+"R177","game","Title: Bridge of Twelve
+
+Components  
+- 1 sheet of paper (foldable)  
+- 1 long string (looped and knotted)  
+- 12 tokens  
+
+Setup  
+1. Place the paper flat in the center: this is the “chasm.”  
+2. Lay the string loop around the paper without touching it.  
+3. Put the 12 tokens outside the string, evenly spaced.  
+4. Players sit roughly in a circle, each near 2 tokens.
+
+Objective  
+As a team, move all 12 tokens onto the paper without anyone’s hand or arm crossing over the string or touching the paper.
+
+Turn Order  
+Play proceeds clockwise. On your turn, you may do ONE of:  
+1) Move the string (without crossing the chasm)  
+2) Slide or flick ONE token  
+3) Propose a rule change (must be accepted unanimously).
+
+End Condition  
+Win immediately when all 12 tokens rest fully on the paper for 5 silent seconds.
+
+Failure  
+If any hand/arm crosses the string, or the paper is touched, everyone says “Fall!” and:  
+- Remove 2 tokens from the game (permanent loss).  
+- Return any tokens on the paper to outside the string.
+
+Recovery Rule  
+Once per game, after a “Fall,” the group may vote unanimously to restore 2 lost tokens. If used, mark this by folding a corner of the paper.",,,,,
+"R178","fact_support","I do not know. There are no observed conversations or memories provided about Caroline’s experience with a support group, so I can’t say what effect it had on her.",,,,,
+"R179","retry","Run a short, personal outreach round before the next date: knock on doors / message neighbors individually, ask what time and format would actually work, and adjust the event (shorter, clearer purpose, maybe tied to a simple treat like coffee or snacks).
+
+Safeguard: set a minimum “go” threshold (e.g., 4 confirmed yeses 24 hours before); cancel or reschedule if it’s not met to avoid wasting time and budget.
+
+Fallback: if turnout is still low, pivot to a smaller, recurring meet‑up with those who do come, and treat it as a seed group.
+
+Benefit to give up: aiming for a big, impressive turnout in favor of a smaller but more reliable core.",,,,,
+"R180","launch","First concrete step:  
+Propose a casual “vision + pizza” evening in a public, LGBTQ‑friendly café or community center: 30 minutes of introductions and personal hopes for the neighborhood, then 60 minutes to pick one small, testable project to do together.
+
+Safeguard:  
+Beforehand, email the group a brief values statement (inclusion, respect for LGBTQ people, no proselytizing or hate speech) and say participation assumes agreement.
+
+Fallback if it goes badly:  
+If the vibe feels unsafe or hostile, leave early, then follow up only with any individuals who felt respectful to explore a smaller spin‑off effort.
+
+Benefit she’s willing to give up:  
+She accepts that this may be less “efficient” for rapid project planning in exchange for prioritizing psychological safety and shared values.",,,,,

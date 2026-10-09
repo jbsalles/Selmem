@@ -78,6 +78,7 @@ fn compatible_axiom(store: &MemoryStore, ax: &IdentityAxiom, key: &Family) -> bo
 }
 
 pub fn run(store: &mut MemoryStore, _narrator: &dyn Narrator) -> Vec<IdentityAxiom> {
+    crate::recall::interpretation::consolidate(store);
     let prior: Vec<_> = store.living_axioms().iter().map(|a| a.id.clone()).collect();
     let mut axioms = extract_axioms(store);
     axioms.extend(promote_traits(store));
