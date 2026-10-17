@@ -1,6 +1,5 @@
 # SelMem
 
-[GENESIS sleep-quality experiment](experiments/genesis/SLEEP.md): matched no-sleep, normal and deep sleep, with controlled histories and LoCoMo-derived factual probes.
 
 Selective reconstructive memory for an LLM entity. v0.5
 
