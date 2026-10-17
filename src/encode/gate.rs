@@ -30,7 +30,7 @@ pub fn encode_with_parts(
         input.disgust = s.disgust;
         input.self_relevance = s.self_relevance;
         input.goal_align = s.goal_relevance;
-        input.attribution = s.attribution;
+        if input.attribution == crate::core::model::Attribution::None { input.attribution = s.attribution; }
         input.schema = s.schema.clone();
     }
     encode_with_interpreter(store, profile, input, embedder, proposed, None)
@@ -159,7 +159,7 @@ pub fn encode_with_interpreter(
             if annotated {
                 slice.self_relevance = semantics.self_relevance;
                 slice.goal_align = semantics.goal_relevance;
-                slice.attribution = semantics.attribution;
+                if slice.attribution == crate::core::model::Attribution::None { slice.attribution = semantics.attribution; }
             }
             slice.schema = semantics.schema;
         }
@@ -203,8 +203,14 @@ fn encode_one(
     embedder: &dyn Embedder,
     novelty_vs: Option<(&Vec<Vec<f32>>, &Vec<String>)>,
 ) -> EncodeDecision {
-    let embedding = embedder.embed(input.event);
-    let nov = if embedding.is_empty() {
+    let embedded = embedder.embed_result(input.event);
+    let learned = embedder.semantic_similarity()
+        && matches!(&embedded, crate::encode::embed::EmbeddingResult::External(_));
+    let embedding = match embedded {
+        crate::encode::embed::EmbeddingResult::External(v)
+        | crate::encode::embed::EmbeddingResult::Fallback(v) => v,
+    };
+    let nov = if !learned || embedding.is_empty() {
         let gists: Vec<String> = novelty_vs.map(|(_, g)| g.clone()).unwrap_or_else(|| store.traces.values().map(|t| t.gist.clone()).collect());
         novelty(input.event, &gists)
     } else if let Some((existing, gists)) = novelty_vs {

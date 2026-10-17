@@ -42,6 +42,11 @@ fn inspect(m: &SelectiveMemory) -> Json {
                             ("core", text(&t.core)),
                             ("schema", text(t.schema.as_deref().unwrap_or(""))),
                             ("fidelity", num(t.fidelity as f64)),
+                            ("attribution",text(format!("{:?}",t.attribution))),
+                            ("access",num(selmem::encode::scoring::access_value(t,&m.profile) as f64)),
+                            ("permanence",num(t.permanence as f64)),
+                            ("source",text(&t.source)),
+                            ("suppressed",Json::Bool(t.suppressed)),
                             ("valence", num(t.valence as f64)),
                             ("arousal", num(t.arousal as f64)),
                             ("self_relevance", num(t.self_relevance as f64)),
@@ -62,6 +67,10 @@ fn inspect(m: &SelectiveMemory) -> Json {
                             ("statement", text(&a.statement)),
                             ("layer", text(format!("{:?}", a.layer))),
                             ("supports", strings(a.support_trace_ids.clone())),
+                            ("strength",num(a.strength as f64)),
+                            ("schema",a.schema.as_ref().map(text).unwrap_or(Json::Null)),
+                            ("superseded_by",a.superseded_by.as_ref().map(text).unwrap_or(Json::Null)),
+                            ("distinct_supports",num(a.support_trace_ids.iter().filter_map(|id|m.store.traces.get(id)).map(|t|t.observation_id.as_deref().unwrap_or(&t.id)).collect::<HashSet<_>>().len() as f64)),
                         ])
                     })
                     .collect(),
@@ -109,7 +118,7 @@ fn graph(m: &SelectiveMemory) -> Json {
             .collect(),
     )
 }
-fn readout(m: &mut SelectiveMemory, query: &str, live: bool) -> Json {
+fn readout(m: &mut SelectiveMemory, query: &str, live: bool, transfer: bool) -> Json {
     let graph_before = graph(m);
     let (memories, dump) = m.remember_with(
         query,
@@ -118,7 +127,7 @@ fn readout(m: &mut SelectiveMemory, query: &str, live: bool) -> Json {
         } else {
             RecallWrite::ReadOnly
         },
-        RecallBias::Observed,
+        if transfer { RecallBias::Transfer } else { RecallBias::Observed },
         &[],
     );
     let _guard = selmem::core::model::ClockGuard::push(m.clock.clone());
@@ -243,6 +252,9 @@ fn lesion(m: &mut SelectiveMemory, kind: &str, roots: &[String]) -> Result<Json,
     let mut removed = HashSet::new();
     match kind {
         "intact" => (),
+        "mood" => m.mood=selmem::Mood::default(),
+        "latent" => removed=m.store.traces.iter().filter(|(_,t)|t.status==selmem::TraceStatus::Latent).map(|(id,_)|id.clone()).collect(),
+        "residual_only" => removed=m.store.traces.iter().filter(|(_,t)|t.status!=selmem::TraceStatus::Latent).map(|(id,_)|id.clone()).collect(),
         "episode" => removed = root_set,
         "associated" => removed = closure.difference(&root_set).cloned().collect(),
         "beliefs" => m.store.axioms.retain(|_, a| a.layer != AxiomLayer::Belief),
@@ -302,6 +314,7 @@ fn lesion(m: &mut SelectiveMemory, kind: &str, roots: &[String]) -> Result<Json,
         ("scope", text("structural lesion; closure includes schema siblings, not proven causal descendants"))]))
 }
 pub(super) fn execute(r: &Json) -> Result<Json, String> {
+    if field(r,"op")?=="recall" && flag(r,"creative_transfer"){return Err("transfer writes require explicit reflect operation".into());}
     let path = Path::new(field(r, "path")?);
     let op = field(r, "op")?;
     if op != "init" && !path.is_file() {
@@ -348,6 +361,14 @@ pub(super) fn execute(r: &Json) -> Result<Json, String> {
             m.set_associations(false, *use_context);
         }
     }
+    // Transient probe-only ablation: the saved common life is never rewritten.
+    if op == "probe" {
+        if let Ok(value) = r.get("reconstruct") {
+            let Json::Bool(enabled) = value else { return Err("reconstruct must be boolean".into()); };
+            m.cut.reconstruct = *enabled;
+            m.cut.reconsolidate = false;
+        }
+    }
     let mut http_audit = None;
     let lifecycle = r
         .get("memory_config")
@@ -365,7 +386,7 @@ pub(super) fn execute(r: &Json) -> Result<Json, String> {
     {
         return Err("HTTP lifecycle requires HTTP memory backend".into());
     }
-    if matches!(op, "recall" | "probe") || (lifecycle == "http" && matches!(op, "live" | "sleep")) {
+    if matches!(op, "recall" | "reflect" | "probe") || (lifecycle == "http" && matches!(op, "live" | "sleep")) {
         if let Ok(config) = r.get("memory_config") {
             if config.get("memory_backend").and_then(Json::string) == Ok("http") {
                 let (bound, audit) = super::http::bind(m, config)?;
@@ -375,7 +396,10 @@ pub(super) fn execute(r: &Json) -> Result<Json, String> {
         }
     }
     let checked_readout = |m: &mut SelectiveMemory, query: &str, live| -> Result<Json, String> {
-        let mut out = readout(m, query, live);
+        let transfer = flag(r, "creative_transfer");
+        if transfer && live && op != "reflect" { return Err("live creative transfer requires explicit reflect operation".into()); }
+        let mut out = readout(m, query, live, transfer);
+        out.put("recall_intent", text(if transfer { "transfer" } else { "factual" }));
         let calls = m.narrator_arc().failure_log();
         out.put("narrator_calls", num(calls.calls as f64));
         out.put("narrator_failures", num(calls.failures as f64));
@@ -506,7 +530,7 @@ pub(super) fn execute(r: &Json) -> Result<Json, String> {
         "live" => {
             let event = r.get("event")?;
             let mut input = EncodeInput::new(field(event, "text")?);
-            input.observation_id = Some(field(event, "id")?);
+            input.observation_id = Some(field(event,"observation_id").unwrap_or(field(event,"id")?));
             input.source = "genesis_fixture";
             if flag(event, "external") {
                 input.attribution = selmem::Attribution::External;
@@ -532,7 +556,7 @@ pub(super) fn execute(r: &Json) -> Result<Json, String> {
             save(&m)?;
             Ok(out)
         }
-        "recall" => {
+        "recall" | "reflect" => {
             m.begin_association_episode();
             let out = checked_readout(&mut m, field(r, "query")?, true)?;
             save(&m)?;
@@ -560,6 +584,7 @@ pub(super) fn execute(r: &Json) -> Result<Json, String> {
             out.put("lifecycle_audit", audit);
             Ok(out)
         }
+        "recall_cut" => {m.cut.reconstruct=flag(r,"enabled");m.cut.reconsolidate=flag(r,"enabled");save(&m)?;Ok(inspect(&m))},
         "inspect" => Ok(inspect(&m)),
         "lesion" => {
             let roots = r

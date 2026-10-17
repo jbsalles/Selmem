@@ -29,6 +29,8 @@ impl Default for EmbedLog {
 }
 
 pub trait Embedder: Send + Sync {
+    /// Dense hash sketches are lexical fallbacks, not evidence of semantic proximity.
+    fn semantic_similarity(&self) -> bool { true }
     fn space_id(&self) -> String { std::any::type_name::<Self>().to_string() }
     fn embed(&self, text: &str) -> Vec<f32> {
         match self.embed_result(text) {
@@ -108,6 +110,7 @@ impl HttpEmbedder {
 }
 
 impl Embedder for HashEmbedder {
+    fn semantic_similarity(&self) -> bool { false }
     fn space_id(&self) -> String { "hash96-v1".into() }
     fn embed_result(&self, text: &str) -> EmbeddingResult {
         EmbeddingResult::External(self.embed_hash(text))

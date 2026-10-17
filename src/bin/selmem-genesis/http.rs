@@ -48,10 +48,15 @@ fn parse_event_annotations(raw: &str, event: &str) -> Result<selmem::EventSemant
         let value = json::parse(raw).map_err(|e| format!("semantic JSON format: {e}"))?;
         for (key, value) in value.object()? {
             let value = if NUMBERS.contains(&key.as_str()) {
-                value
-                    .number()
-                    .map_err(|_| format!("semantic numeric field expected: {key}"))?
-                    .to_string()
+                match value {
+                    Json::Number(n) if n.is_finite() => n.to_string(),
+                    Json::String(raw) => {
+                        let n=raw.trim().parse::<f64>().map_err(|_|format!("semantic numeric field expected: {key}; received {}",value.encode()))?;
+                        if !n.is_finite(){return Err(format!("non-finite semantic numeric field: {key}"));}
+                        n.to_string()
+                    },
+                    _ => return Err(format!("semantic numeric field expected: {key}; received {}",value.encode())),
+                }
             } else {
                 value
                     .string()
@@ -106,6 +111,19 @@ mod annotation_format_tests {
     const EVENT: &str = "Workshop rule: ulen requires machine kavi.";
     const OBSERVED: &str = "entities=ulen|kavi; actions=require; event_type=rule; bearer=world; loss=none; stake_mark=machine kavi; absence=none; valence=0; arousal=0; disgust=0; self_relevance=0; goal_relevance=0; agency=none; schema=workshop rule; confidence=1.0.";
     #[test]
+    fn quoted_numbers_preserve_values_without_defaults_or_clamping() {
+        let raw=r#"{"entities":"ulen|kavi","actions":"require","event_type":"rule","bearer":"world","loss":"none","stake_mark":"machine kavi","absence":"none","valence":"-0.4","arousal":"0.25","disgust":0,"self_relevance":"0.9","goal_relevance":0,"agency":"none","schema":"workshop rule","confidence":"1"}"#;
+        let parsed=parse_event_annotations(raw,EVENT).unwrap();
+        assert_eq!(parsed.arousal,0.25);assert_eq!(parsed.valence,-0.4);
+        for invalid in ["null","true","{}","[]","\"high\"","\"NaN\"","\"inf\"","\"1.1\"","\"-0.1\"","\"\""]{
+            assert!(parse_event_annotations(&raw.replace("\"arousal\":\"0.25\"",&format!("\"arousal\":{invalid}")),EVENT).is_err(),"{invalid}");
+        }
+        let f=annotation_format();let schema=f.get("json_schema").unwrap().get("schema").unwrap();
+        assert_eq!(schema.get("required").unwrap().array().unwrap().len(),15);
+        assert_eq!(schema.get("additionalProperties").unwrap(),&Json::Bool(false));
+        assert_eq!(schema.get("properties").unwrap().get("arousal").unwrap().get("type").unwrap().string().unwrap(),"number");
+    }
+    #[test]
     fn exact_gpt_response_and_json_preserve_same_annotations() {
         let legacy = parse_event_annotations(OBSERVED, EVENT).unwrap();
         let value = json::parse(r#"{"entities":"ulen|kavi","actions":"require","event_type":"rule","bearer":"world","loss":"none","stake_mark":"machine kavi","absence":"none","valence":0,"arousal":0,"disgust":0,"self_relevance":0,"goal_relevance":0,"agency":"none","schema":"workshop rule","confidence":1}"#).unwrap();
@@ -138,6 +156,20 @@ mod annotation_format_tests {
     }
 }
 
+// Constrain transport types; the organ still validates ranges and meaning.
+fn annotation_format()->Json {
+    let names=["entities","actions","event_type","bearer","loss","stake_mark","absence","valence","arousal","disgust","self_relevance","goal_relevance","agency","schema","confidence"];
+    let numbers=["valence","arousal","disgust","self_relevance","goal_relevance","confidence"];
+    let properties=Json::Object(names.iter().map(|k|(k.to_string(),obj([("type",text(if numbers.contains(k){"number"}else{"string"}))]))).collect());
+    obj([("type",text("json_schema")),("json_schema",obj([("name",text("event_annotations")),("strict",Json::Bool(true)),("schema",obj([("type",text("object")),("properties",properties),("required",Json::Array(names.map(text).to_vec())),("additionalProperties",Json::Bool(false))]))]))])
+}
+fn decode_annotation_response(raw:&str,event:&str)->Result<selmem::EventSemantics,String>{
+    let response=json::parse(raw)?;
+    let message=response.get("choices")?.array()?.first().ok_or("missing semantic response")?.get("message")?;
+    let mut semantics=parse_event_annotations(message.get("content")?.string()?,event)?;
+    semantics.core.claim=event.into();semantics.validate()?;Ok(semantics)
+}
+
 // The existing organ interface remains authoritative. No annotations from an
 // experimental condition or sealed archive are supplied to the interpreter.
 struct EventInterpreter {
@@ -160,44 +192,30 @@ impl selmem::SemanticInterpreter for EventInterpreter {
             ])),
         ]);
         let effort = selmem::Config::get().reasoning();
-        if !effort.is_empty() && effort != "off" {
-            body.put("reasoning_effort", text(effort));
-        }
+        body.put("reasoning_effort", text(effort));
+        body.put("response_format",annotation_format());
         let request = body.encode();
-        let raw = super::transport::post(
-            "semantic_interpretation",
-            &self.endpoint,
-            self.key.as_deref(),
-            &request,
-        );
-        let result = raw.as_ref().map_err(Clone::clone).and_then(|raw| {
-            let response = json::parse(raw)?;
-            let message = response
-                .get("choices")?
-                .array()?
-                .first()
-                .ok_or("missing semantic response")?
-                .get("message")?;
-            let mut semantics = parse_event_annotations(message.get("content")?.string()?, event)?;
-            // Full event is the controlled fact core; learned annotations are
-            // interpretations, not a license to replace/shorten the evidence.
-            semantics.core.claim = event.into();
-            semantics.validate()?;
-            Ok(semantics)
-        });
-        let mut audit = self.audit.lock().unwrap();
-        audit.semantic_calls.push(obj([
-            ("event", text(event)),
-            ("request_body", text(request)),
-            ("raw_response", raw.as_ref().map(text).unwrap_or(Json::Null)),
-            (
-                "error",
-                result.as_ref().err().map(text).unwrap_or(Json::Null),
-            ),
-        ]));
-        if let Err(error) = &result {
-            audit.error = Some(error.clone());
+        let cached=super::transport::semantic_lookup(&self.endpoint,&request).map_err(|error|{self.audit.lock().unwrap().error=Some(error.clone());error})?;
+        let cache_hit=cached.is_some();
+        let mut result=Err("semantic annotation attempts exhausted".to_string());
+        for semantic_attempt in 1..=3 {
+            let raw=if let Some(raw)=&cached{Ok(raw.clone())}else{super::transport::post("semantic_interpretation",&self.endpoint,self.key.as_deref(),&request)};
+            result=raw.as_ref().map_err(Clone::clone).and_then(|raw|decode_annotation_response(raw,event));
+            let retry_format=raw.is_ok()&&result.is_err()&&!cache_hit&&semantic_attempt<3;
+            self.audit.lock().unwrap().semantic_calls.push(obj([
+                ("cache_hit",Json::Bool(cache_hit)),("semantic_attempt",Json::Number(semantic_attempt as f64)),
+                ("event",text(event)),("request_body",text(&request)),
+                ("raw_response",raw.as_ref().map(text).unwrap_or(Json::Null)),
+                ("error",result.as_ref().err().map(text).unwrap_or(Json::Null)),
+            ]));
+            if result.is_ok(){
+                if !cache_hit{if let Err(error)=super::transport::semantic_store_validated(&self.endpoint,&request,raw.as_ref().map_err(Clone::clone)?){result=Err(error);}}
+                break;
+            }
+            if !retry_format{break;}
+            super::progress::line(format!("SEMANTIC FORMAT RETRY {}/3: {}",semantic_attempt+1,result.as_ref().unwrap_err()));
         }
+        if let Err(error)=&result{self.audit.lock().unwrap().error=Some(error.clone());}
         timer.finish(result.is_ok());
         result
     }
@@ -331,9 +349,7 @@ impl PropositionScorer for Scorer {
             ])),
         ]);
         let reasoning = selmem::Config::get().reasoning();
-        if !reasoning.is_empty() && reasoning != "off" {
-            body.put("reasoning_effort", text(reasoning));
-        }
+        body.put("reasoning_effort", text(reasoning));
         let response = super::transport::post(
             "scorer",
             &self.endpoint,

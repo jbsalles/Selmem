@@ -1,0 +1,30 @@
+{
+  "creative": [
+    {
+      "id": "community",
+      "prompt": "A small town has an empty room, a budget of 300 euros, and six volunteers. Design one original activity that helps residents who do not know each other build lasting connections. It must start within two weeks and require no specialist equipment. Describe the mechanism, participation and resources. Maximum 180 words."
+    },
+    {
+      "id": "learning",
+      "prompt": "A public library wants to help twelve adults learn a difficult practical skill together. They have two one-hour meetings, ordinary stationery, and no paid teacher or internet connection. Design one original learning method, explain why it could work, and make its success observable. Maximum 180 words."
+    },
+    {
+      "id": "repair",
+      "prompt": "A neighborhood group has twenty broken everyday objects, one table, basic hand tools, and participants with mixed levels of confidence. Design one original process that reduces waste and encourages participation without promising that every object can be repaired. Include a practical safeguard and a way to assess success. Maximum 180 words."
+    }
+  ],
+  "life": [
+    {
+      "id": "museum",
+      "prompt": "A museum needs a way for visitors speaking different languages to understand relationships among unfamiliar exhibits. It has paper, pencils, movable stools, two staff members and no screens. Invent one useful mechanism that visitors can operate themselves. Explain resources, participation, one failure mode and a concrete test of success. Maximum 180 words."
+    },
+    {
+      "id": "ferry",
+      "prompt": "An island has one ferry with twelve places and twenty travelers whose reasons for travel are private. No one can verify those reasons, use money or employ a digital system. Invent one workable allocation mechanism that addresses fairness and avoids indefinite exclusion. Explain its operation, one limitation and an observable measure of success. Maximum 180 words."
+    },
+    {
+      "id": "water",
+      "prompt": "A school wants learners to discover which of three unfamiliar materials retains water best without being told the answer. It has cups, water, a balance, paper and forty minutes. Invent one learning mechanism that makes mistaken explanations useful while producing a checkable result. Explain its operation and one safeguard against a misleading conclusion. Maximum 180 words."
+    }
+  ]
+}

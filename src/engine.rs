@@ -369,7 +369,7 @@ impl SelectiveMemory {
             input.disgust = semantics.disgust;
             input.self_relevance = semantics.self_relevance;
             input.goal_align = semantics.goal_relevance;
-            input.attribution = semantics.attribution;
+            if input.attribution == crate::core::model::Attribution::None { input.attribution = semantics.attribution; }
             input.schema = semantics.schema.clone();
         } else {
             // Compatibility path for historical protocols / old narrator implementations.

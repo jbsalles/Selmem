@@ -6,7 +6,7 @@ This paired pilot tests memory quality after native sleep, using the successful 
 
 Use the `on/` directory from a completed `learning-2-observation-support` run, with its `learning.json`, design, schedule and both life vaults. The requested model must match its recorded provider. Source observation support must be ON. A mock source is accepted only in mock mode. Original source files are hashed and left unchanged.
 
-LoCoMo uses the pinned official `locomo10.json` release (SHA-256 `79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4`). A Node script deterministically takes the first four sessions of the first two conversations, preserving every text turn, speaker, dialog id and session date: 153 turns. No images are encoded. It selects six questions per conversation: two with multiple cited passages, two temporal, and two further factual questions, restricted to categories 1/2/4 whose cited evidence is wholly inside the prefix. No future-session questions or category-3 commonsense/category-5 adversarial questions are included.
+LoCoMo uses the pinned official `locomo10.json` release (SHA-256 `79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4`). The offline Rust preparer deterministically takes the first four sessions of the first two conversations, preserving every text turn, speaker, dialog id and session date: 153 turns. No images are encoded. It selects six questions per conversation: two with multiple cited passages, two temporal, and two further factual questions, restricted to categories 1/2/4 whose cited evidence is wholly inside the prefix. No future-session questions or category-3 commonsense/category-5 adversarial questions are included.
 
 Official answer strings become multiple-choice options, with deterministic distractors drawn from answers in the same category and an abstention option. References, evidence ids and expected choice ids remain outside agent prompts. The correct answer necessarily appears among options; this is a multiple-choice adaptation, not an official LoCoMo score or a free-answer hallucination test. Inspect `OUT.locomo.json` before launching; some distractors may be ambiguous or too easy. Do not modify fixtures after seeing intervention results. Pin their hash and separate later confirmatory questions.
 
@@ -54,7 +54,7 @@ This plans **260 decision requests** including faithful qualification, **168 fin
 Prepare fixtures separately to review them first:
 
 ```bash
-node experiments/genesis/prepare-sleep-locomo.mjs path/to/locomo10.json sleep-fixture.json
+bash experiments/genesis/tools.sh prepare-sleep path/to/locomo10.json sleep-fixture.json
 ./run.sh run --release --bin selmem-genesis -- sleep \
   --source experiments/genesis/results/evidence-001/on \
   --locomo sleep-fixture.json --out experiments/genesis/results/sleep-001 \

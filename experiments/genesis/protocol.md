@@ -39,3 +39,7 @@ Prespecify meaningful effects after estimating natural variability; separate dev
 ## Matched sleep intervention
 
 [SLEEP.md](SLEEP.md) specifies a paired pilot at 0/1/5/20 cycles, with identical prefix snapshots, equal virtual time, source hashes and isolated probes. Controlled decision utility and LoCoMo-derived factual correctness remain separate measures. This tests preservation and use of memory after sleep, not creative superiority.
+
+## Creative transfer extension
+
+See [CREATIVITY.md](CREATIVITY.md) for the executable exploratory LoCoMo-derived design. The collection has four conditions sharing a task and model; native full/no-reconstruction share one saved life. Blind utility/originality ratings precede source audits and predeclared target/sham lesions. No sleep or co-recall learning benefit is tested in this first campaign. Generation repeats are nested within histories and do not establish population-level individuality or creativity.

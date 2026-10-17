@@ -94,11 +94,7 @@ impl HttpNarrator {
         let cfg = crate::config::Config::get();
         let temp = cfg.temp();
         let effort = cfg.reasoning();
-        let extra = if effort.is_empty() || effort == "off" {
-            String::new()
-        } else {
-            format!(",\"reasoning_effort\":\"{}\"", json_esc(&effort))
-        };
+        let extra = format!(",\"reasoning_effort\":\"{}\"", json_esc(&effort));
         let cap = token_cap_field(&self.url, &self.model);
         let body = format!(
             "{{\"model\":\"{}\",\"temperature\":{},\"{cap}\":280{} ,\"messages\":[{{\"role\":\"system\",\"content\":\"{}\"}},{{\"role\":\"user\",\"content\":\"{}\"}}]}}",
@@ -148,7 +144,7 @@ fn loose_content(raw: &str) -> Option<String> {
 }
 
 /// GPT-5/6 and the o-series reject `max_tokens`. Grok / Ollama still want it.
-pub(crate) fn token_cap_field(url: &str, model: &str) -> &'static str {
+pub fn token_cap_field(url: &str, model: &str) -> &'static str {
     let m = model.to_ascii_lowercase();
     let openai = url.contains("api.openai.com")
         || url.contains("openai.azure.com")

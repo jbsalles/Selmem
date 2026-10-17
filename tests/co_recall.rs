@@ -456,3 +456,18 @@ fn http_reconstruct_receives_separate_fallible_cues_and_target_core() {
     assert!(request.contains("External"));
     assert!(!request.contains("archive_id"));
 }
+
+#[test]
+fn explicit_live_transfer_learns_but_readonly_transfer_does_not() {
+    let mut mem=memory(Attribution::Internal);
+    mem.set_associations(true,false);
+    mem.begin_association_episode();
+    let (_,audit)=mem.remember_with(QUERY,RecallWrite::Live,RecallBias::Transfer,&[]);
+    assert_eq!(audit.selected.len(),2);
+    assert!(!audit.associations_reinforced.is_empty());
+    mem.begin_association_episode();
+    let before=mem.store.associations.encode();
+    let (_,audit)=mem.remember_with(QUERY,RecallWrite::ReadOnly,RecallBias::Transfer,&[]);
+    assert!(audit.associations_reinforced.is_empty());
+    assert_eq!(mem.store.associations.encode(),before);
+}

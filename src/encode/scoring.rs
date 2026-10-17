@@ -38,13 +38,23 @@ pub fn lexical_similarity(a: &str, b: &str) -> f32 {
     }
 }
 
+/// LoCoMo-style transport headers describe a source, not a new experience.
+/// Keep the stored event intact; strip this wrapper only for comparison.
+pub fn event_content(text: &str) -> &str {
+    if text.starts_with("Conversation on ") {
+        text.split_once(" said:").map_or(text, |(_, body)| body.trim())
+    } else {
+        text
+    }
+}
+
 pub fn novelty(text: &str, gists: &[String]) -> f32 {
     if gists.is_empty() {
         return 1.0;
     }
     let nearest = gists
         .iter()
-        .map(|g| lexical_similarity(text, g))
+        .map(|g| lexical_similarity(event_content(text), event_content(g)))
         .fold(0.0_f32, f32::max);
     1.0 - nearest
 }

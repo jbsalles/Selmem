@@ -123,6 +123,9 @@ impl Provider {
         ])
     }
     pub(super) fn ask(&mut self, prompt: Json, mode: &str) -> Result<Json> {
+        self.ask_with(prompt, mode, SYSTEM, 0., self.seed)
+    }
+    pub(super) fn ask_with(&mut self, prompt: Json, mode: &str, system: &str, temperature: f64, seed: Option<u64>) -> Result<Json> {
         let timer = super::progress::Call::start(format!(
             "{mode} model={}{}",
             self.model,
@@ -131,7 +134,7 @@ impl Provider {
         let result: Result<(Json, Json)> = (|| {
             if self.mock {
                 let reply = match mode {
-                    "decision" => obj([(
+                    "decision" | "life_choice" => obj([(
                         "choice",
                         prompt
                             .get("options")?
@@ -141,6 +144,7 @@ impl Provider {
                             .get("id")?
                             .clone(),
                     )]),
+                    "creative" | "life_creative" => obj([("proposal", text("Technical rehearsal: build a rotating workshop where neighbors exchange small practical skills within the stated resources."))]),
                     _ => return Err("unknown provider mode".into()),
                 };
                 return Ok((
@@ -158,22 +162,22 @@ impl Provider {
                 .or_else(|| self.api_key.clone());
             let mut body = obj([
                 ("model", text(&self.model)),
-                ("temperature", num(0.)),
+                ("temperature", num(temperature)),
                 (
                     "messages",
                     arr([
-                        obj([("role", text("system")), ("content", text(SYSTEM))]),
+                        obj([("role", text("system")), ("content", text(system))]),
                         obj([("role", text("user")), ("content", text(prompt.encode()))]),
                     ]),
                 ),
             ]);
-            if let Some(seed) = self.seed {
+            if let Some(seed) = seed {
                 body.put("seed", num(seed as f64));
             }
+            if mode=="life_creative" {body.put(selmem::recall::http::token_cap_field(&self.endpoint,&self.model),num(400.));}
+            if mode=="life_choice" {body.put(selmem::recall::http::token_cap_field(&self.endpoint,&self.model),num(64.));}
             let reasoning = selmem::Config::get().reasoning();
-            if !reasoning.is_empty() && reasoning != "off" {
-                body.put("reasoning_effort", text(reasoning));
-            }
+            body.put("reasoning_effort", text(reasoning));
             let raw = json::parse(&super::transport::post(
                 mode,
                 &self.endpoint,
@@ -185,7 +189,8 @@ impl Provider {
                 .array()?
                 .first()
                 .ok_or("missing response choice")?;
-            let reply = json::parse(s(choice.get("message")?, "content")?)?;
+            let content=s(choice.get("message")?, "content")?;
+            let reply=match json::parse(content) {Ok(v)=>v,Err(_) if mode=="life_creative"=>obj([("invalid_output",text(content))]),Err(e)=>return Err(e)};
             Ok((reply, raw))
         })();
         timer.finish(result.is_ok());
@@ -219,6 +224,7 @@ impl Provider {
 #[derive(Clone)]
 pub(super) struct Memory { pub(super) arch:String, pub(super) path:PathBuf, config:Json }
 impl Memory {
+    pub(super) fn configuration(&self)->Json{self.config.clone()}
     pub(super) fn new(arch:&str,path:PathBuf,config:&Json)->Self{Self{arch:arch.into(),path,config:config.clone()}}
     pub(super) fn call(&self, op: &str, extra: Json) -> Result<Json> {
         let request = merge(

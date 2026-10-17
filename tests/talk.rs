@@ -203,7 +203,12 @@ fn sleep_after_chat_writes_the_book_not_the_frame() {
         "one recorded turn is one hour, not a second book"
     );
 
-    let hour = talk_hours[0];
+    // Admission may retain more than one turn. HashMap order is not chronology.
+    let hour = talk_hours.iter().copied().find(|hour| {
+        let Some(archive) = hour.archive_id.as_ref().and_then(|id| mem.store.archives.get(id)) else { return false };
+        let text = archive.verbatim.to_lowercase();
+        text.contains("projet") || text.contains("credit") || text.contains("injust")
+    }).expect("the salient project turn must survive the sitting");
     assert!(!hour.gist.is_empty(), "book is gist");
     assert!(!hour.core.is_empty(), "book is core");
     let aid = hour.archive_id.as_ref().expect("kept hour has a sealed archive");

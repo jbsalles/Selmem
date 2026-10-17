@@ -27,11 +27,14 @@ pub enum RecallWrite {
     ReadOnly,
 }
 
-/// Probe-only ablation on the marked hour. Live `remember` stays `Observed`.
+/// Explicit retrieval intent and probe ablations. Ordinary recall stays `Observed`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RecallBias {
     #[default]
     Observed,
+    /// Retrieve topical source experiences for analogy, not claims about a named subject.
+    /// This explicit intent never forces an unrelated trace above the recall gate.
+    Transfer,
     /// Put the first usable marked trace at selected rank 1, even if its score is low.
     ForceMarked,
     /// Never select a marked trace.
@@ -142,6 +145,7 @@ pub fn recall_with(
         embedder.embed(query)
     } else { Vec::new() };
     let live = write == RecallWrite::Live;
+    let transfer_query = transfer_terms(query);
     let cloud = context_cloud(store, query, &query_embedding);
     let ids: Vec<String> = store.active_ids();
     let mut ranked: Vec<ScoredTrace> = ids
@@ -173,7 +177,7 @@ pub fn recall_with(
             let transfer = if crate::recall::interpretation::subject_matches(store, trace, query) {
                 crate::recall::interpretation::for_query(trace, query)
             } else { None };
-            let anchor = if trace.attribution == crate::core::model::Attribution::External
+            let mut anchor = if trace.attribution == crate::core::model::Attribution::External
                 && relevance <= 0.0
             {
                 0.0
@@ -235,8 +239,20 @@ pub fn recall_with(
                     }
                 }
             }
+            if bias == RecallBias::Transfer {
+                // Analogy needs topical content, not the identity of the old speaker.
+                // Hash collisions, timestamps and affect alone cannot license a source.
+                let content = crate::encode::scoring::event_content;
+                let relevant = topic_relevance(&transfer_query, &transfer_terms(content(&trace.core)))
+                    .max(topic_relevance(&transfer_query, &transfer_terms(content(&trace.gist))));
+                anchor = relevant;
+                score = if relevant > 0.0 {
+                    (0.75 * relevant + 0.25 * base_score.clamp(0.0, 1.0)) * access
+                } else { 0.0 };
+            }
             // Schema names are metadata, not query evidence.
-            if trace.attribution == crate::core::model::Attribution::External
+            if bias != RecallBias::Transfer
+                && trace.attribution == crate::core::model::Attribution::External
                 && (!crate::recall::interpretation::subject_matches(store, trace, query)
                     || !crate::recall::interpretation::factual_relation_matches(query, &trace.core)) {
                 score = 0.0;
@@ -272,7 +288,11 @@ pub fn recall_with(
         .map(|c| c.trace_id.clone())
         .collect();
 
-    let chosen_ids = apply_bias(&eligible, store, bias, marked, profile.max_recall);
+    let chosen_ids = if bias == RecallBias::Transfer {
+        select_transfer(&ranked, store, profile.max_recall)
+    } else {
+        apply_bias(&eligible, store, bias, marked, profile.max_recall)
+    };
 
     // Freeze all cue content and weights before the first trace can write back.
     let before: Vec<_> = chosen_ids
@@ -416,7 +436,7 @@ pub fn recall_with(
     }
     let associations_reinforced = if live
         && cut.reconstruct
-        && bias == RecallBias::Observed
+        && matches!(bias, RecallBias::Observed | RecallBias::Transfer)
         && narrator.failure_log().failures == failures_before
     {
         let active: Vec<_> = before
@@ -507,6 +527,43 @@ fn eligible(c: &ScoredTrace) -> bool {
     c.score >= 0.08
 }
 
+/// Task-writing instructions and conversational encouragement are not source topics.
+fn transfer_terms(text: &str) -> String {
+    crate::encode::scoring::token_set(text).into_iter().filter(|word| {
+        topic_relevance(word, word) > 0.0 && !matches!(word.as_str(),
+            "design" | "original" | "propose" | "describe" | "explain" | "include"
+            | "maximum" | "must" | "within" | "require" | "requires" | "using"
+            | "use" | "used" | "without" | "every" | "each" | "all" | "only"
+            | "help" | "helps" | "make" | "makes" | "made" | "great" | "good"
+            | "thanks" | "thank" | "yeah" | "really" | "much" | "lot" | "going"
+            | "get" | "got" | "way" | "well" | "sure" | "something" | "anything"
+            | "success" | "successful" | "work" | "working" | "works" | "want"
+            | "wants" | "need" | "needs" | "needed" | "new" | "two" | "three"
+            | "six" | "twelve" | "twenty" | "one" | "its")
+            && !word.chars().all(|c| c.is_numeric())
+    }).collect::<Vec<_>>().join(" ")
+}
+
+/// Marginal relevance penalizes redundant content only among eligible traces.
+fn select_transfer(ranked: &[ScoredTrace], store: &MemoryStore, cap: usize) -> Vec<String> {
+    let mut chosen: Vec<String> = Vec::new();
+    while chosen.len() < cap {
+        let best = ranked.iter().filter(|c| c.is_eligible() && !chosen.contains(&c.trace_id))
+            .map(|c| {
+                let content = crate::encode::scoring::event_content;
+                let text = content(&store.traces[&c.trace_id].core);
+                let redundancy = chosen.iter().map(|id| {
+                    crate::encode::scoring::lexical_similarity(text, content(&store.traces[id].core))
+                }).fold(0.0_f32, f32::max);
+                (c, c.score * (1.0 - 0.5 * redundancy))
+            })
+            .max_by(|(a, x), (b, y)| x.total_cmp(y).then_with(|| b.trace_id.cmp(&a.trace_id)));
+        let Some((next, _)) = best else { break };
+        chosen.push(next.trace_id.clone());
+    }
+    chosen
+}
+
 fn apply_bias(
     eligible: &[String],
     store: &MemoryStore,
@@ -518,7 +575,7 @@ fn apply_bias(
         return Vec::new();
     }
     match bias {
-        RecallBias::Observed => eligible.iter().take(cap).cloned().collect(),
+        RecallBias::Observed | RecallBias::Transfer => eligible.iter().take(cap).cloned().collect(),
         RecallBias::DropMarked => eligible
             .iter()
             .filter(|id| !marked.iter().any(|m| m == *id))

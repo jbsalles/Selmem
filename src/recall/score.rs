@@ -70,7 +70,8 @@ impl HttpScorer {
     fn request_body(&self, claim: &str, sentence: &str, effort: &str) -> String {
         let system = "Reply with one word: entail, contradict, or unknown. The claim is sealed. Do not rewrite it.";
         let user = format!("CLAIM:\n{claim}\nSENTENCE:\n{sentence}");
-        let extra = if effort.is_empty() || effort == "off" { String::new() } else { format!(",\"reasoning_effort\":\"{}\"", json_esc(&effort)) };
+        let effort = crate::config::normalize_reasoning(effort);
+        let extra = format!(",\"reasoning_effort\":\"{}\"", json_esc(&effort));
         let cap = super::http::token_cap_field(&self.url, &self.model);
         let model = self.model.to_ascii_lowercase();
         let reasoning_model = ["gpt-5", "gpt-6", "o1", "o3", "o4"].iter().any(|prefix| model.starts_with(prefix));
@@ -111,6 +112,6 @@ mod compatibility_tests {
     fn requests_use_completion_caps_and_respect_reasoning_policy() {
         let gpt=HttpScorer::parse("https://api.openai.com/v1/chat/completions","gpt-5",None).unwrap();
         let body=gpt.request_body("claim","sentence","low");assert!(body.contains("\"max_completion_tokens\":2048"));assert!(body.contains("\"reasoning_effort\":\"low\""));assert!(!body.contains("temperature"));assert!(!body.contains("\"max_tokens\""));
-        let grok=HttpScorer::parse("https://api.x.ai/v1/chat/completions","grok",None).unwrap();let body=grok.request_body("claim","sentence","off");assert!(body.contains("\"max_tokens\":128"));assert!(body.contains("\"temperature\":0"));assert!(!body.contains("reasoning_effort"));
+        let grok=HttpScorer::parse("https://api.x.ai/v1/chat/completions","grok",None).unwrap();let body=grok.request_body("claim","sentence","off");assert!(body.contains("\"max_tokens\":128"));assert!(body.contains("\"temperature\":0"));assert!(body.contains("\"reasoning_effort\":\"none\""));
     }
 }

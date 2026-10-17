@@ -1,6 +1,6 @@
 # GENESIS
 
-Two maintained experiments, one Rust executable. [Protocol and limitations](protocol.md), [result ledger](../RESULTS.md), [native observation support](../../ARCHITECTURE.md).
+Four maintained experiments, one Rust executable. [Protocol and limitations](protocol.md), [result ledger](../RESULTS.md), [native observation support](../../ARCHITECTURE.md).
 
 ## 1. Qualify the decision model
 
@@ -42,7 +42,7 @@ Outputs include design/configuration, fixtures, encoding receipts, life/clone sn
 
 ## Migration
 
-The separate `selmem-genesis-positive` and `selmem-genesis-learning` executables are now `selmem-genesis positive` and `selmem-genesis learning`. Gate/policy/qualification/recall launchers and contrast/presentation/sensitivity/content/threshold troubleshooting commands have been removed. The oversized prepare/run/replay campaign scaffold and unexecuted confirmatory/pilot grids have also been retired. The next singularity/creativity protocols remain a research plan, not executable claims.
+The separate `selmem-genesis-positive` and `selmem-genesis-learning` executables are now `selmem-genesis positive` and `selmem-genesis learning`. Gate/policy/qualification/recall launchers and contrast/presentation/sensitivity/content/threshold troubleshooting commands have been removed. The oversized prepare/run/replay campaign scaffold and unexecuted confirmatory/pilot grids have also been retired. The creative-transfer collection and causal follow-up are now executable exploratory protocols; no creative result is claimed.
 
 Existing evidence is readable and must keep its original manifests. Place qualified `positive-001/grok` outside or back under the ignored results directory if reusing it. Do not run the old suite script. The native organ's algorithms and observation-support implementation are unchanged by this cleanup.
 
@@ -51,3 +51,28 @@ Legacy library exports for benchmark/experiment/fork demonstrations have been re
 ## Sleep quality
 
 The third command, `selmem-genesis sleep`, compares time-matched no-sleep, native normal sleep and forced deep sleep on saved learning histories and a pinned LoCoMo-derived factual panel. Read [SLEEP.md](SLEEP.md) for preparation, qualification, costs and limits. No real result is claimed yet.
+
+## Creative transfer
+
+`selmem-genesis creative` collects LoCoMo-derived creative proposals under empty, BM25 RAG, no-reconstruction and full SelMem conditions. Full/ablation share the same saved life. `creative-causal` applies audited target/sham trace lesions. [CREATIVITY.md](CREATIVITY.md) defines tasks, preparation, costs, blind human ratings and limitations. Start with the 72-proposal pilot, then freeze the protocol before the 360-proposal ten-history campaign. Mock is technical rehearsal only.
+
+```bash
+LOCOMO_DATASET=/path/to/locomo10.json bash experiments/genesis/run-creativity.sh experiments/genesis/results/creative-001
+bash run.sh test --bin selmem-genesis -- --test-threads=1
+```
+
+The long trajectory experiment is documented in [CREATIVE_LIFE.md](CREATIVE_LIFE.md):
+`creative-life` now defaults to the economical two-history design, retaining all sessions,
+90 exposure days, 30 washout days and the developmental/readout/layer/continuation controls.
+It shares only validated stateless annotations and plans 600 creative proposals.
+The older ten-history full fixture remains supported for a new full-mode run.
+
+## Creative preview and preserved plans
+
+The independent `creative-preview` protocol is described in [CREATIVE_PREVIEW.md](CREATIVE_PREVIEW.md): two complete histories encoded once, ten nights per history, five conditions, and 60 proposals. Run `bash experiments/genesis/run-creative-preview.sh experiments/genesis/creative-preview.json experiments/genesis/results/creative-preview-001` from the repository root with a configured `.selmem`.
+
+The longitudinal **economy** (90+30 days, 600 proposals) and **full** (90+30 days, 6,480 proposals) plans, preparers, launchers, and evaluators remain available with unchanged protocols. See [CREATIVE_LIFE.md](CREATIVE_LIFE.md). Use a separate output directory for each experiment; do not pool their observations or ratings.
+
+## Offline Rust tools
+
+[RUST_TOOLS.md](RUST_TOOLS.md) documents the Rust replacements for data preparation, blind rating, availability summaries, and mechanism coding. Run `bash experiments/genesis/tools.sh` for the command list. Existing completed result formats and the three frozen experiment plans are preserved. Apply tooling updates after an active collection finishes, because its resume checks bind the original code and executable.

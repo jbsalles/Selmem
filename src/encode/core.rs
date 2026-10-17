@@ -160,6 +160,10 @@ fn unframed_core(event: &str) -> String {
 pub fn reported_speech(event: &str) -> Option<(&str, &str)> {
     let (speaker, body) = event.split_once(" said:")?;
     let speaker = speaker.trim();
+    // Transport timestamps are not part of the quoted speaker's identity.
+    let speaker = if speaker.starts_with("Conversation on ") {
+        speaker.rsplit_once(": ").map_or(speaker, |(_, name)| name.trim())
+    } else { speaker };
     if speaker.is_empty() || speaker.split_whitespace().count() > 6
         || speaker.chars().any(|c| !(c.is_alphabetic() || c == ' ' || c == '-' || c == '\''))
         || matches!(speaker.to_lowercase().as_str(), "i" | "we" | "you") {

@@ -14,7 +14,7 @@ if [[ ! -f "$dataset" ]]; then
   curl --fail --location --max-time 90 https://raw.githubusercontent.com/snap-research/locomo/main/data/locomo10.json -o "$tmp"
   mv "$tmp" "$dataset"
 fi
-node experiments/genesis/prepare-sleep-locomo.mjs "$dataset" "$out_dir.locomo.json"
+bash experiments/genesis/tools.sh prepare-sleep "$dataset" "$out_dir.locomo.json"
 ./run.sh build --release --bin selmem-genesis
 export SELMEM_REASONING=off
 printf 'SLEEP QUALITY: 4 histories; 3 arms; checkpoints 0/1/5/20; 20 faithful qualification choices + 240 measured choices; 168 isolated final readouts; 153 new LoCoMo encodings with live recall; 160 native nights. HTTP count varies with reconstruction/scoring/retries; cap=%s attempts. Provider must match source.\n' "${GENESIS_SLEEP_HTTP_LIMIT:-3000}"

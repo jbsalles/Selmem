@@ -15,6 +15,14 @@ pub struct Config {
     values: HashMap<String, String>,
 }
 
+/// Explicit wire value: historical `off` means no reasoning, never provider default.
+pub fn normalize_reasoning(raw: &str) -> String {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "" | "off" => "none".into(),
+        value => value.into(),
+    }
+}
+
 impl Config {
     pub fn empty() -> Self {
         Self::default()
@@ -120,7 +128,7 @@ impl Config {
     }
 
     pub fn reasoning(&self) -> String {
-        self.resolve_or(None, "reasoning", "none")
+        normalize_reasoning(&self.resolve_or(None, "reasoning", "none"))
     }
 
     pub fn http_timeout(&self) -> String {
@@ -294,4 +302,15 @@ fn flag_from_args(name: &str) -> Option<String> {
             None
         }
     })
+}
+
+#[cfg(test)]
+mod reasoning_regression {
+    #[test]
+    fn off_never_silently_requests_provider_default() {
+        for value in ["", "off", " OFF ", "none"] {
+            assert_eq!(super::normalize_reasoning(value), "none");
+        }
+        assert_eq!(super::normalize_reasoning(" HIGH "), "high");
+    }
 }

@@ -16,6 +16,7 @@ struct Budget {
 thread_local! { static BUDGET: RefCell<Option<Budget>> = const { RefCell::new(None) }; }
 pub(super) struct Session;
 pub(super) fn begin(out: &Path, limit: usize) -> Session {
+    enable_semantic_cache(false);
     BUDGET.with(|b| {
         *b.borrow_mut() = Some(Budget {
             out: out.into(),
@@ -28,6 +29,7 @@ pub(super) fn begin(out: &Path, limit: usize) -> Session {
 impl Drop for Session {
     fn drop(&mut self) {
         BUDGET.with(|b| *b.borrow_mut() = None);
+        enable_semantic_cache(false);
     }
 }
 pub(super) fn used() -> usize {
@@ -144,4 +146,67 @@ mod tests {
         assert!(!rows.lines().last().unwrap().contains("\"error\":null"));
         std::fs::remove_dir_all(out).unwrap();
     }
+}
+
+/// Restore attempted calls, including a started request without a returned result.
+pub(super) fn resume(out:&Path,limit:usize)->Result<Session>{
+ enable_semantic_cache(false);
+ let path=out.join("http.jsonl");let mut used=0;
+ if path.exists(){let bytes=std::fs::read(&path).map_err(|e|e.to_string())?;let end=bytes.iter().rposition(|b|*b==b'\n').map_or(0,|p|p+1);
+  if end<bytes.len(){let f=std::fs::OpenOptions::new().write(true).open(&path).map_err(|e|e.to_string())?;f.set_len(end as u64).map_err(|e|e.to_string())?;f.sync_all().map_err(|e|e.to_string())?;log(&out.join("http-recovery.jsonl"),&obj([("trailing_bytes",num((bytes.len()-end) as f64))]))?;}
+  for line in std::str::from_utf8(&bytes[..end]).map_err(|e|e.to_string())?.lines(){let r=super::json::parse(line)?;if r.get("phase")?.string()?=="start"{used=used.max(r.get("id")?.number()? as usize);}}
+ }
+ BUDGET.with(|b|*b.borrow_mut()=Some(Budget{out:out.into(),limit,used}));Ok(Session)
+}
+
+// Only stateless semantic annotations may be reused. Memory reconstruction,
+// choices and creative generations remain independent calls.
+#[derive(Default)]
+struct SemanticCache { enabled: bool, hits: usize, misses: usize }
+thread_local! { static SEMANTIC_CACHE: RefCell<SemanticCache> = RefCell::new(SemanticCache::default()); }
+pub(super) fn enable_semantic_cache(enabled: bool) {
+    SEMANTIC_CACHE.with(|c| *c.borrow_mut() = SemanticCache { enabled, ..Default::default() });
+}
+pub(super) fn semantic_cache_stats() -> super::json::Json {
+    SEMANTIC_CACHE.with(|c| { let c=c.borrow(); obj([
+        ("enabled",super::json::Json::Bool(c.enabled)),
+        ("hits_this_session",num(c.hits as f64)),
+        ("misses_this_session",num(c.misses as f64)),
+    ]) })
+}
+fn semantic_cache_path(url:&str,body:&str)->Option<(String,PathBuf)> {
+    let enabled=SEMANTIC_CACHE.with(|c|c.borrow().enabled);
+    if !enabled {return None;}
+    let key=super::sha256::hex(obj([("policy",text("validated-semantic-1")),("url",text(url)),("request",text(body))]).encode().as_bytes());
+    BUDGET.with(|b|b.borrow().as_ref().map(|b|(key.clone(),b.out.join("semantic-cache").join(format!("{key}.json")))))
+}
+pub(super) fn semantic_lookup(url:&str,body:&str)->Result<Option<String>> {
+    let Some((key,path))=semantic_cache_path(url,body) else {return Ok(None)};
+    if !path.exists(){SEMANTIC_CACHE.with(|c|c.borrow_mut().misses+=1);return Ok(None);}
+    let cached=super::runner::load(&path)?;
+    let raw=super::runner::s(&cached,"raw_response")?;
+    if super::runner::s(&cached,"request_sha256")?!=key || super::runner::s(&cached,"response_sha256")?!=super::sha256::hex(raw.as_bytes()) {
+        return Err("semantic cache integrity mismatch; preserve the cache and journal".into());
+    }
+    SEMANTIC_CACHE.with(|c|c.borrow_mut().hits+=1);
+    BUDGET.with(|b|->Result<()>{if let Some(b)=b.borrow().as_ref(){log(&b.out.join("semantic-cache-audit.jsonl"),&obj([("request_sha256",text(&key)),("kind",text("semantic_cache_hit"))]))?;}Ok(())})?;
+    super::progress::line("SEMANTIC CACHE HIT: no HTTP request");
+    Ok(Some(raw.into()))
+}
+/// Call only after parsing and validating the annotations successfully.
+pub(super) fn semantic_store_validated(url:&str,body:&str,raw:&str)->Result<()> {
+    let Some((key,path))=semantic_cache_path(url,body) else {return Ok(())};
+    super::runner::write(&path,&obj([("request_sha256",text(key)),("response_sha256",text(super::sha256::hex(raw.as_bytes()))),("raw_response",text(raw))]))
+}
+
+#[cfg(test)]mod cache_tests{
+ use super::*;
+ #[test]fn cache_keys_include_complete_request_and_endpoint_and_detect_corruption(){
+  let out=super::super::lifecycle_tests::root();std::fs::create_dir_all(&out).unwrap();let _session=begin(&out,1);enable_semantic_cache(true);
+  semantic_store_validated("endpoint-a","model=one;reasoning=none;event=one","validated reply").unwrap();
+  assert_eq!(semantic_lookup("endpoint-a","model=one;reasoning=none;event=one").unwrap().as_deref(),Some("validated reply"));
+  for body in ["model=two;reasoning=none;event=one","model=one;reasoning=low;event=one","model=one;reasoning=none;event=two"]{assert!(semantic_lookup("endpoint-a",body).unwrap().is_none());}
+  assert!(semantic_lookup("endpoint-b","model=one;reasoning=none;event=one").unwrap().is_none());assert_eq!(used(),0);
+  let (_,path)=semantic_cache_path("endpoint-a","model=one;reasoning=none;event=one").unwrap();let mut r=super::super::runner::load(&path).unwrap();r.put("raw_response",text("altered reply"));super::super::runner::write(&path,&r).unwrap();assert!(semantic_lookup("endpoint-a","model=one;reasoning=none;event=one").is_err());std::fs::remove_dir_all(out).unwrap();
+ }
 }
