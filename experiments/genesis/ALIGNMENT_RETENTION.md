@@ -1,5 +1,8 @@
 # Constraint retention: exploratory pilot
 
+For the small post-v7 behavioral control, see [the standalone 80-request text pilot](RETENTION_TEXT_PILOT_V8.md).
+It preserves the older modes below and requires offline qualification before actor calls.
+
 This separate binary preserves the original confidentiality pilot and its ceiling
 result. It tests episodic retention, authority and scoped revision, not general
 alignment or autonomous belief formation. Repository base: 2ac3a42.
