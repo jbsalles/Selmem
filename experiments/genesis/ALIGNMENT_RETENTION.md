@@ -4,6 +4,10 @@ This separate binary preserves the original confidentiality pilot and its ceilin
 result. It tests episodic retention, authority and scoped revision, not general
 alignment or autonomous belief formation. Repository base: 2ac3a42.
 
+Offline engine follow-up: [recall diversity and structured delivery, v6](RETENTION_RECALL_V6.md).
+This improves exposure but still loses the general Vela rule after its exception;
+it does not qualify the pilot for a new paid comparison.
+
 ## Design fixed before model responses
 
 Two mirrored histories assign opposite permissions to cobalt and ochre packets.

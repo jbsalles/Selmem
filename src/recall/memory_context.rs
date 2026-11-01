@@ -48,6 +48,11 @@ impl MemoryContext {
  pub fn from_selected(store:&MemoryStore,ids:&[String],narratives:&[String],axioms:&[String],mood:&Mood,o:&MemoryContextOptions,now:u64)->Self{
   let mut c=Self::default();let mut remaining=o.words.min(4000);let mut seen=BTreeSet::new();
   if o.episodes {for (id,narrative) in ids.iter().zip(narratives).take(4){let Some(t)=store.traces.get(id)else{continue};if t.suppressed||t.status==TraceStatus::Latent||!seen.insert(id){continue;}
+   if let Some(record)=super::dependency::record(t){
+    // Do not expose a partial scoped rule or a dangling dependent exception.
+    if narrative.split_whitespace().count()>remaining.min(160){continue;}
+    if record.parent.is_some()&&!c.episodes.iter().any(|e| !e.truncated&&store.traces.get(&e.trace_id).is_some_and(|p|super::dependency::same_provenance(t,p)&&super::dependency::record(p).is_some_and(|r|super::dependency::is_parent(&record,&r)))){continue;}
+   }
    let (narrative,truncated)=clip(narrative,&mut remaining,160);if narrative.is_empty(){continue;}
    c.episodes.push(MemoryEpisode{trace_id:id.clone(),narrative,attribution:t.attribution,channel:t.channel,fidelity:t.fidelity,confidence:t.confidence,affect:o.affect.then(||Mood{valence:t.valence,arousal:t.arousal,disgust:t.disgust}),scope_facets:t.personal.scope_facets.clone(),truncated});}}
   let mut seen=BTreeSet::new();if o.dispositions{for line in axioms.iter().take(4){if !seen.insert(line){continue;}
@@ -73,7 +78,14 @@ impl MemoryContext {
  }
  pub fn filtered(&self,o:&MemoryContextOptions)->Self{
   let mut c=self.clone();let mut remaining=o.words.min(4000);if !o.dispositions{c.self_model.clear();}c.self_model.truncate(4);for s in &mut c.self_model{let(t,x)=clip(&s.context,&mut remaining,20);s.context=t;s.truncated|=x;let(t,x)=clip(&s.statement,&mut remaining,60);s.statement=t;s.truncated|=x;}c.self_model.retain(|s|!s.statement.is_empty());if !o.episodes{c.episodes.clear();}c.episodes.truncate(4);
-  for e in &mut c.episodes{let(t,x)=clip(&e.narrative,&mut remaining,160);e.narrative=t;e.truncated|=x;if !o.affect{e.affect=None;}}c.episodes.retain(|e|!e.narrative.is_empty());
+  let mut delivered_records=Vec::new();
+  for e in &mut c.episodes{
+   if let Some(record)=super::dependency::parse(&e.narrative){
+    if e.truncated||e.narrative.split_whitespace().count()>remaining.min(160)||(record.parent.is_some()&&!delivered_records.iter().any(|p|super::dependency::is_parent(&record,p))){e.narrative.clear();continue;}
+    delivered_records.push(record);
+   }
+   let(t,x)=clip(&e.narrative,&mut remaining,160);e.narrative=t;e.truncated|=x;if !o.affect{e.affect=None;}
+  }c.episodes.retain(|e|!e.narrative.is_empty());
   if !o.dispositions{c.dispositions.clear();c.contextual_statements.clear();}c.dispositions.truncate(4);c.contextual_statements.truncate(4-c.dispositions.len());
   for a in &mut c.dispositions{let(t,x)=clip(&a.statement,&mut remaining,80);a.statement=t;a.truncated|=x;}for a in &mut c.contextual_statements{let(t,x)=clip(&a.statement,&mut remaining,80);a.statement=t;a.truncated|=x;}
   c.dispositions.retain(|a|!a.statement.is_empty());c.contextual_statements.retain(|a|!a.statement.is_empty());if !o.associations{c.associations.clear();}

@@ -13,6 +13,10 @@ use crate::encode::embed::Embedder;
 use crate::encode::scoring::{recall_score_emb, refresh_access};
 use crate::recall::narrator::Narrator;
 
+#[cfg(test)]
+#[path = "dependency_tests.rs"]
+mod dependency_selection_tests;
+
 #[derive(Clone, Debug)]
 pub struct AssociationUse {
     pub target: String,
@@ -300,6 +304,9 @@ pub fn recall_with(
 
     let chosen_ids = if bias == RecallBias::Transfer {
         select_transfer(&ranked, store, profile.max_recall)
+    } else if bias != RecallBias::ForceMarked {
+        let allowed = apply_bias(&eligible, store, bias, marked, eligible.len());
+        select_diverse_for_query(&ranked, &allowed, store, profile.max_recall, query)
     } else {
         apply_bias(&eligible, store, bias, marked, profile.max_recall)
     };
@@ -599,6 +606,131 @@ fn select_transfer(ranked: &[ScoredTrace], store: &MemoryStore, cap: usize) -> V
         chosen.push(next.trace_id.clone());
     }
     chosen
+}
+
+/// Penalize repeated content from the same source without deleting evidence.
+/// Eligibility and ablation filters are applied first. Scores in the audit remain
+/// the original relevance scores; selected IDs record the subsequent selection.
+#[cfg(test)]
+fn select_diverse(
+    ranked: &[ScoredTrace],
+    allowed: &[String],
+    store: &MemoryStore,
+    cap: usize,
+) -> Vec<String> {
+    select_diverse_for_query(ranked, allowed, store, cap, "")
+}
+
+fn select_diverse_for_query(
+    ranked: &[ScoredTrace], allowed: &[String], store: &MemoryStore, cap: usize, query: &str,
+) -> Vec<String> {
+    use super::dependency::{conflicts, record, same_provenance};
+    let allowed: std::collections::HashSet<&str> = allowed.iter().map(String::as_str).collect();
+    let records: std::collections::HashMap<_, _> = ranked.iter().filter_map(|c| {
+        record(&store.traces[&c.trace_id]).map(|r| (c.trace_id.as_str(), r))
+    }).collect();
+    let mut chosen: Vec<String> = Vec::new();
+    while chosen.len() < cap {
+        let mut best: Option<(&ScoredTrace, f32, Option<String>)> = None;
+        for candidate in ranked {
+            if !allowed.contains(candidate.trace_id.as_str()) || chosen.contains(&candidate.trace_id) {
+                continue;
+            }
+            let trace = &store.traces[&candidate.trace_id];
+            let mut parent_id = None;
+            if let Some(record) = records.get(candidate.trace_id.as_str()) {
+                if conflicts(record, query) { continue; }
+                if let Some(parent_version) = &record.parent {
+                    let parents: Vec<_> = records.iter().filter(|(id, other)| {
+                        other.version == *parent_version && other.issuer == record.issuer
+                            && other.scope == record.scope && other.parent.is_none()
+                            && same_provenance(trace, &store.traces[**id])
+                            && store.traces[**id].created_at <= trace.created_at
+                    }).map(|(id, _)| *id).collect();
+                    // Missing, ambiguous, or ablated parents cannot be supplied
+                    // by bypassing the eligibility gate. Nested chains abstain.
+                    if parents.len() != 1 || !allowed.contains(parents[0]) { continue; }
+                    if !chosen.iter().any(|id| id == parents[0]) {
+                        if chosen.len() + 2 > cap { continue; }
+                        parent_id = Some(parents[0].to_string());
+                    }
+                }
+            }
+            let redundancy = chosen.iter().map(|id| {
+                let previous = &store.traces[id];
+                if trace.source != previous.source || trace.attribution != previous.attribution
+                    || trace.channel != previous.channel {
+                    return 0.0;
+                }
+                let similarity = crate::encode::scoring::lexical_similarity;
+                // Both representations must overlap; a short shared core alone
+                // must not erase a distinction retained in the lived narrative.
+                similarity(&trace.gist, &previous.gist)
+                    .min(similarity(&trace.core, &previous.core))
+            }).fold(0.0_f32, f32::max);
+            let adjusted = candidate.score * (1.0 - redundancy);
+            // Keep the existing deterministic ranking as the tie breaker.
+            if best.as_ref().map_or(true, |(_, score, _)| adjusted > *score) {
+                best = Some((candidate, adjusted, parent_id));
+            }
+        }
+        let Some((candidate, _, parent)) = best else { break };
+        if let Some(parent) = parent { chosen.push(parent); }
+        chosen.push(candidate.trace_id.clone());
+    }
+    chosen
+}
+
+#[cfg(test)]
+mod diversity_tests {
+    use super::*;
+
+    fn fixture() -> (MemoryStore, Vec<ScoredTrace>, Vec<String>) {
+        let mut memory = crate::SelectiveMemory::new(EntityProfile::new("observer"));
+        let mut input = crate::EncodeInput::new("Workshop volunteers repair broken tools.");
+        input.permanence = 1.0;
+        let id = memory.live_with(input).trace_id.unwrap();
+        let template = memory.store.traces[&id].clone();
+        let mut store = MemoryStore::new();
+        let mut ranked = Vec::new();
+        for (index, (text, score)) in [
+            ("Workshop volunteers repair broken tools.", 0.9),
+            ("Workshop volunteers repair broken tools.", 0.89),
+            ("Workshop opens on Sunday for beginners.", 0.7),
+        ].into_iter().enumerate() {
+            let mut trace = template.clone();
+            trace.id = format!("fixture-{index}");
+            trace.gist = text.into();
+            trace.core = text.into();
+            ranked.push(ScoredTrace { trace_id: trace.id.clone(), score,
+                status: trace.status, base_score: score, anchor: 1.0 });
+            store.traces.insert(trace.id.clone(), trace);
+        }
+        let allowed = ranked.iter().map(|c| c.trace_id.clone()).collect();
+        (store, ranked, allowed)
+    }
+
+    #[test]
+    fn repeated_content_yields_to_complementary_evidence_without_deletion() {
+        let (store, ranked, allowed) = fixture();
+        assert_eq!(select_diverse(&ranked, &allowed, &store, 2), vec!["fixture-0", "fixture-2"]);
+        assert_eq!(select_diverse(&ranked, &allowed, &store, 3), vec!["fixture-0", "fixture-2", "fixture-1"]);
+        assert!(select_diverse(&ranked, &allowed, &store, 0).is_empty());
+    }
+
+    #[test]
+    fn independent_sources_are_not_treated_as_one_repetition() {
+        let (mut store, ranked, allowed) = fixture();
+        store.traces.get_mut("fixture-1").unwrap().source = "another witness".into();
+        assert_eq!(select_diverse(&ranked, &allowed, &store, 2), vec!["fixture-0", "fixture-1"]);
+    }
+
+    #[test]
+    fn ablation_filters_cannot_be_undone_by_diversity() {
+        let (store, ranked, allowed) = fixture();
+        let allowed = apply_bias(&allowed, &store, RecallBias::DropMarked, &["fixture-2".into()], 3);
+        assert_eq!(select_diverse(&ranked, &allowed, &store, 3), vec!["fixture-0", "fixture-1"]);
+    }
 }
 
 fn apply_bias(

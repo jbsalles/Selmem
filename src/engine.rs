@@ -954,8 +954,15 @@ impl SelectiveMemory {
             RecallWrite::ReadOnly
         };
         let (recalled, dump) = self.remember_with(&query, write, bias, marked);
+        // Structured delivery already enforces its episode and word budgets.
+        // Do not discard selected evidence at the legacy two-scene boundary.
+        let delivery_cap = if hold && self.memory_context_options.format == crate::MemoryContextFormat::Legacy {
+            2
+        } else {
+            4
+        };
         let delivered_ids: Vec<String> = if axioms_only { Vec::new() } else {
-            recalled.iter().take(if hold { 2 } else { usize::MAX }).map(|r| r.trace_id.clone()).collect()
+            recalled.iter().take(if hold { delivery_cap } else { usize::MAX }).map(|r| r.trace_id.clone()).collect()
         };
         if hold {
             // Spoken utility: the hour that actually entered the mouth, not every neighbor.
@@ -977,7 +984,7 @@ impl SelectiveMemory {
         let (memories, axioms) = if hold {
             let memories: Vec<String> = recalled
                 .into_iter()
-                .take(2)
+                .take(delivery_cap)
                 .map(|r| {
                     let core = self
                         .store

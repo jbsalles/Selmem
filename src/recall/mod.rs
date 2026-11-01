@@ -23,3 +23,4 @@ pub use retrieve::{
     ScoredTrace,
 };
 pub mod interpretation;
+mod dependency;
