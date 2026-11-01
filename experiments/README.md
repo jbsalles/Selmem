@@ -6,6 +6,7 @@ The retained source covers model qualification, cumulative learning, sleep, conv
 | --- | --- | --- |
 | Qualification and learning | Check decision competence, then compare observation support OFF/ON | [GENESIS](genesis/README.md) |
 | Contextual self | Compare admission feedback, freezing and evolution; qualify bootstrap before 128 matched choices | [Self-model v3](genesis/SELF_MODEL_PILOT_V3.md), [recorded results](genesis/SELF_MODEL_RESULTS.md) |
+| Native causal delivery | Six post-recall arms, 12 related synthetic domains, 3,456 choices; 83.2% full vs 50.5% empty, with preflight and repeat-noise checks | [Results and replay](genesis/CAUSAL_NATIVE_RESULTS.md), [compact answers](evidence/contextual/causal-v2-qualified-12-001/answers.csv) |
 | Contextual breaking points | Map choice accuracy against 8/16/32/64-word limits at 240/960 distractors, four v4 memory conditions, Grok 4.3 | [Pilot results](genesis/CONTEXTUAL_BREAKING_RESULTS.md), [protocol and replay](genesis/CONTEXTUAL_BREAKING_POINTS.md) |
 | Contextual self → actor behavior | Separate episodic readout, autobiographical wording, self-statement swaps and post-contradiction retirement (84 + 24 + 96 decisions) | [Recorded follow-up results](genesis/SELF_BEHAVIOR_RESULTS.md), [emergence protocol](genesis/SELF_EMERGENCE.md) |
 | Sleep | Compare equal-time no-sleep, ordinary sleep and forced-deep controls | [Sleep protocol](genesis/SLEEP.md) |
@@ -25,3 +26,7 @@ There are early qualitative indications consistent with memory-conditioned creat
 Use the commands in each protocol and fresh output directories. Paid collections need a private runtime configuration and provider credentials. Mock runs test orchestration only. Source hashes, model identifiers, task fixtures, reasoning settings and original responses must stay with each run.
 
 [REPRODUCIBILITY.md](REPRODUCIBILITY.md) distinguishes fresh replication, analysis of published answers and resumption of historical runs. A new build is not a way to relabel old results. Source snapshots, caches and raw paid outputs remain in separate local evidence archives; they are not deleted by this publication cleanup.
+
+Native causal ablations reuse existing qualified V4 snapshots, freeze native
+structured memory delivery, and compare six interventions with fully crossed
+option order and exact repetitions. See [the protocol](genesis/CAUSAL_ABLATIONS.md).

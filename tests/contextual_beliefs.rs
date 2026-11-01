@@ -291,3 +291,56 @@ fn candidate_counterexample_aborts_both_children_without_poisoning_parent() {
     assert_eq!(m.store.traces[&parent].personal.scope_status, ScopeStatus::General);
     assert!(m.store.traces[&parent].personal.scope_epoch.is_some());
 }
+
+#[test]
+fn explicit_context_reaches_native_delivery_without_rewriting_the_question() {
+    let mut m=organ(true);let parent=seed(&mut m,false);qualify(&mut m,&parent);
+    let q="Which plan would you choose for yourself?";
+    let facets=[ContextFacet::new("company","alone")];
+    let legacy=m.open_mouth_scoped(q,&facets).unwrap();
+    assert!(legacy.memory_context.self_model.is_empty());
+    let draft=m.open_mouth_in_context(q,"venue",&facets).unwrap();
+    assert_eq!(draft.user,q);
+    assert_eq!(draft.memory_context.self_model.len(),1);
+    let statement=&draft.memory_context.self_model[0];
+    assert_eq!(statement.statement,m.store.traces[&statement.trace_id].gist);
+    assert_eq!(statement.scope_facets,facets);
+    assert!(m.open_mouth_scoped(q,&facets).unwrap().memory_context.self_model.is_empty(),"context is one-shot");
+    assert!(m.open_mouth_in_context(q,"unrelated",&facets).unwrap().memory_context.self_model.is_empty());
+    assert!(m.open_mouth_in_context(q,"venue",&[]).unwrap().memory_context.self_model.iter().all(|s|s.scope_status!=ScopeStatus::Conditional.token()),"context alone cannot attest company");
+}
+
+#[test]
+fn context_cues_do_not_read_expectations_support_ids_or_archives() {
+    let mut m=organ(true);let parent=seed(&mut m,false);qualify(&mut m,&parent);
+    let q="Choose a new plan.";let facts=[ContextFacet::new("company","alone")];
+    for a in m.store.archives.values_mut(){a.verbatim="SEALED_DO_NOT_READ".into();}
+    let path=std::env::temp_dir().join(format!("selmem-cue-isolation-{}.vault",std::process::id()));
+    m.path=Some(path.clone());m.save().unwrap();
+    let mut first=SelectiveMemory::open(&path,EntityProfile::new("Claire")).unwrap();
+    let draft=first.open_mouth_in_context_cued(q,"venue",&facts).unwrap();
+    let before=draft.dump.selected.clone();
+    let rendered=draft.memory_reply().user_prompt();
+    assert!(!rendered.contains("SEALED_DO_NOT_READ"));
+    let mut m=SelectiveMemory::open(&path,EntityProfile::new("Claire")).unwrap();
+    for t in m.store.traces.values_mut().filter(|t|t.personal.role!=SelfRole::Episode){
+        t.personal.expectation="EXPECTATION_SENTINEL_DO_NOT_DELIVER".into();
+        t.personal.support_ids.clear();
+    }
+    let after=m.open_mouth_in_context_cued(q,"venue",&facts).unwrap();
+    assert_eq!(before,after.dump.selected,"cueing uses statements, not the expectation or support IDs");
+    assert!(!after.memory_reply().user_prompt().contains("EXPECTATION_SENTINEL_DO_NOT_DELIVER"));
+    assert!(m.open_mouth_in_context_cued(q," ",&facts).is_err());
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn delivered_episodes_keep_their_observed_scope() {
+    let mut m=organ(true);let parent=seed(&mut m,false);qualify(&mut m,&parent);
+    let draft=m.open_mouth_in_context_cued("Choose a new plan.","venue",&[ContextFacet::new("company","alone")]).unwrap();
+    assert!(!draft.memory_context.episodes.is_empty());
+    for e in &draft.memory_context.episodes { assert_eq!(e.scope_facets,m.store.traces[&e.trace_id].personal.scope_facets); }
+    let json=draft.memory_reply().user_prompt();
+    assert!(json.contains("scope_facets"));
+    assert!(json.contains("company=alone"));
+}

@@ -1,0 +1,52 @@
+{
+  "analysis_date": "2026-11-01",
+  "run": "causal-v2-qualified-12-001",
+  "source_archive": {
+    "filename": "causal-v2-qualified-12-001.tar(1).gz",
+    "sha256": "13a12524ad815aeee02ba437a17a3d1cdf09c8d07337836e82932b5ad6fdd2b3"
+  },
+  "source_files": {
+    "manifest.json": {
+      "sha256": "4e2d77cfbdfa611b355b11b2d067b417051daa43977e93c944af4d6119db55cd",
+      "bytes": 249
+    },
+    "preflight.json": {
+      "sha256": "507131c36570a09f1e10015e1b7e341d43bb67c886337110e2967526ba8af35f",
+      "bytes": 145
+    },
+    "choices.jsonl": {
+      "sha256": "1e3f8fd506dcd32d602843faf18a969f7c9597520eb286fe2cdfc7d20ab91c3f",
+      "bytes": 11601072
+    },
+    "payloads.jsonl": {
+      "sha256": "2e3367136337968a220210255a87b4fe5de458d6983602f8f25735b70afde162",
+      "bytes": 11839536
+    },
+    "paired.csv": {
+      "sha256": "a5d9cfcb1cc6f48ae9467b980f5301108e9142fc86f776b1def13ffa9d459961",
+      "bytes": 1958
+    },
+    "exposure.csv": {
+      "sha256": "b69f5bcfd763463437fd5eddb17537bd541b5633a440fcce2e939709f48fa63c",
+      "bytes": 6651
+    },
+    "delivery-audit.jsonl": {
+      "sha256": "6288f8e4783ec63b41f341ea5c984c38d984ca5dc7178c90733c9ea36abee164",
+      "bytes": 931198
+    }
+  },
+  "source_commit": "Not recorded in the supplied run manifest; do not substitute the documentation checkout revision.",
+  "provider_mode": "Request records specify grok-4.3, reasoning_effort=none, temperature=0; provider-side build/fingerprint not retained.",
+  "export": "answers.csv is a compact derived answer table. Original model requests, memory packets and snapshots remain in the full archive. It is not a resumable run.",
+  "validation": {
+    "planned": 3456,
+    "recorded": 3456,
+    "unique_trial_ids": 3456,
+    "valid": 3456,
+    "errors": 0,
+    "request_mismatches": 0,
+    "qualified_cells": 192,
+    "delivered_conditional_beliefs": 192,
+    "topic_relevant_episodes": 384
+  }
+}

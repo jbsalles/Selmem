@@ -16,18 +16,18 @@
 <div class="wrap">
 <header>
 <a class="brand" href="https://github.com/jbsalles/Selmem/blob/main/README.md" aria-label="SelMem project readme">Sel<span>Mem</span></a>
-<nav aria-label="Page navigation"><a href="#findings">Findings</a><a href="#self">Contextual self</a><a href="#contextual">Transfer pilots</a><a href="#creativity">Creative examples</a><a href="#record">Run record</a><a href="https://github.com/jbsalles/Selmem">GitHub ↗</a></nav>
+<nav aria-label="Page navigation"><a href="#findings">Findings</a><a href="#causal">Causal ablations</a><a href="#self">Contextual self</a><a href="#contextual">Transfer pilots</a><a href="#creativity">Creative examples</a><a href="#record">Run record</a><a href="https://github.com/jbsalles/Selmem">GitHub ↗</a></nav>
 </header>
 <main>
 <div class="hero">
-<div><p class="eyebrow">Research notebook / October 2026</p><h1>A past that changes<br>what comes <em>next.</em></h1><p class="intro">Selective, reconstructive memory for LLM entities. We test what survives, how history influences a response, and whether that influence can become useful creativity.</p><a class="button" href="https://github.com/jbsalles/Selmem/blob/main/experiments/CREATIVITY_RESULTS.md">Read the creative findings →</a></div>
-<aside class="status" aria-label="Current research status"><span class="label">Evidence status · exploratory</span><h2>Contextual memory: a pilot gain.<br>No proven general superiority.</h2><p>In synthetic long-history probes, SelMem ON reached 16/16 history-aligned decisions against 10/16 for each deterministic frequency-summary and lexical-retrieval baseline.</p><p>Only two independent domains were tested; strong semantic RAG, autonomous preference formation and creative advantage remain unproved.</p></aside>
+<div><p class="eyebrow">Research notebook / November 2026</p><h1>A past that changes<br>what comes <em>next.</em></h1><p class="intro">Selective, reconstructive memory for LLM entities. We test what survives, how history influences a response, and whether that influence can become useful creativity.</p><a class="button" href="https://github.com/jbsalles/Selmem/blob/main/experiments/genesis/CAUSAL_NATIVE_RESULTS.md">Read the causal ablation results →</a></div>
+<aside class="status" aria-label="Current research status"><span class="label">Observed · causal delivery v2</span><h2>83.2% history-concordant.<br>50.5% with empty memory.</h2><p>A completed Grok 4.3 run tested six delivery conditions across 12 synthetic scenario domains. Removing delivered beliefs or episodes lowered concordance to 74.5% and 72.0%.</p><p>The explicit <code>context-cued</code> route and post-recall cuts define this result. The domains share one behavioral axis; general RAG and creativity advantages remain unproved.</p></aside>
 </div>
-<div class="stats" aria-label="Recorded guarded preview collection">
-<div class="stat"><strong>60</strong><span>Recorded preview proposals</span></div>
-<div class="stat"><strong>5</strong><span>Memory / readout conditions</span></div>
-<div class="stat"><strong>887</strong><span>HTTP attempts, including retries</span></div>
-<div class="stat"><strong>2</strong><span>Source histories, not 60 lives</span></div>
+<div class="stats" aria-label="Completed native causal ablation collection">
+<div class="stat"><strong>3,456</strong><span>Valid actor choices</span></div>
+<div class="stat"><strong>12</strong><span>Synthetic scenarios / one shared axis</span></div>
+<div class="stat"><strong>6</strong><span>Post-recall delivery conditions</span></div>
+<div class="stat"><strong>3</strong><span>Identical-request repetitions</span></div>
 </div>
 <section id="findings" aria-labelledby="findings-title">
 <div class="section-head"><h2 id="findings-title">What has actually moved.</h2><p>State change, answer selection and useful creativity are separate outcomes.</p></div>
@@ -36,6 +36,23 @@
 <article class="card"><span class="label">Observed · influence 005</span><span class="number">3 / 24 switches</span><h3>Memory weighting can change selection.</h3><p>The moderate coefficient changed three choices on fixed candidate pools. The pipeline model rated utility lower twice and equal once.</p><p class="caveat">Mean originality on those switches was unchanged. This is a selection intervention, not a creativity win.</p><a class="evidence-link" href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/memory-influence-005/changed-selections.json">Inspect the changed choices →</a></article>
 <article class="card"><span class="label">Historical report · learning</span><span class="number">8 → 16 / 16</span><h3>Retained evidence can improve a decision.</h3><p>Observation support ON improved native and strict recall agreement with the full-history oracle, compared with OFF.</p><p class="caveat">One history pair, explicit support counts. This is not a reconstructive-creativity result; raw historical archives are not included here.</p><a class="evidence-link" href="https://github.com/jbsalles/Selmem/blob/main/experiments/RESULTS.md">Read the result ledger →</a></article>
 </div>
+</section>
+<section id="causal" aria-labelledby="causal-title">
+<div class="section-head"><h2 id="causal-title">Ablating the delivered memory.</h2><p>Analysis November 1, 2026 · Grok 4.3 · reasoning requested as none · synthetic mirrored histories.</p></div>
+<div class="grid">
+<article class="card"><span class="label">Full versus empty</span><span class="number">+32.6 points</span><h3>History changes the decision.</h3><p>Full memory reached 479/576 history-concordant choices, against 291/576 with empty memory. It exceeded empty memory in all 12 scenarios.</p><p class="caveat">These are repeated choices on 24 saved histories, not 3,456 independent agents or 12 independent behavioral axes.</p></article>
+<article class="card"><span class="label">Component delivery cuts</span><span class="number">12.8% flips</span><h3>Both delivered components contribute.</h3><p>Removing beliefs changed 74 paired choices; removing episodes also changed 74. Full-memory repeat disagreement was 11/384 (2.9%).</p><p class="caveat">Cuts occur after recall. Beliefs already helped cue episode selection, so this does not measure their total causal contribution.</p></article>
+<article class="card"><span class="label">Mirrored histories</span><span class="number">66.3%</span><h3>Different histories yield different choices.</h3><p>Mirroring the saved history changed 191/288 full-memory choices, compared with 9/288 (3.1%) without memory.</p><p class="caveat">Swapping only the belief did not reliably transfer the donor pattern. Option-order sensitivity remains material.</p></article>
+</div>
+<div class="table-wrap"><table><caption class="label" style="text-align:left;margin:20px 0 8px">Causal v2 · 576 choices per arm · matched history, scope, wording, option order and repetition</caption><thead><tr><th scope="col">Delivery condition</th><th scope="col">History-concordant</th><th scope="col">Different from full</th></tr></thead><tbody>
+<tr><th scope="row">Full native memory</th><td>479/576 (83.2%)</td><td>—</td></tr>
+<tr><th scope="row">No delivered beliefs</th><td>429/576 (74.5%)</td><td>74/576 (12.8%)</td></tr>
+<tr><th scope="row">No delivered episodes</th><td>415/576 (72.0%)</td><td>74/576 (12.8%)</td></tr>
+<tr><th scope="row">Mirror beliefs swapped</th><td>273/576 (47.4%)</td><td>206/576 (35.8%)</td></tr>
+<tr><th scope="row">Empty memory</th><td>291/576 (50.5%)</td><td>202/576 (35.1%)</td></tr>
+<tr><th scope="row">Neutral length placebo</th><td>288/576 (50.0%)</td><td>191/576 (33.2%)</td></tr>
+</tbody></table></div>
+<p class="note"><strong>Mechanism and limits.</strong> All 192 full-memory query cells delivered one contextual belief and two relevant episodes. This required the revised <code>context-cued</code> route; an earlier native run delivered no beliefs and only unrelated episodes. Swapped beliefs matched the donor pattern in only 52.6% of choices, and option reversal changed 24.0% of full-memory choices. The next causal test removes beliefs <em>before</em> retrieval. No new creativity or general semantic-RAG comparison is claimed. <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/genesis/CAUSAL_NATIVE_RESULTS.md">Full analysis, per-domain results and archive provenance</a> · <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/contextual/causal-v2-qualified-12-001/answers.csv">Compact answer rows</a>.</p>
 </section>
 <section id="self" aria-labelledby="self-title">
 <div class="section-head"><h2 id="self-title">When a remembered self affects a choice.</h2><p>Grok 4.3 · October 2026 · scripted histories, matched actor choices; not independent lives.</p></div>
@@ -62,7 +79,7 @@
 <tr><th scope="row">Query-time lexical retrieval</th><td>10/16 (62.5%)</td><td>50</td></tr>
 <tr><th scope="row">No memory</th><td>6/16 (37.5%)</td><td>0</td></tr>
 </tbody></table></div>
-<p class="note">The preregistered criterion requires <strong>12 independent domains</strong>, plus a gain of at least 10 percentage points over both summary and retrieval, with both baselines beaten in 8/12 domains. Only <strong>2</strong> were tested; the run records <strong>meets_preregistered_threshold: false</strong>. Histories are synthetic, source labeling uses a scripted witness, and no independent LLM judge ran. This supports a limited memory-selection result, <strong>not general RAG superiority or autonomous individuality</strong>. <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/genesis/CONTEXTUAL_TRANSFER_RESULTS.md">Read all four pilots, negative controls and archive hashes</a>.</p>
+<p class="note">The preregistered criterion requires <strong>12 independent domains</strong>, plus a gain of at least 10 percentage points over both summary and retrieval, with both baselines beaten in 8/12 domains. Only <strong>2</strong> were tested in that original v4 pilot; the later causal suite uses different controls. The original run records <strong>meets_preregistered_threshold: false</strong>. Histories are synthetic, source labeling uses a scripted witness, and no independent LLM judge ran. This supports a limited memory-selection result, <strong>not general RAG superiority or autonomous individuality</strong>. <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/genesis/CONTEXTUAL_TRANSFER_RESULTS.md">Read all four pilots, negative controls and archive hashes</a>.</p>
 </section>
 <section id="creativity" aria-labelledby="creativity-title">
 <div class="section-head"><h2 id="creativity-title">Ideas worth inspecting.</h2><p>Illustrative summaries of recorded answers. These are not blind rankings.</p></div>
@@ -83,7 +100,7 @@
 </tbody></table></div>
 </section>
 <section aria-labelledby="next-title"><div class="section-head"><h2 id="next-title">Keep the question open.</h2></div>
-<div class="split"><div><h3>What the evidence supports</h3><ul><li>Selective admission and sleep produce inspectable memory changes.</li><li>Concrete proposals and selection tradeoffs can be audited.</li><li>Creative examples justify more controlled investigation.</li></ul></div><div><h3>What still needs demonstrating</h3><ul><li>An independent blind utility–originality advantage over controls.</li><li>A useful mechanism that causally depends on a specific history.</li><li>Replication beyond two histories and the recorded model.</li></ul></div></div>
+<div class="split"><div><h3>What the evidence supports</h3><ul><li>Selective admission and sleep produce inspectable memory changes.</li><li>Post-recall memory cuts change choices in the versioned context-cued suite.</li><li>Concrete proposals and selection tradeoffs can be audited.</li><li>Creative examples justify more controlled investigation.</li></ul></div><div><h3>What still needs demonstrating</h3><ul><li>An independent blind utility–originality advantage over controls.</li><li>Pre-retrieval lesions separating direct belief delivery from episode cueing.</li><li>Replication with fresh histories, unrelated behavioral axes and other models.</li></ul></div></div>
 <details><summary>Scope, negative results and reproduction</summary><p>The ledger also records admission loss, null sleep comparisons, factual abstentions and a persistence defect. Larger economy/full creative-life plans remain available, not completed claims. The compact exports omit raw runtime logs and vaults; resuming old work needs the original complete archive and build. Inspect the <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/RESULTS.md">ledger</a>, <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/REPRODUCIBILITY.md">reproduction guide</a> and <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/README.md">evidence provenance</a>. No independent blind creativity ratings are included.</p></details>
 </section>
 </main>

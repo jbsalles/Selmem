@@ -47,6 +47,8 @@ pub struct SelectiveMemory {
     drop_stake: bool,
     memory_context_options: crate::MemoryContextOptions,
     query_scope: Vec<crate::ContextFacet>,
+    query_context: Option<String>,
+    query_self_cues: bool,
 }
 
 /// Runtime LLM endpoint. Key stays on the process; GET only reports a mask.
@@ -108,6 +110,8 @@ impl SelectiveMemory {
             drop_stake: false,
             memory_context_options: crate::MemoryContextOptions::default(),
             query_scope: Vec::new(),
+            query_context: None,
+            query_self_cues: false,
         }
     }
 
@@ -158,6 +162,8 @@ impl SelectiveMemory {
             drop_stake: false,
             memory_context_options: crate::MemoryContextOptions::default(),
             query_scope: Vec::new(),
+            query_context: None,
+            query_self_cues: false,
             })
         } else {
             Ok(Self {
@@ -180,6 +186,8 @@ impl SelectiveMemory {
             drop_stake: false,
             memory_context_options: crate::MemoryContextOptions::default(),
             query_scope: Vec::new(),
+            query_context: None,
+            query_self_cues: false,
             })
         }
     }
@@ -850,6 +858,27 @@ impl SelectiveMemory {
         self.query_scope=facets.to_vec();
         Ok(self.open_mouth(user))
     }
+    /// Caller-attested application context, separate from user prose and scope facts.
+    /// Matching native self-view statements can cue episodic recall; expectations,
+    /// support IDs and sealed archives are never used as retrieval instructions.
+    pub fn open_mouth_in_context(&mut self,user:&str,context:&str,facets:&[crate::ContextFacet])->Result<MouthDraft,String>{
+        self.open_mouth_context_inner(user,context,facets,false)
+    }
+    /// Opt-in top-down retrieval: native applicable self-view gists cue episodes.
+    /// This is a distinct retrieval route, not the original lexical baseline.
+    pub fn open_mouth_in_context_cued(&mut self,user:&str,context:&str,facets:&[crate::ContextFacet])->Result<MouthDraft,String>{
+        self.open_mouth_context_inner(user,context,facets,true)
+    }
+    fn open_mouth_context_inner(&mut self,user:&str,context:&str,facets:&[crate::ContextFacet],cued:bool)->Result<MouthDraft,String>{
+        crate::core::self_model::validate_context_facets(facets)?;
+        if context.trim().is_empty() || context.len()>128 || context.chars().any(char::is_control) {
+            return Err("invalid recall context".into());
+        }
+        self.query_context=Some(context.trim().to_string());
+        self.query_self_cues=cued;
+        self.query_scope=facets.to_vec();
+        Ok(self.open_mouth(user))
+    }
     pub fn open_mouth(&mut self, user: &str) -> MouthDraft {
         self.open_mouth_inner(user, true, RecallBias::Observed, &[], false)
     }
@@ -901,16 +930,24 @@ impl SelectiveMemory {
         axioms_only: bool,
     ) -> MouthDraft {
         let query_scope=std::mem::take(&mut self.query_scope);
+        let query_context=self.query_context.take();
+        let query_self_cues=std::mem::take(&mut self.query_self_cues);
         let _clock = self.enter_clock();
         self.mouth_held = true;
         if hold {
             self.talk.hear(user, None);
         }
-        let query = if hold {
+        let mut query = if hold {
             self.talk.recall_query(user)
         } else {
             user.to_string()
         };
+        // Explicit context activates native top-down recall, not forced trace IDs.
+        if query_self_cues {
+            for t in crate::core::self_model::view_scoped(&self.store,user,query_context.as_deref(),&query_scope).into_iter().take(4) {
+                query.push('\n'); query.push_str(&t.gist);
+            }
+        }
         let write = if hold {
             RecallWrite::Live
         } else {
@@ -1011,7 +1048,7 @@ impl SelectiveMemory {
         };
         let mut axioms = axioms;
         if self.memory_context_options.format==crate::MemoryContextFormat::Legacy {
-            for t in crate::core::self_model::view_scoped(&self.store,user,None,&query_scope).into_iter().take(4).rev(){axioms.insert(0,format!("Lived {} in {} (certainty {:.2}; foundations missing {}; counterexamples {}): {}",t.personal.role.token(),t.personal.context,t.personal.certainty,t.personal.foundations_missing,t.personal.counter_ids.len(),t.gist));}
+            for t in crate::core::self_model::view_scoped(&self.store,user,query_context.as_deref(),&query_scope).into_iter().take(4).rev(){axioms.insert(0,format!("Lived {} in {} (certainty {:.2}; foundations missing {}; counterexamples {}): {}",t.personal.role.token(),t.personal.context,t.personal.certainty,t.personal.foundations_missing,t.personal.counter_ids.len(),t.gist));}
         }
         for interpretation in scoped_reading.axioms.iter().filter(|s| s.starts_with("Tentative observed interpretation;")) {
             if !axioms.contains(interpretation) { axioms.push(interpretation.clone()); }
@@ -1022,7 +1059,7 @@ impl SelectiveMemory {
         } else { crate::MemoryContext::default() };
         // The agent's direct identity is constitutive; no recall required.
         memory_context.agent_name = Some(self.profile.name.clone());
-        memory_context.attach_self_view_scoped(&self.store,user,&self.memory_context_options,&query_scope);
+        memory_context.attach_self_view_in_context(&self.store,user,query_context.as_deref(),&self.memory_context_options,&query_scope);
         if hold && asks_about_human_name(user) && self.memory_context_options.dispositions {
             if let Some(t) = self.store.traces.values()
                 .filter(|t| t.schema.as_deref()==Some("interlocutor-name")

@@ -33,7 +33,7 @@ impl MemoryContextOptions {
  pub fn to_json(&self)->String{format!("{{\"format\":{},\"usage\":{},\"episodes\":{},\"dispositions\":{},\"associations\":{},\"affect\":{},\"word_budget\":{}}}",q(match self.format{MemoryContextFormat::Legacy=>"legacy",MemoryContextFormat::Structured=>"structured"}),q(match self.usage{MemoryUse::Legacy=>"legacy",MemoryUse::Neutral=>"neutral",MemoryUse::Experience=>"experience"}),self.episodes,self.dispositions,self.associations,self.affect,self.words)}
 }
 #[derive(Clone,Debug)]
-pub struct MemoryEpisode{pub trace_id:String,pub narrative:String,pub attribution:Attribution,pub channel:Channel,pub fidelity:f32,pub confidence:f32,pub affect:Option<Mood>,pub truncated:bool}
+pub struct MemoryEpisode{pub trace_id:String,pub narrative:String,pub attribution:Attribution,pub channel:Channel,pub fidelity:f32,pub confidence:f32,pub affect:Option<Mood>,pub scope_facets:Vec<crate::ContextFacet>,pub truncated:bool}
 #[derive(Clone,Debug)]
 pub struct AcquiredDisposition{pub axiom_id:String,pub statement:String,pub layer:AxiomLayer,pub strength:f32,pub attribution:String,pub support_trace_ids:Vec<String>,pub truncated:bool}
 #[derive(Clone,Debug)]
@@ -49,7 +49,7 @@ impl MemoryContext {
   let mut c=Self::default();let mut remaining=o.words.min(4000);let mut seen=BTreeSet::new();
   if o.episodes {for (id,narrative) in ids.iter().zip(narratives).take(4){let Some(t)=store.traces.get(id)else{continue};if t.suppressed||t.status==TraceStatus::Latent||!seen.insert(id){continue;}
    let (narrative,truncated)=clip(narrative,&mut remaining,160);if narrative.is_empty(){continue;}
-   c.episodes.push(MemoryEpisode{trace_id:id.clone(),narrative,attribution:t.attribution,channel:t.channel,fidelity:t.fidelity,confidence:t.confidence,affect:o.affect.then(||Mood{valence:t.valence,arousal:t.arousal,disgust:t.disgust}),truncated});}}
+   c.episodes.push(MemoryEpisode{trace_id:id.clone(),narrative,attribution:t.attribution,channel:t.channel,fidelity:t.fidelity,confidence:t.confidence,affect:o.affect.then(||Mood{valence:t.valence,arousal:t.arousal,disgust:t.disgust}),scope_facets:t.personal.scope_facets.clone(),truncated});}}
   let mut seen=BTreeSet::new();if o.dispositions{for line in axioms.iter().take(4){if !seen.insert(line){continue;}
    let mut matches:Vec<_>=store.living_axioms().into_iter().filter(|a|a.statement==*line).collect();matches.sort_by(|a,b|a.id.cmp(&b.id));
    if let Some(a)=matches.first(){let support:Vec<_>=a.support_trace_ids.iter().filter_map(|id|store.traces.get(id)).collect();if support.len()!=a.support_trace_ids.len()||support.iter().any(|t|t.suppressed||t.status==TraceStatus::Latent){continue;}
@@ -64,8 +64,11 @@ impl MemoryContext {
   self.attach_self_view_scoped(store,query,o,&[])
  }
  pub fn attach_self_view_scoped(&mut self,store:&MemoryStore,query:&str,o:&MemoryContextOptions,facets:&[crate::ContextFacet]){
+  self.attach_self_view_in_context(store,query,None,o,facets)
+ }
+ pub fn attach_self_view_in_context(&mut self,store:&MemoryStore,query:&str,context:Option<&str>,o:&MemoryContextOptions,facets:&[crate::ContextFacet]){
   if !o.dispositions{return;}
-  self.self_model=crate::core::self_model::view_scoped(store,query,None,facets).into_iter().take(4).map(|t|SelfPerspective{trace_id:t.id.clone(),role:t.personal.role.token().into(),context:t.personal.context.clone(),statement:t.gist.clone(),certainty:t.personal.certainty,importance:t.personal.importance,foundations_missing:t.personal.foundations_missing,counterexamples:t.personal.counter_ids.len(),scope_status:t.personal.scope_status.token().into(),scope_parent:t.personal.scope_parent.clone(),scope_facets:t.personal.scope_facets.clone(),truncated:false}).collect();
+  self.self_model=crate::core::self_model::view_scoped(store,query,context,facets).into_iter().take(4).map(|t|SelfPerspective{trace_id:t.id.clone(),role:t.personal.role.token().into(),context:t.personal.context.clone(),statement:t.gist.clone(),certainty:t.personal.certainty,importance:t.personal.importance,foundations_missing:t.personal.foundations_missing,counterexamples:t.personal.counter_ids.len(),scope_status:t.personal.scope_status.token().into(),scope_parent:t.personal.scope_parent.clone(),scope_facets:t.personal.scope_facets.clone(),truncated:false}).collect();
   *self=self.filtered(o);
  }
  pub fn filtered(&self,o:&MemoryContextOptions)->Self{
@@ -78,7 +81,7 @@ impl MemoryContext {
  }
  pub fn to_json(&self)->String{
   let self_model=self.self_model.iter().map(|s|format!("{{\"trace_id\":{},\"role\":{},\"context\":{},\"statement\":{},\"certainty\":{},\"importance\":{},\"foundations_missing\":{},\"counterexamples\":{},\"scope_status\":{},\"scope_parent\":{},\"scope_facets\":{},\"truncated\":{}}}",q(&s.trace_id),q(&s.role),q(&s.context),q(&s.statement),number(s.certainty),number(s.importance),s.foundations_missing,s.counterexamples,q(&s.scope_status),s.scope_parent.as_ref().map(|x|q(x)).unwrap_or_else(||"null".into()),strings(&s.scope_facets.iter().map(|f|format!("{}={}",f.dimension,f.value)).collect::<Vec<_>>()),s.truncated)).collect::<Vec<_>>().join(",");
-  let episodes=self.episodes.iter().map(|e|format!("{{\"trace_id\":{},\"narrative\":{},\"attribution\":{},\"channel\":{},\"fidelity\":{},\"confidence\":{},\"affect\":{},\"truncated\":{}}}",q(&e.trace_id),q(&e.narrative),q(e.attribution.token()),q(match e.channel{Channel::Selfhood=>"selfhood",Channel::World=>"world",Channel::Log=>"log"}),number(e.fidelity),number(e.confidence),mood_json(e.affect.as_ref()),e.truncated)).collect::<Vec<_>>().join(",");
+  let episodes=self.episodes.iter().map(|e|format!("{{\"trace_id\":{},\"narrative\":{},\"attribution\":{},\"channel\":{},\"fidelity\":{},\"confidence\":{},\"affect\":{},\"scope_facets\":{},\"truncated\":{}}}",q(&e.trace_id),q(&e.narrative),q(e.attribution.token()),q(match e.channel{Channel::Selfhood=>"selfhood",Channel::World=>"world",Channel::Log=>"log"}),number(e.fidelity),number(e.confidence),mood_json(e.affect.as_ref()),strings(&e.scope_facets.iter().map(|f|format!("{}={}",f.dimension,f.value)).collect::<Vec<_>>()),e.truncated)).collect::<Vec<_>>().join(",");
   let dispositions=self.dispositions.iter().map(|a|format!("{{\"axiom_id\":{},\"statement\":{},\"layer\":{},\"strength\":{},\"attribution\":{},\"support_trace_ids\":{},\"support_trace_count\":{},\"support_ids_truncated\":{},\"truncated\":{}}}",q(&a.axiom_id),q(&a.statement),q(match a.layer{AxiomLayer::Motif=>"motif",AxiomLayer::Belief=>"belief",AxiomLayer::Trait=>"trait"}),number(a.strength),q(&a.attribution),strings(&a.support_trace_ids[..a.support_trace_ids.len().min(32)]),a.support_trace_ids.len(),a.support_trace_ids.len()>32,a.truncated)).collect::<Vec<_>>().join(",");
   let statements=self.contextual_statements.iter().map(|s|format!("{{\"statement\":{},\"status\":\"supplied_context_not_acquired_disposition\",\"truncated\":{}}}",q(&s.statement),s.truncated)).collect::<Vec<_>>().join(",");
   let associations=self.associations.iter().map(|a|format!("{{\"a\":{},\"b\":{},\"weight\":{}}}",q(&a.a),q(&a.b),number(a.weight))).collect::<Vec<_>>().join(",");

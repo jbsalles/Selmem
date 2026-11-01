@@ -1,0 +1,7 @@
+arm,valid,history_concordant,history_concordant_percent,canonical_a,paired_with_full,different_from_full,full_only_concordant,arm_only_concordant,repeat_reference_pairs,repeat_reference_disagreements,mirror_pairs,mirror_differences,order_pairs,order_differences
+full,576,479,83.1597,385,,,,,384,11,288,191,288,69
+no_beliefs,576,429,74.4792,435,576,74,62,12,384,10,288,141,288,53
+no_episodes,576,415,72.0486,447,576,74,69,5,384,13,288,127,288,57
+swapped,576,273,47.3958,523,576,206,206,0,384,20,288,25,288,53
+bare,576,291,50.5208,485,576,202,195,7,384,15,288,9,288,79
+placebo,576,288,50.0000,520,576,191,191,0,384,14,288,12,288,26

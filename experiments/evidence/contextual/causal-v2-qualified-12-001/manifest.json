@@ -1,0 +1,1 @@
+{"model":"grok-4.3","pairs":12,"planned_calls":3456,"provider":"grok","reasoning":"none","repeats":3,"route":"context-cued","seed":"1729","source":"experiments/genesis/results/causal-native-12-002/snapshots","version":"native-causal-v2","words":600}

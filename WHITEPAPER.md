@@ -24,6 +24,8 @@ That is the path-dependence hypothesis. It is not yet a demonstration of intelli
 
 **Budget-breaking follow-up (October 28, 2026):** A new **512-decision** Grok 4.3 sweep reused the v4 synthetic histories at **240/960 distractors** and **8/16/32/64 memory words**. At 32 and 64 words, qualified context memory scored **28/32**, compared with **18/32** for lexical retrieval and **14/32** for a frequency summary. The advantage narrowed to **17/32 vs 16/32** at eight words, when SelMem’s own output was cut before the predicted action. ON/OFF/lexical memory texts were *identical* across distractor loads: this does not isolate a causal distractor effect. Delivered lengths were unequal, baselines were deterministic, and just **two domains** were tested. See the [breaking-point analysis](experiments/genesis/CONTEXTUAL_BREAKING_RESULTS.md); the preregistered 12-domain v4 threshold remains unmet.
 
+**Native delivery follow-up (analysis November 1, 2026):** In a separate 3,456-choice, 12-scenario Grok 4.3 ablation run using `context-cued` recall, full memory reached **83.2%** history-concordance versus **50.5%** with empty memory. Removing delivered beliefs or episodes reduced concordance to **74.5%** and **72.0%**. These are post-recall component-delivery effects on one shared behavioral axis; they do not establish a reconstruction-specific or general RAG advantage. [Causal results and limitations](experiments/genesis/CAUSAL_NATIVE_RESULTS.md).
+
 ---
 
 ## Not this
@@ -276,6 +278,25 @@ The v4 criterion was frozen for **12 independent semantic domains**: ON must bea
 **Bounded claim:** SelMem demonstrated a context-sensitive compression/selection benefit in this small synthetic pilot **relative to the tested deterministic frequency and lexical baselines**. The result does not isolate the contribution of reconstructive distortion, compare with semantic RAG or a strong LLM summarizer, or demonstrate learned preference, durable individuality or creativity. [Full per-arm data, negative results, controls and archive SHA-256](experiments/genesis/CONTEXTUAL_TRANSFER_RESULTS.md); [v4 protocol](experiments/genesis/CONTEXTUAL_LONGLIFE_V4.md).
 
 
+### Native causal ablations: direct effects of delivered memory
+
+The completed `causal-v2-qualified-12-001` run recorded **3,456 valid Grok 4.3 choices**, with reasoning requested as none, six arms, 12 synthetic scenario domains, two mirror lives and two company scopes per domain, two wordings, both option orders and three identical-request repetitions. A 192-cell preflight verified one delivered conditional belief and two relevant episodes per full-memory packet.
+
+| Delivered memory | History-concordant choices | Paired decisions different from full |
+| --- | ---: | ---: |
+| Full | **479/576 (83.2%)** | — |
+| Conditional beliefs removed | 429/576 (74.5%) | 74/576 (12.8%) |
+| Episodes removed | 415/576 (72.0%) | 74/576 (12.8%) |
+| Mirror beliefs substituted | 273/576 (47.4%) | 206/576 (35.8%) |
+| Empty memory | 291/576 (50.5%) | 202/576 (35.1%) |
+| Neutral length placebo | 288/576 (50.0%) | 191/576 (33.2%) |
+
+The full condition's identical-request repetition reference disagreed in **11/384 comparisons (2.9%)**. Removing beliefs yielded 62 concordant-to-nonconcordant changes and 12 in the reverse direction; removing episodes yielded 69 versus 5. Full memory exceeded empty memory in all 12 scenario domains. Mirroring the saved history changed 191/288 full-memory decisions (66.3%), versus 9/288 without memory (3.1%). These observations support a causal contribution of the delivered components to choices in this task family. They are not independent-agent population estimates.
+
+This result uses a revised, explicitly selected **`context-cued`** route: caller-attested application context makes the native self-view applicable, and its existing gist can cue episodic recall before the packet is frozen. It does not append a separate predicted-action instruction. An earlier 3,456-answer native run delivered no beliefs and only background episodes, so its belief-removal and swap contrasts were invalid. That negative diagnosis is retained rather than relabeled as v2.
+
+The cuts occur **after recall**. Consequently, the no-beliefs arm still benefits from any belief-mediated episode selection; a pre-retrieval lesion is needed to estimate the total belief contribution. Swaps reduce original-history concordance but match the donor in only 52.6% of choices, with a strong calm-option bias. Reversing option order changes 24.0% of full-memory choices. The 12 domains share one behavioral axis; new histories, models and axes are needed. This suite does not isolate reconstruction or establish an advantage over competent semantic RAG, creativity, autonomous preference or durable individuality. [Full design, per-domain counts and evidence](experiments/genesis/CAUSAL_NATIVE_RESULTS.md).
+
 ## What remains unproved
 
 ### Creative collections: suggestive observations, no established advantage
@@ -297,7 +318,7 @@ The [compact evidence](experiments/evidence/README.md) publishes proposals, cond
 - A general causal advantage specifically from reconstruction over competent semantic retrieval or task-conditioned/rolling summaries; the v4 pilot compared only deterministic baselines.
 - Original and useful designs whose historical dependence is causally established.
 
-A next causal test should remove support metadata from clones while preserving all other state. Mixed and contradictory observations should test revision. Transfer requires new tasks and actors without explicit reminders of the founding episode. Creativity requires executable designs evaluated for utility, novelty and memory dependence against equally budgeted controls.
+The next causal test should remove contextual beliefs before retrieval while preserving the episodic store, separating direct self-view delivery from belief-mediated episode selection. A separate support-metadata lesion should preserve all other state. Mixed and contradictory observations should test revision. Transfer requires new tasks and actors without explicit reminders of the founding episode. Creativity requires executable designs evaluated for utility, novelty and memory dependence against equally budgeted controls.
 
 ## Limits and negative outcomes
 
@@ -311,7 +332,7 @@ Experiments must retain failures, separate behavior from performance and preserv
 
 Rust tests cover selection, core vs detail, anchors, axiom succession, identity paint, reinterpretation, DetachKind misses, grounding blend, latent residue, night pass order, file and SQLite round-trips, attribution, schema centers, suppression, confidence vs access, survival hazard, recency weight and context cloud. Observation-support tests cover repeated observations, replay identities, contradictions, bounded counts and persistence. GENESIS checks include configuration loading, snapshot errors and isolated probes.
 
-The maintained experiments include qualification, cumulative learning, sleep, creativity pilots, contextual self-model assays and contextual-transfer v1–v4, alongside LoCoMo and the longitudinal creative-life plans. The v4 long-history pilot records a bounded advantage over tested deterministic selectors; v2 and v3 record null comparisons against stronger information-preserving controls. None establishes durable behavioral singularity, general superiority over competent RAG, or a creative advantage attributable to reconstruction. Constants remain unfitted. The [results showcase](docs/index.html) separates observed mechanisms, historical reports and unproved claims.
+The maintained experiments include qualification, cumulative learning, sleep, creativity pilots, contextual self-model assays, contextual-transfer v1–v4 and the revised native causal-delivery suite, alongside LoCoMo and the longitudinal creative-life plans. The v4 long-history pilot records a bounded advantage over tested deterministic selectors; v2 and v3 record null comparisons against stronger information-preserving controls. The native causal suite adds a measured component-delivery effect across 12 related synthetic scenarios. These results do not establish durable behavioral singularity, general superiority over competent RAG, or a creative advantage attributable to reconstruction. Constants remain unfitted. The [results showcase](docs/index.html) separates observed mechanisms, historical reports and unproved claims.
 
 Two processes on one `.db` will collide. Anchors are decay brakes, not an ethics layer.
 

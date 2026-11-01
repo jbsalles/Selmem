@@ -598,11 +598,19 @@ mod tests {
     }
 }
 
-#[path = "selmem-contextual-sweep.rs"]
+#[path = "selmem-contextual-longlife/sweep.rs"]
 mod sweep;
 
+#[path = "selmem-contextual-longlife/causal_v2.rs"]
+mod causal;
+
 fn main() {
-    if std::env::args().any(|arg| matches!(arg.as_str(),
+    if std::env::args().any(|arg| arg == "--causal-ablation") {
+        if let Err(error) = causal::Causal::parse().and_then(causal::run) {
+            eprintln!("GENESIS causal ablation: {error}");
+            std::process::exit(1);
+        }
+    } else if std::env::args().any(|arg| matches!(arg.as_str(),
         "--sweep-budgets" | "--sweep-loads" | "--sweep-arms")) {
         if let Err(error) = sweep::Sweep::parse().and_then(sweep::run) {
             eprintln!("GENESIS contextual budget sweep: {error}");

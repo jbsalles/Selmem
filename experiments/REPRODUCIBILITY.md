@@ -46,6 +46,12 @@ Verify the compact data from the repository root:
 
 The four published lots are selected for distinct interventions. They are not four independent confirmations. Historical qualification, learning and sleep numbers in the ledger are explicitly marked when their original raw archives are not included in this source publication.
 
+## Native causal-delivery suite
+
+The [native causal v2 analysis](genesis/CAUSAL_NATIVE_RESULTS.md) separates the completed 3,456-answer `context-cued` run from the earlier failed native-exposure run. Its compact `answers.csv` supports recalculating descriptive decision contrasts; a new native preflight needs the exact qualified snapshots and the causal v2 implementation. Resume additionally requires the original frozen payloads, audit/checksums and manifest settings. The documentation update alone does not install the implementation extension.
+
+Treat repeated requests, wordings, option orders and mirrored scenarios as clustered observations. Repetition disagreement and option-order sensitivity are different measures. The 12-scenario causal suite has different arms from the old two-domain v4 selector comparison and does not satisfy that earlier preregistered criterion by inheritance. See the recorded archive hash and source-commit/provider-attestation gaps in the causal provenance file.
+
 ## Static results page
 
 Open `docs/index.html` in a local checkout, or host the repository root and visit `/docs/index.html`. It is a standalone English HTML/CSS page with no script, external font or tracking request. Relative evidence links expect the repository layout; hosting only the docs subdirectory would omit the sibling evidence files. Publication does not automatically configure or deploy a hosting service.
