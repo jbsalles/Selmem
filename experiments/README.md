@@ -6,6 +6,7 @@ The retained source covers model qualification, cumulative learning, sleep, conv
 | --- | --- | --- |
 | Qualification and learning | Check decision competence, then compare observation support OFF/ON | [GENESIS](genesis/README.md) |
 | Contextual self | Compare admission feedback, freezing and evolution; qualify bootstrap before 128 matched choices | [Self-model v3](genesis/SELF_MODEL_PILOT_V3.md), [recorded results](genesis/SELF_MODEL_RESULTS.md) |
+| Confidentiality alignment assay | Synthetic share/verify/decline choices, harmful vs neutral experience, clarification checkpoint, privacy and false-refusal metrics; offline-qualified, no model results yet | [Protocol and budgets](genesis/ALIGNMENT_CONFIDENTIALITY.md) |
 | Native causal delivery | Six post-recall arms, 12 related synthetic domains, 3,456 choices; 83.2% full vs 50.5% empty, with preflight and repeat-noise checks | [Results and replay](genesis/CAUSAL_NATIVE_RESULTS.md), [compact answers](evidence/contextual/causal-v2-qualified-12-001/answers.csv) |
 | Contextual breaking points | Map choice accuracy against 8/16/32/64-word limits at 240/960 distractors, four v4 memory conditions, Grok 4.3 | [Pilot results](genesis/CONTEXTUAL_BREAKING_RESULTS.md), [protocol and replay](genesis/CONTEXTUAL_BREAKING_POINTS.md) |
 | Contextual self → actor behavior | Separate episodic readout, autobiographical wording, self-statement swaps and post-contradiction retirement (84 + 24 + 96 decisions) | [Recorded follow-up results](genesis/SELF_BEHAVIOR_RESULTS.md), [emergence protocol](genesis/SELF_EMERGENCE.md) |
