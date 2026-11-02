@@ -52,6 +52,26 @@ impl ObservationEvidence {
         Some(format!("Observation support metadata (not additional recalled episodes). Counts include the initial carrier observation: do not add the narrative as another observation. Counts use caller-provided IDs; statistical independence is not verified. Different claims remain separate and do not erase earlier observations.\n{claims}"))
     }
 
+    /// On merge, move or union observation support from the dropped trace onto
+    /// the keeper. Primary claim of the survivor is preferred. Capacity limits
+    /// are respected. Never copies from archives.
+    pub fn transfer_on_merge(&mut self, keep: &str, other: &str) {
+        if !self.enabled { return; }
+        let Some(src) = self.groups.remove(other) else { return; };
+        match self.groups.get_mut(keep) {
+            None => {
+                self.groups.insert(keep.to_string(), src);
+            }
+            Some(dst) => {
+                for (obs, claim) in src.observations {
+                    if dst.observations.len() >= MAX_OBSERVATIONS { break; }
+                    dst.observations.entry(obs).or_insert(claim);
+                }
+                dst.updated_at = dst.updated_at.max(src.updated_at);
+            }
+        }
+    }
+
     /// Saturated reconstructive weight from distinct primary-claim support only.
     /// Contradictory observations remain available as separate evidence, but
     /// must not increase the positive recall signal of the carrier claim.
@@ -222,6 +242,26 @@ mod tests {
         assert!(!offer(&mut m,"a","Mira supplied six batteries to the workshop.").kept);
         assert_eq!(ObservationEvidence::decode(&m.store.observation_evidence.encode()).unwrap(),m.store.observation_evidence);
         m.store.traces.remove(&id);assert!(m.store.observation_evidence.render(&m.store,&id).is_none());
+    }
+    #[test]fn transfer_on_merge_unions_observations_onto_keeper(){
+        let mut m=memory();
+        let keep=offer(&mut m,"ka","Mira supplied six batteries to the workshop.").trace_id.unwrap();
+        let other=offer(&mut m,"ob","Jules delivered three coils to the dock.").trace_id.unwrap();
+        assert_ne!(keep,other);
+        // Ensure the dropped trace carries an extra observation the keeper lacks.
+        m.store.observation_evidence.seed(&other,"src-other",crate::Channel::Selfhood,"obs-base","Jules delivered three coils to the dock.");
+        if let Some(g)=m.store.observation_evidence.groups.get_mut(&other){
+            g.observations.insert("obs-extra".into(),"Jules delivered three coils to the dock.".into());
+        } else {
+            m.store.observation_evidence.seed(&other,"src-other",crate::Channel::Selfhood,"obs-extra","Jules delivered three coils to the dock.");
+        }
+        assert!(m.store.observation_evidence.groups.get(&other).is_some());
+        let before=m.store.observation_evidence.groups.get(&keep).map(|g|g.observations.len()).unwrap_or(0);
+        m.store.observation_evidence.transfer_on_merge(&keep,&other);
+        assert!(m.store.observation_evidence.groups.get(&other).is_none());
+        let after=m.store.observation_evidence.groups.get(&keep).unwrap().observations.len();
+        assert!(after>before);
+        assert!(m.store.observation_evidence.groups.get(&keep).unwrap().observations.contains_key("obs-extra"));
     }
     #[test]fn support_weight_saturates_and_is_zero_under_two_or_disabled(){
         let mut m=memory();

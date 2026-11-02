@@ -141,6 +141,9 @@ pub fn run(
                     axiom.support_trace_ids.push(keep.clone());
                 }
             }
+            // Observation support travels with the fused hour so consolidation
+            // does not erase cumulative evidence. Sleep can then change ranking.
+            store.observation_evidence.transfer_on_merge(&keep, other);
             merged += 1;
         }
     }

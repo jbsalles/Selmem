@@ -943,7 +943,9 @@ impl SelectiveMemory {
             user.to_string()
         };
         // Explicit context activates native top-down recall, not forced trace IDs.
-        if query_self_cues {
+        // self_cues lesion keeps the episodic store but withholds belief gists
+        // from the retrieval query (pre-retrieval belief ablation).
+        if query_self_cues && self.cut.self_cues {
             for t in crate::core::self_model::view_scoped(&self.store,user,query_context.as_deref(),&query_scope).into_iter().take(4) {
                 query.push('\n'); query.push_str(&t.gist);
             }

@@ -686,6 +686,10 @@ pub struct OrganCut {
     /// Independently controls schema-center narrative cues.
     /// Disabling observation support must not remove unrelated schema context.
     pub schema_prototype: bool,
+    /// When false, applicable self-view belief gists are not appended to the
+    /// retrieval query even on the context-cued route. Episodic store is
+    /// unchanged. Used for the pre-retrieval belief ablation.
+    pub self_cues: bool,
 }
 
 impl Default for OrganCut {
@@ -705,6 +709,7 @@ impl OrganCut {
             merge_support_veto: false,
             support_signal: true,
             schema_prototype: true,
+            self_cues: true,
         }
     }
 
@@ -718,6 +723,7 @@ impl OrganCut {
             merge_support_veto: false,
             support_signal: true,
             schema_prototype: true,
+            self_cues: true,
         }
     }
 
@@ -752,6 +758,15 @@ impl OrganCut {
     pub fn no_schema_prototype() -> Self {
         Self {
             schema_prototype: false,
+            ..Self::full()
+        }
+    }
+
+    /// Pre-retrieval belief ablation: keep the episodic store, drop self-view
+    /// gists from the retrieval query on the context-cued route.
+    pub fn no_self_cues() -> Self {
+        Self {
+            self_cues: false,
             ..Self::full()
         }
     }
