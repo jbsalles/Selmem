@@ -43,22 +43,41 @@ const DOMAINS: [Domain; 12] = [
     Domain{id:"entertainment",topic:"evening entertainment",a:"I chose a calm film screening.",b:"I chose a crowded trivia party.",novel_a:"a quiet independent cinema",novel_b:"a lively quiz night",paraphrase_a:"an intimate documentary showing",paraphrase_b:"an animated social game event"},
 ];
 
+/// Second axis: risk / caution. Not a calm/social variant.
+/// Used by --axis risk (scaffolded; pair limit still 12 on the calm set).
+#[allow(dead_code)]
+const DOMAINS_RISK: [Domain; 4] = [
+    Domain{id:"invest",topic:"resource commitment",a:"I chose the guaranteed small return.",b:"I chose the high-variance bet.",novel_a:"a locked low-yield bond",novel_b:"an uncapped speculative stake",paraphrase_a:"a certain modest payout",paraphrase_b:"a risky large upside"},
+    Domain{id:"route",topic:"path selection",a:"I chose the mapped safe road.",b:"I chose the unmapped shortcut.",novel_a:"a signed maintained trail",novel_b:"an unmarked direct cut",paraphrase_a:"a known secure path",paraphrase_b:"an uncharted faster line"},
+    Domain{id:"deadline",topic:"delivery timing",a:"I chose to ship the tested version.",b:"I chose to ship the untested feature.",novel_a:"a verified stable build",novel_b:"an experimental early drop",paraphrase_a:"a checked reliable release",paraphrase_b:"a bold unfinished push"},
+    Domain{id:"ally",topic:"partnership",a:"I chose the proven cautious partner.",b:"I chose the bold unproven partner.",novel_a:"a steady established collaborator",novel_b:"a daring new associate",paraphrase_a:"a reliable careful ally",paraphrase_b:"an ambitious untested ally"},
+];
+
+fn domains_for(axis: &str) -> &'static [Domain] {
+    if axis == "risk" { &DOMAINS_RISK } else { &DOMAINS }
+}
+static AXIS: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+fn set_axis(a: &str) { let _ = AXIS.set(a.to_string()); }
+fn cur_domains() -> &'static [Domain] {
+    domains_for(AXIS.get().map(|s| s.as_str()).unwrap_or("calm"))
+}
+
 #[derive(Clone)]
 struct Config {
     out: PathBuf, pairs:usize, actor:bool, judge:bool, provider:String, model:String,
     judge_provider:String, judge_model:String, max_http_calls:usize, seed:u64,
-    distractors:usize, memory_words:usize,
+    distractors:usize, memory_words:usize, axis:String,
 }
 impl Config {
     fn parse()->Result<Self,String>{
         let mut c=Self{out:PathBuf::new(),pairs:12,actor:false,judge:false,
             provider:"grok".into(),model:"grok-4.3".into(),
             judge_provider:"openai".into(),judge_model:"gpt-4.1-mini".into(),
-            max_http_calls:0,seed:1729,distractors:240,memory_words:64};
+            max_http_calls:0,seed:1729,distractors:240,memory_words:64,axis:"calm".into()};
         let mut args=std::env::args().skip(1);
         while let Some(flag)=args.next(){
             if flag=="--help"||flag=="-h" {
-                println!("GENESIS contextual longlife v4 (Rust only)\n--out NEW_DIR [--pairs 1..12] [--seed N]\n--actor --provider grok|openai --model MODEL --max-http-calls N\n[--judge --judge-provider grok|openai --judge-model MODEL]\nDefault offline qualification: 0 API calls.\n--distractors 240 --memory-words 64\nActor: 48*--pairs calls (two mirrored lives, two contexts, six arms, two counterbalanced wording/order cells).\nIndependent judge: +4*--pairs calls. All calls counted against the same strict cap.");
+                println!("GENESIS contextual longlife v4 (Rust only)\n--out NEW_DIR [--pairs 1..12] [--axis calm|risk] [--seed N]\n--actor --provider grok|openai --model MODEL --max-http-calls N\n[--judge --judge-provider grok|openai --judge-model MODEL]\nDefault offline qualification: 0 API calls.\n--distractors 240 --memory-words 64\nActor: 48*--pairs calls (two mirrored lives, two contexts, six arms, two counterbalanced wording/order cells).\nIndependent judge: +4*--pairs calls. All calls counted against the same strict cap.");
                 std::process::exit(0);
             }
             if flag=="--actor"{c.actor=true;continue;}
@@ -66,7 +85,7 @@ impl Config {
             let value=args.next().ok_or_else(||format!("missing value for {flag}"))?;
             match flag.as_str(){
                 "--out"=>c.out=PathBuf::from(value),
-                "--pairs"=>c.pairs=value.parse().map_err(|_|"invalid pairs")?,
+                "--pairs"=>c.pairs=value.parse().map_err(|_|"invalid pairs")?,"--axis"=>c.axis=value,
                 "--seed"=>c.seed=value.parse().map_err(|_|"invalid seed")?,
                 "--distractors"=>c.distractors=value.parse().map_err(|_|"invalid distractors")?,
                 "--memory-words"=>c.memory_words=value.parse().map_err(|_|"invalid memory-words")?,
@@ -79,7 +98,8 @@ impl Config {
             }
         }
         if c.out.as_os_str().is_empty()||c.out.exists(){return Err("--out must name a new directory".into());}
-        if !(1..=DOMAINS.len()).contains(&c.pairs){return Err("--pairs must be 1..=12".into());}
+        if c.axis!="calm"&&c.axis!="risk"{return Err("--axis must be calm or risk".into());}
+        if !(1..=domains_for(&c.axis).len()).contains(&c.pairs){return Err("--pairs out of range for axis".into());}
         if c.distractors<80||c.distractors>2000{return Err("--distractors must be 80..=2000".into());}
         if c.memory_words<24||c.memory_words>256{return Err("--memory-words must be 24..=256".into());}
         if c.judge&&!c.actor{return Err("--judge requires --actor".into());}
@@ -235,7 +255,7 @@ impl Trial{
     fn id(self)->String{format!("{}:{}:{}:{}:{}:{}",self.domain,self.reversed,self.company,self.arm.name(),self.wording,self.order)}
     fn target_a(self)->bool{if self.reversed{self.company}else{!self.company}}
     fn question(self)->String{
-        let d=DOMAINS[self.domain];
+        let d=cur_domains()[self.domain];
         let intro=if self.wording==0{
             if self.company{"You are making this decision together with close friends."}
             else{"You are making this decision on your own."}
@@ -250,6 +270,7 @@ impl Trial{
         (0,"1")|(1,"2")=>Some(true),(0,"2")|(1,"1")=>Some(false),_=>None}}
 }
 fn trials(pairs:usize)->Vec<Trial>{
+    // axis already set by caller
     let mut v=Vec::new();
     for domain in 0..pairs {for reversed in [false,true]{for company in [false,true]{
         for arm in Arm::ALL {for wording in 0..2{
@@ -350,7 +371,7 @@ fn select_retrieval(m:&SelectiveMemory,query:&str,context:&str)->(String,Vec<Str
 }
 fn material(t:Trial,dir:&Path,budget:usize)->Result<(String,Vec<String>,usize),String>{
     if t.arm==Arm::Bare{return Ok((String::new(),Vec::new(),0));}
-    let d=DOMAINS[t.domain];let m=load(dir,d,t.reversed,t.arm==Arm::On)?;
+    let d=cur_domains()[t.domain];let m=load(dir,d,t.reversed,t.arm==Arm::On)?;
     let context=if t.company{"friends"}else{"alone"};
     let (raw,selected)=match t.arm {
         Arm::On|Arm::Off=>{
@@ -378,7 +399,7 @@ fn judge(c:&Config,dir:&Path,judge_key:&str)->Result<(),String>{
     let mut out=BufWriter::new(file);
     let system="Independent memory audit. Judge only whether a tentative context-specific action prediction is supported by at least two independent observed actions in that context. Do not infer preferences, motives, feelings, causal mechanisms, or psychological traits. Reply exactly entail, contradict, or unknown.";
     for domain in 0..c.pairs{for reversed in [false,true]{for company in [false,true]{
-        let d=DOMAINS[domain];let m=load(dir,d,reversed,true)?;
+        let d=cur_domains()[domain];let m=load(dir,d,reversed,true)?;
         let context=if company{"friends"}else{"alone"};
         let relevant=view_scoped(&m.store,"choice-pattern",Some("choice-pattern"),
             &[ContextFacet::new("company",context)]).into_iter()
@@ -416,7 +437,7 @@ fn run_actor(c:&Config,dir:&Path,actor_key:&str)->Result<(),String>{
         let correct=decision==Some(t.target_a());
         let entry=totals.entry((t.domain,t.arm)).or_default();entry.0+=1;if correct{entry.1+=1;}
         writeln!(out,"{}",obj([
-            ("index",num(index as f64)),("domain",text(DOMAINS[t.domain].id)),
+            ("index",num(index as f64)),("domain",text(cur_domains()[t.domain].id)),
             ("history",text(if t.reversed{"reversed"}else{"normal"})),
             ("context",text(if t.company{"friends"}else{"alone"})),
             ("arm",text(t.arm.name())),("wording",num(t.wording as f64)),
@@ -441,7 +462,7 @@ fn run_actor(c:&Config,dir:&Path,actor_key:&str)->Result<(),String>{
         }).collect::<Vec<_>>();
         for (arm,attempts,correct) in &all {
             writeln!(report,"{}",obj([
-                ("domain",text(DOMAINS[domain].id)),("arm",text(arm.name())),
+                ("domain",text(cur_domains()[domain].id)),("arm",text(arm.name())),
                 ("attempts",num(*attempts as f64)),("concordant",num(*correct as f64)),
                 ("rate",num(*correct as f64/(*attempts).max(1) as f64)),
             ]).encode()).map_err(|e|e.to_string())?;
@@ -475,6 +496,7 @@ fn run_actor(c:&Config,dir:&Path,actor_key:&str)->Result<(),String>{
     Ok(())
 }
 fn run(c:Config)->Result<(),String>{
+    set_axis(&c.axis);
     // Acquire keys and verify the complete budget before creating any results.
     let actor_key=if c.actor{Some(key_for(&c.provider)?)}else{None};
     let judge_key=if c.judge{Some(key_for(&c.judge_provider)?)}else{None};
@@ -581,7 +603,7 @@ mod tests {
         }
     }
     #[test] fn structured_witness_does_not_infer_preference(){
-        let d=DOMAINS[0];
+        let d=cur_domains()[0];
         let w=FixtureWitness{a:d.a,b:d.b};
         assert_eq!(w.score_expectation(d.a,d.b),PropositionLabel::Contradict);
         assert_eq!(w.score_expectation(d.a,"I felt delighted."),PropositionLabel::Unknown);

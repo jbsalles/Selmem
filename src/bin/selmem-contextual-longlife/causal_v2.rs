@@ -8,26 +8,30 @@ const ARMS: [&str; 6] = ["full","no_beliefs","no_episodes","swapped","bare","pla
 
 pub(super) struct Causal {
     source:PathBuf,out:PathBuf,pairs:usize,repeats:usize,words:usize,seed:u64,
-    actor:bool,resume:bool,cap:usize,provider:String,model:String,route:String,
+    actor:bool,resume:bool,cap:usize,provider:String,model:String,route:String,prepare:bool,rag:bool,
 }
 impl Causal {
     pub(super) fn parse()->Result<Self,String>{
         let mut c=Self{source:PathBuf::new(),out:PathBuf::new(),pairs:12,repeats:3,words:600,seed:1729,
-            actor:false,resume:false,cap:0,provider:"grok".into(),model:"grok-4.3".into(),route:"legacy".into()};
+            actor:false,resume:false,cap:0,provider:"grok".into(),model:"grok-4.3".into(),route:"legacy".into(),prepare:false,rag:false};
         let mut it=std::env::args().skip(1);
         while let Some(f)=it.next(){
-            match f.as_str(){"--causal-ablation"=>continue,"--actor"=>{c.actor=true;continue},"--resume"=>{c.resume=true;continue},
-                "--help"|"-h"=>{println!("Native causal v2 (offline by default)\n--causal-ablation --snapshots DIR --out NEW_DIR --pairs 1..12\n--recall-route legacy|context|context-cued [--repeats 3 --memory-words 600 --seed 1729]\n[--actor --provider grok|openai --model MODEL --max-http-calls N] [--resume]\nAll cells must pass frozen delivery checks BEFORE keys or HTTP. Failed preflights cannot be resumed into actors.\nCalls = 96 * pairs * repeats; actor cap is per invocation, no automatic retries.");std::process::exit(0)},_=>{}}
+            match f.as_str(){"--causal-ablation"=>continue,"--actor"=>{c.actor=true;continue},"--resume"=>{c.resume=true;continue},"--prepare-snapshots"=>{c.prepare=true;continue},"--rag"=>{c.rag=true;continue},
+                "--help"|"-h"=>{println!("Native causal v2 (offline by default)\n--causal-ablation --snapshots DIR --out NEW_DIR --pairs 1..12\n--prepare-snapshots DIR   (offline: write workspace vaults and exit)\n--recall-route legacy|context|context-cued|context-cued-ablated [--repeats 3 --memory-words 600 --seed 1729]\n[--actor --provider grok|openai --model MODEL --max-http-calls N] [--resume]\nAll cells must pass frozen delivery checks BEFORE keys or HTTP. Failed preflights cannot be resumed into actors.\nCalls = 96 * pairs * repeats; actor cap is per invocation, no automatic retries.");std::process::exit(0)},_=>{}}
             let v=it.next().ok_or_else(||format!("missing value for {f}"))?;
             match f.as_str(){"--snapshots"=>c.source=v.into(),"--out"=>c.out=v.into(),"--pairs"=>c.pairs=v.parse().map_err(|_|"invalid pairs")?,
                 "--repeats"=>c.repeats=v.parse().map_err(|_|"invalid repeats")?,"--memory-words"=>c.words=v.parse().map_err(|_|"invalid words")?,
                 "--seed"=>c.seed=v.parse().map_err(|_|"invalid seed")?,"--recall-route"=>c.route=v,
                 "--provider"=>c.provider=v,"--model"=>c.model=v,"--max-http-calls"=>c.cap=v.parse().map_err(|_|"invalid cap")?,_=>return Err(format!("unknown flag {f}"))}
         }
+        if c.prepare {
+            if c.source.as_os_str().is_empty(){return Err("--prepare-snapshots requires --snapshots DIR".into())}
+            return Ok(c);
+        }
         if c.source.as_os_str().is_empty()||c.out.as_os_str().is_empty(){return Err("--snapshots and --out required".into())}
         if !(1..=12).contains(&c.pairs)||!(2..=100).contains(&c.repeats){return Err("pairs 1..12, repeats 2..100 required".into())}
         MemoryContextOptions{words:c.words,..Default::default()}.validate()?;
-        if !["legacy","context","context-cued"].contains(&c.route.as_str()){return Err("invalid recall route".into())}
+        if !["legacy","context","context-cued","context-cued-ablated"].contains(&c.route.as_str()){return Err("invalid recall route".into())}
         if !["grok","openai"].contains(&c.provider.as_str())||c.model.trim().is_empty(){return Err("invalid provider/model".into())}
         if c.actor&&c.cap==0{return Err("--actor requires a positive HTTP cap".into())}
         if c.resume != c.out.is_dir() || (!c.resume&&c.out.exists()){return Err("use a new --out, or --resume on an existing v2 run".into())}
@@ -51,10 +55,11 @@ fn native(c:&Causal,t:Trial)->Result<Delivery,String>{
     let typed=view_scoped(&m.store,&q,Some("choice-pattern"),&facets).iter().map(|t|t.id.clone()).collect::<Vec<_>>();
     let qualified=m.store.traces.values().filter(|t|t.personal.scope_status==ScopeStatus::Conditional).count();
     m.set_memory_context_options(MemoryContextOptions{words:c.words,..Default::default()})?;
+    if c.route=="context-cued-ablated"{m.cut=selmem::OrganCut::no_self_cues();}
     let draft=match c.route.as_str(){
         "legacy"=>m.open_mouth_scoped(&q,&facets)?,
         "context"=>m.open_mouth_in_context(&q,"choice-pattern",&facets)?,
-        "context-cued"=>m.open_mouth_in_context_cued(&q,"choice-pattern",&facets)?,_=>unreachable!()};
+        "context-cued"|"context-cued-ablated"=>m.open_mouth_in_context_cued(&q,"choice-pattern",&facets)?,_=>unreachable!()};
     let reply=draft.memory_reply();let ctx=reply.filtered_context();
     // Validation ONLY may inspect fixture labels. None enter retrieval or actor instructions.
     let topic_episodes=ctx.episodes.iter().filter(|e|m.store.traces.get(&e.trace_id).is_some_and(|t|[d.a,d.b].contains(&t.gist.as_str()))).count();
@@ -124,6 +129,20 @@ fn freeze(c:&Causal)->Result<Vec<Json>,String>{
     fs::write(c.out.join("preflight.json"),obj([("version",text("native-causal-v2")),("pass",Json::Bool(failed==0)),("cells",num((16*c.pairs)as f64)),("failed_cells",num(failed as f64)),
         ("payload_checksum",text(checksum(&payloads))),("audit_checksum",text(checksum(&audit)))]).encode()).map_err(|e|e.to_string())?;
     fs::write(c.out.join("payloads.jsonl"),payloads).map_err(|e|e.to_string())?;
+    if c.rag {
+        let mut lines = String::new();
+        for domain in 0..c.pairs {
+            for reversed in [false, true] {
+                let m = load(&c.out.join("snapshots"), DOMAINS[domain], reversed, true)?;
+                let q = "choice";
+                let ctx = rag_baseline(&m.store, q, 8, c.words);
+                lines.push_str(&obj([("domain", text(DOMAINS[domain].id)), ("reversed", Json::Bool(reversed)), ("rag", text(&ctx))]).encode());
+                lines.push('\n');
+            }
+        }
+        fs::write(c.out.join("rag.jsonl"), lines).map_err(|e| e.to_string())?;
+        eprintln!("wrote {}", c.out.join("rag.jsonl").display());
+    }
     Ok(plan)
 }
 fn gate(c:&Causal,plan:&[Json])->Result<(),String>{
@@ -134,13 +153,33 @@ fn gate(c:&Causal,plan:&[Json])->Result<(),String>{
     }
     if plan.len()!=96*c.pairs*c.repeats{return Err("invalid/incomplete frozen plan".into())}
     let audit=read_lines(&c.out.join("delivery-audit.jsonl"))?;
-    if preflight.get("version")?.string()?!="native-causal-v2"||preflight.get("pass")?!=&Json::Bool(true)||preflight.get("cells")?.number()? as usize!=16*c.pairs
-        ||audit.len()!=16*c.pairs||audit.iter().any(|a|a.get("pass").ok()!=Some(&Json::Bool(true))){return Err("PRECHECK BLOCKED: at least one cell lacks a delivered belief, relevant scoped episode, or distinct mirror belief. See exposure.csv and delivery-audit.jsonl. ZERO actor HTTP calls made.".into())}
+    // Ablated route is expected to fail the episode gate: that is the measurement.
+    // Still require a frozen plan and checksums. Do not weaken other routes.
+    let ablated = c.route == "context-cued-ablated";
+    let cells_ok = preflight.get("cells")?.number()? as usize == 16*c.pairs && audit.len() == 16*c.pairs;
+    let pass_ok = if ablated { true } else {
+        preflight.get("pass")? == &Json::Bool(true)
+            && audit.iter().all(|a| a.get("pass").ok() == Some(&Json::Bool(true)))
+    };
+    if preflight.get("version")?.string()? != "native-causal-v2" || !cells_ok || !pass_ok {
+        return Err("PRECHECK BLOCKED: at least one cell lacks a delivered belief, relevant scoped episode, or distinct mirror belief. See exposure.csv and delivery-audit.jsonl. ZERO actor HTTP calls made.".into());
+    }
+    if ablated { eprintln!("gate relaxed for context-cued-ablated (episode absence is the measured effect)"); }
     Ok(())
 }
 // Detect accidental plan edits on resume; this is not an authentication signature.
 fn checksum(s:&str)->String{format!("{:016x}",rank(0,s))}
+pub(super) fn prepare(c:&Causal)->Result<(),String>{
+    fs::create_dir_all(&c.source).map_err(|e|e.to_string())?;
+    let mut log=BufWriter::new(File::create(c.source.join("organ.jsonl")).map_err(|e|e.to_string())?);
+    for d in DOMAINS.iter().take(c.pairs){for r in [false,true]{
+        build_life(&c.source,*d,r,true,&mut log,80,c.seed)?;
+        eprintln!("wrote {}", history_path(&c.source,*d,r,true).display());
+    }}
+    Ok(())
+}
 pub(super) fn run(c:Causal)->Result<(),String>{
+    if c.prepare { return prepare(&c); }
     let plan=if c.resume{
         if fs::read_to_string(c.out.join("manifest.json")).map_err(|e|e.to_string())?!=c.manifest(){return Err("resume settings/version differ; v1 actor results cannot be reused".into())}
         read_lines(&c.out.join("payloads.jsonl"))?
@@ -237,4 +276,28 @@ mod tests {
         for(order,digit)in[(0.,"1"),(1.,"2")]{assert_eq!(chosen(&obj([("order",num(order))]),&obj([("answer",text(digit))])).unwrap(),Some(true));}
         assert_eq!(chosen(&obj([("order",num(0.))]),&obj([("answer",text("invalid"))])).unwrap(),None);
     }
+}
+
+/// Lexical RAG baseline: rank traces by token overlap with the query,
+/// return the top-k gists as a flat context. Same word budget as memory arms.
+/// Scaffold for an equal-metadata embedding RAG; no HTTP.
+#[allow(dead_code)]
+pub(super) fn rag_baseline(store: &selmem::MemoryStore, query: &str, k: usize, words: usize) -> String {
+    let q: std::collections::BTreeSet<_> = query.split_whitespace().map(|w| w.to_ascii_lowercase()).collect();
+    let mut scored: Vec<_> = store.traces.values().map(|t| {
+        let g: std::collections::BTreeSet<_> = t.gist.split_whitespace().map(|w| w.to_ascii_lowercase()).collect();
+        let overlap = q.intersection(&g).count();
+        (overlap, t.gist.clone())
+    }).collect();
+    scored.sort_by(|a, b| b.0.cmp(&a.0));
+    let mut out = String::new();
+    let mut n = 0;
+    for (_, gist) in scored.into_iter().take(k) {
+        let add = gist.split_whitespace().count();
+        if n + add > words && n > 0 { break; }
+        if !out.is_empty() { out.push(' '); }
+        out.push_str(&gist);
+        n += add;
+    }
+    out
 }
