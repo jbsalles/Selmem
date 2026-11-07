@@ -74,6 +74,9 @@ pub fn run(
                 store.merges_refused = store.merges_refused.saturating_add(1);
                 continue;
             }
+            let supported=store.observation_evidence.groups.contains_key(&keep)||store.observation_evidence.groups.contains_key(other);
+            if supported && (store.traces[&keep].source!=store.traces[other].source
+                || !store.observation_evidence.can_transfer_on_merge(&keep,other)) {continue;}
             let other_clone = store.traces.get(other).cloned();
             let Some(src) = other_clone else { continue };
             let keep_charged = !store.living_axiom_ids_for(&keep).is_empty();

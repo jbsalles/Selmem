@@ -44,7 +44,7 @@ const DOMAINS: [Domain; 12] = [
 ];
 
 /// Second axis: risk / caution. Not a calm/social variant.
-/// Used by --axis risk (scaffolded; pair limit still 12 on the calm set).
+/// Used by --axis risk; all construction and readout use these domains.
 #[allow(dead_code)]
 const DOMAINS_RISK: [Domain; 4] = [
     Domain{id:"invest",topic:"resource commitment",a:"I chose the guaranteed small return.",b:"I chose the high-variance bet.",novel_a:"a locked low-yield bond",novel_b:"an uncapped speculative stake",paraphrase_a:"a certain modest payout",paraphrase_b:"a risky large upside"},
@@ -307,7 +307,9 @@ fn chat(provider:&str,model:&str,key:&str,system:&str,user:&str,max_tokens:f64)-
 }
 fn load(dir:&Path,d:Domain,reversed:bool,on:bool)->Result<SelectiveMemory,String>{
     let mut profile=EntityProfile::new("Claire");profile.encode_threshold=0.;
-    let mut m=SelectiveMemory::open(&history_path(dir,d,reversed,on),profile)
+    let path=history_path(dir,d,reversed,on);
+    if !path.is_file(){return Err(format!("missing snapshot {}",path.display()));}
+    let mut m=SelectiveMemory::open(&path,profile)
         .map_err(|e|format!("reading snapshot: {e}"))?;
     m.store.contextual_scope.enabled=on;
     Ok(m)
@@ -503,13 +505,13 @@ fn run(c:Config)->Result<(),String>{
     fs::create_dir(&c.out).map_err(|e|e.to_string())?;
     let dir=c.out.join("snapshots");fs::create_dir(&dir).map_err(|e|e.to_string())?;
     let mut organ=BufWriter::new(File::create(c.out.join("organ.jsonl")).map_err(|e|e.to_string())?);
-    for d in DOMAINS.into_iter().take(c.pairs){for reversed in [false,true]{for on in [false,true]{
+    for d in cur_domains().iter().copied().take(c.pairs){for reversed in [false,true]{for on in [false,true]{
         build_life(&dir,d,reversed,on,&mut organ,c.distractors,c.seed)?;
     }}}
     organ.flush().map_err(|e|e.to_string())?;
     // Verify identical observed streams in ON/OFF. Self-beliefs may differ,
     // but both arms must experience the same episodes in the same order.
-    for d in DOMAINS.into_iter().take(c.pairs){for reversed in [false,true]{
+    for d in cur_domains().iter().copied().take(c.pairs){for reversed in [false,true]{
         let on=load(&dir,d,reversed,true)?;
         let off=load(&dir,d,reversed,false)?;
         let rows=|m:&SelectiveMemory|observations(m).iter()
@@ -529,7 +531,7 @@ fn run(c:Config)->Result<(),String>{
     }
     payloads.flush().map_err(|e|e.to_string())?;
     fs::write(c.out.join("manifest.json"),obj([
-        ("version",text("genesis-contextual-longlife-v4")),
+        ("version",text("genesis-contextual-longlife-v4")),("axis",text(&c.axis)),
         ("synthetic",Json::Bool(true)),("actor",Json::Bool(c.actor)),
         ("independent_llm_audit",Json::Bool(c.judge)),
         ("scorer",text("scripted per-action witness; general belief bootstrapped from observations; judge separately optional")),
@@ -613,7 +615,7 @@ mod tests {
         let path=std::env::temp_dir().join(format!("selmem-transfer-{}-{n}",std::process::id()));
         let c=Config{out:path.clone(),pairs:1,actor:false,judge:false,
             provider:"grok".into(),model:"grok-4.3".into(),judge_provider:"openai".into(),
-            judge_model:"gpt-4.1-mini".into(),max_http_calls:0,seed:1729,distractors:80,memory_words:64};
+            judge_model:"gpt-4.1-mini".into(),max_http_calls:0,seed:1729,distractors:80,memory_words:64,axis:"calm".into()};
         let result=run(c);
         let _=fs::remove_dir_all(path);
         result.unwrap();

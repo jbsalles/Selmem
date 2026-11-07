@@ -106,13 +106,14 @@ pub fn save(
         )?;
         writeln!(
             w,
-            "cut {} {} {} {} {} {}",
+            "cut {} {} {} {} {} {} {} {} {}",
             flag(cut.reconsolidate),
             flag(cut.ground),
             flag(cut.ladder),
             flag(cut.reconstruct),
             flag(cut.util_to_strength),
             flag(cut.merge_support_veto),
+            flag(cut.support_signal),flag(cut.schema_prototype),flag(cut.self_cues),
         )?;
         writeln!(w, "embedding-space")?;
         write_blob(&mut w, store.embedding_space.as_deref().unwrap_or(""))?;
@@ -277,6 +278,9 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
                         cut.reconstruct = p[3] == "1";
                         cut.util_to_strength = p[4] == "1";
                         cut.merge_support_veto = p[5] == "1";
+                if let Some(v)=p.get(6){cut.support_signal=*v=="1";}
+                if let Some(v)=p.get(7){cut.schema_prototype=*v=="1";}
+                if let Some(v)=p.get(8){cut.self_cues=*v=="1";}
                     }
                 }
             }

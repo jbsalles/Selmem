@@ -52,23 +52,26 @@ impl ObservationEvidence {
         Some(format!("Observation support metadata (not additional recalled episodes). Counts include the initial carrier observation: do not add the narrative as another observation. Counts use caller-provided IDs; statistical independence is not verified. Different claims remain separate and do not erase earlier observations.\n{claims}"))
     }
 
-    /// On merge, move or union observation support from the dropped trace onto
-    /// the keeper. Primary claim of the survivor is preferred. Capacity limits
-    /// are respected. Never copies from archives.
-    pub fn transfer_on_merge(&mut self, keep: &str, other: &str) {
-        if !self.enabled { return; }
-        let Some(src) = self.groups.remove(other) else { return; };
+    /// Validate before mutating either carrier. Reject lossy or invalid unions.
+    pub fn can_transfer_on_merge(&self, keep:&str, other:&str)->bool {
+        if keep==other {return false;}
+        let (Some(dst),Some(src))=(self.groups.get(keep),self.groups.get(other)) else{return true;};
+        if dst.source!=src.source || dst.channel!=src.channel{return false;}
+        let mut union=dst.observations.clone();
+        for (id,claim) in &src.observations {
+            if union.get(id).is_some_and(|old|old!=claim){return false;}
+            union.insert(id.clone(),claim.clone());
+        }
+        union.len()<=MAX_OBSERVATIONS && union.values().collect::<BTreeSet<_>>().len()<=MAX_VARIANTS
+    }
+    /// Metadata transfer is independent of the runtime signal switch.
+    /// Incompatible groups remain intact; merge must check eligibility first.
+    pub fn transfer_on_merge(&mut self, keep:&str, other:&str) {
+        if !self.can_transfer_on_merge(keep,other){return;}
+        let Some(src)=self.groups.remove(other) else{return;};
         match self.groups.get_mut(keep) {
-            None => {
-                self.groups.insert(keep.to_string(), src);
-            }
-            Some(dst) => {
-                for (obs, claim) in src.observations {
-                    if dst.observations.len() >= MAX_OBSERVATIONS { break; }
-                    dst.observations.entry(obs).or_insert(claim);
-                }
-                dst.updated_at = dst.updated_at.max(src.updated_at);
-            }
+            None=>{self.groups.insert(keep.into(),src);},
+            Some(dst)=>{dst.observations.extend(src.observations);dst.updated_at=dst.updated_at.max(src.updated_at);}
         }
     }
 

@@ -3,12 +3,16 @@
 ## 1. Second axis
 `DOMAINS_RISK` in `src/bin/selmem-contextual-longlife.rs` (4 domains: invest, route, deadline, ally).
 Contrast is risk/caution, not calm/social.
-Not yet wired into `--pairs` (still capped at the 12 calm domains).
-To use: select from `DOMAINS_RISK` in a dedicated runner or extend the pair loop.
+The ordinary longlife runner selects these with `--axis risk --pairs 1..4`.
+History construction, retrieval and reporting use the same selected domain set.
+The causal v2 runner remains a calm/social protocol; it does not accept `--axis`.
 
 ## 2. RAG baseline
 `rag_baseline(store, query, k, words)` in `causal_v2.rs`.
-Lexical overlap ranking, word-budgeted. No HTTP.
+Lexical overlap over active, unsuppressed observed Episode traces. Ties use trace
+IDs. Whole gists that do not fit are skipped, including the first gist. No HTTP.
+This side file is not an actor-evaluated RAG arm. The fixed `choice` query is a
+scaffold, not a task-matched retrieval comparison.
 Equal-metadata embedding RAG still to be plugged (HashEmbedder cosine).
 
 ## 3. Blind ratings

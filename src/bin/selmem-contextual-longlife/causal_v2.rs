@@ -24,7 +24,10 @@ impl Causal {
                 "--seed"=>c.seed=v.parse().map_err(|_|"invalid seed")?,"--recall-route"=>c.route=v,
                 "--provider"=>c.provider=v,"--model"=>c.model=v,"--max-http-calls"=>c.cap=v.parse().map_err(|_|"invalid cap")?,_=>return Err(format!("unknown flag {f}"))}
         }
+        if !(1..=12).contains(&c.pairs){return Err("pairs 1..12 required".into());}
         if c.prepare {
+            if c.actor||c.resume{return Err("snapshot preparation is offline and requires a new directory".into());}
+            if c.source.exists(){return Err("snapshot directory already exists".into());}
             if c.source.as_os_str().is_empty(){return Err("--prepare-snapshots requires --snapshots DIR".into())}
             return Ok(c);
         }
@@ -37,7 +40,7 @@ impl Causal {
         if c.resume != c.out.is_dir() || (!c.resume&&c.out.exists()){return Err("use a new --out, or --resume on an existing v2 run".into())}
         Ok(c)
     }
-    fn manifest(&self)->String{obj([("version",text("native-causal-v2")),("source",text(self.source.to_string_lossy())),
+    fn manifest(&self)->String{obj([("version",text("native-causal-v2")),("protocol",text("qualified-ablation-v3")),("rag",Json::Bool(self.rag)),("source",text(self.source.to_string_lossy())),
         ("pairs",num(self.pairs as f64)),("repeats",num(self.repeats as f64)),("words",num(self.words as f64)),("seed",text(self.seed.to_string())),
         ("route",text(&self.route)),("provider",text(&self.provider)),("model",text(&self.model)),
         ("reasoning",text(if self.provider=="grok"{"none"}else{"provider_default"})),("planned_calls",num((96*self.pairs*self.repeats)as f64))]).encode()}
@@ -109,8 +112,8 @@ fn freeze(c:&Causal)->Result<Vec<Json>,String>{
         let base=deliveries[&(domain,reversed,company,wording,order)].clone();
         let donor=&deliveries[&(domain,!reversed,company,wording,order)];
         let cell=format!("{domain}:{reversed}:{company}:{wording}:{order}");
-        let donor_diff=base.context.self_model.iter().map(|s|&s.statement).collect::<Vec<_>>()!=donor.context.self_model.iter().map(|s|&s.statement).collect::<Vec<_>>();
-        let pass=base.pass&&donor.pass&&donor_diff;if !pass{failed+=1}
+        let donor_diff=base.context.self_model.iter().filter(|s|s.scope_status==ScopeStatus::Conditional.token()).map(|s|&s.statement).collect::<Vec<_>>()!=donor.context.self_model.iter().filter(|s|s.scope_status==ScopeStatus::Conditional.token()).map(|s|&s.statement).collect::<Vec<_>>();
+        let pass=if c.route=="context-cued-ablated" {beliefs_valid(&base.audit)&&beliefs_valid(&donor.audit)&&donor_diff} else {base.pass&&donor.pass&&donor_diff};if !pass{failed+=1}
         exposure.push_str(&format!("{cell},{},{},{},{},{},{},{pass}\n",base.audit.get("qualified")?.number()?,base.audit.get("plain_view_ids")?.array()?.len(),base.audit.get("typed_view_ids")?.array()?.len(),conditionals(&base.context),base.audit.get("topic_episodes")?.number()?,base.audit.get("scoped_episodes")?.number()?));
         audit.push_str(&obj([("cell",text(&cell)),("base",base.audit), ("donor",donor.audit.clone()),("donor_differs",Json::Bool(donor_diff)),("pass",Json::Bool(pass))]).encode());audit.push('\n');
         let full=user(&base.context,&t.question()).encode();
@@ -145,6 +148,8 @@ fn freeze(c:&Causal)->Result<Vec<Json>,String>{
     }
     Ok(plan)
 }
+fn beliefs_valid(a:&Json)->bool {a.get("qualified").and_then(Json::number).ok()==Some(2.) && a.get("delivered_beliefs").and_then(Json::number).ok()==Some(1.)}
+fn ablated_cell_valid(a:&Json)->bool {a.get("donor_differs").ok()==Some(&Json::Bool(true)) && a.get("base").is_ok_and(beliefs_valid) && a.get("donor").is_ok_and(beliefs_valid)}
 fn gate(c:&Causal,plan:&[Json])->Result<(),String>{
     let preflight=json::parse(&fs::read_to_string(c.out.join("preflight.json")).map_err(|e|e.to_string())?)?;
     for (file,key) in [("payloads.jsonl","payload_checksum"),("delivery-audit.jsonl","audit_checksum")]{
@@ -157,7 +162,7 @@ fn gate(c:&Causal,plan:&[Json])->Result<(),String>{
     // Still require a frozen plan and checksums. Do not weaken other routes.
     let ablated = c.route == "context-cued-ablated";
     let cells_ok = preflight.get("cells")?.number()? as usize == 16*c.pairs && audit.len() == 16*c.pairs;
-    let pass_ok = if ablated { true } else {
+    let pass_ok = if ablated { audit.iter().all(ablated_cell_valid) } else {
         preflight.get("pass")? == &Json::Bool(true)
             && audit.iter().all(|a| a.get("pass").ok() == Some(&Json::Bool(true)))
     };
@@ -229,15 +234,30 @@ mod tests {
         let source=root.join("source");fs::create_dir_all(&source).unwrap();
         let mut log=BufWriter::new(File::create(root.join("organ.jsonl")).unwrap());
         for r in [false,true]{build_life(&source,DOMAINS[0],r,true,&mut log,80,1729).unwrap();}
-        let c=Causal{source,out:root.join("run"),pairs:1,repeats:3,words:600,seed:1729,actor:false,resume:false,cap:0,provider:"grok".into(),model:"grok-4.3".into(),route:route.into()};
+        let c=Causal{source,out:root.join("run"),pairs:1,repeats:3,words:600,seed:1729,actor:false,resume:false,cap:0,provider:"grok".into(),model:"grok-4.3".into(),route:route.into(),prepare:false,rag:false};
         (root,c)
+    }
+    #[test]
+    fn ablated_gate_retains_belief_and_mirror_requirements(){
+        let valid=obj([("qualified",num(2.)),("delivered_beliefs",num(1.)),("topic_episodes",num(0.)),("scoped_episodes",num(0.))]);
+        let mut cell=obj([("base",valid.clone()),("donor",valid.clone()),("donor_differs",Json::Bool(true))]);assert!(ablated_cell_valid(&cell));
+        cell.put("donor_differs",Json::Bool(false));assert!(!ablated_cell_valid(&cell));cell.put("donor_differs",Json::Bool(true));let mut broken=valid;broken.put("delivered_beliefs",num(0.));cell.put("base",broken);assert!(!ablated_cell_valid(&cell));
+    }
+    #[test]
+    fn rag_budget_and_ties_are_deterministic_and_missing_snapshots_fail(){
+        let mut p=EntityProfile::new("Claire");p.encode_threshold=0.;let mut m=SelectiveMemory::new(p);
+        for (i,event) in ["token alpha","token beta","token gamma"].iter().enumerate(){let id=format!("obs-{i}");let input=EncodeInput::observed(event,&id);m.live_with(input);}
+        let first=rag_baseline(&m.store,"token",8,2);assert!(first.split_whitespace().count()<=2);assert_eq!(rag_baseline(&m.store,"token",8,1),"");
+        let traces=m.store.traces.drain().collect::<Vec<_>>();for(id,t)in traces.into_iter().rev(){m.store.traces.insert(id,t);}assert_eq!(first,rag_baseline(&m.store,"token",8,2));
+        for t in m.store.traces.values_mut(){t.suppressed=true;}assert_eq!(rag_baseline(&m.store,"token",8,100),"");
+        let dir=std::env::temp_dir().join("definitely-missing-selmem-review");assert!(load(&dir,DOMAINS[0],false,true).is_err());assert!(!dir.exists());
     }
     #[test]
     fn failed_exposure_blocks_actor_and_resume_before_key_lookup(){
         let(root,mut c)=fixture("legacy");c.actor=true;c.cap=1;
         let error=run(c).unwrap_err();assert!(error.contains("PRECHECK BLOCKED"),"{error}");
         assert!(!root.join("run/choices.jsonl").exists());
-        let c=Causal{source:root.join("source"),out:root.join("run"),pairs:1,repeats:3,words:600,seed:1729,actor:true,resume:true,cap:1,provider:"grok".into(),model:"grok-4.3".into(),route:"legacy".into()};
+        let c=Causal{source:root.join("source"),out:root.join("run"),pairs:1,repeats:3,words:600,seed:1729,actor:true,resume:true,cap:1,provider:"grok".into(),model:"grok-4.3".into(),route:"legacy".into(),prepare:false,rag:false};
         assert!(run(c).unwrap_err().contains("PRECHECK BLOCKED"));
         assert!(!root.join("run/choices.jsonl").exists());
         fs::remove_dir_all(root).unwrap();
@@ -284,17 +304,17 @@ mod tests {
 #[allow(dead_code)]
 pub(super) fn rag_baseline(store: &selmem::MemoryStore, query: &str, k: usize, words: usize) -> String {
     let q: std::collections::BTreeSet<_> = query.split_whitespace().map(|w| w.to_ascii_lowercase()).collect();
-    let mut scored: Vec<_> = store.traces.values().map(|t| {
+    let mut scored: Vec<_> = store.traces.values().filter(|t| !t.suppressed && t.status==selmem::TraceStatus::Active && t.personal.role==SelfRole::Episode && t.personal.evidence==selmem::SelfEvidence::Observation).map(|t| {
         let g: std::collections::BTreeSet<_> = t.gist.split_whitespace().map(|w| w.to_ascii_lowercase()).collect();
         let overlap = q.intersection(&g).count();
-        (overlap, t.gist.clone())
+        (overlap, t.id.clone(), t.gist.clone())
     }).collect();
-    scored.sort_by(|a, b| b.0.cmp(&a.0));
+    scored.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
     let mut out = String::new();
     let mut n = 0;
-    for (_, gist) in scored.into_iter().take(k) {
+    for (_, _, gist) in scored.into_iter().take(k) {
         let add = gist.split_whitespace().count();
-        if n + add > words && n > 0 { break; }
+        if n + add > words { continue; }
         if !out.is_empty() { out.push(' '); }
         out.push_str(&gist);
         n += add;

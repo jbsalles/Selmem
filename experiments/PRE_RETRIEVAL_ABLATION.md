@@ -22,17 +22,22 @@ Both arms completed 192/192 calls (`choices.jsonl`, field `answer`).
 
 - Answers that differ: **50 / 192** (~26 %).
 - Identical-request repeat disagreement in the native v2 ablation was ~2.9 %.
-  50/192 is well above that floor.
+  That historical rate is not a matched noise floor for these runs.
 
-Removing the cues (and therefore the episodes they select) changes about a
-quarter of the held-out binary choices. Selection reaches the decision, not
-only the delivered packet.
+The reported runs differ on about a quarter of answers aggregated across the
+six delivery arms. This is exploratory: a matched same-condition repeat control
+and per-arm, ID-aligned analysis are needed before attributing the differences
+to selection. The raw runs below are temporary paths, not bundled evidence;
+these counts have not been independently reproduced from committed artifacts.
 
 ## Limits
 
 - One domain, calm/social axis, synthetic history.
 - Gate was relaxed only for `context-cued-ablated` so the actor could run;
-  episode absence is the measured effect. Other routes stay strict.
+  episode absence is the measured effect. The repaired gate still requires two
+  qualified beliefs, one delivered conditional per mirror, and distinct mirror
+  beliefs. New manifests mark this protocol; older actor runs cannot be resumed
+  into it. Other routes stay strict.
 - No control that keeps the same episodes and only perturbs prompt wording.
   Part of the 26 % could be prompt-shape sensitivity. The exposure split
   (1–2 vs 0 episodes) is not ambiguous.

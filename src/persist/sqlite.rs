@@ -312,13 +312,14 @@ pub fn save(
             (
                 "cut",
                 &format!(
-                    "{} {} {} {} {} {}",
+                    "{} {} {} {} {} {} {} {} {}",
                     if cut.reconsolidate { 1 } else { 0 },
                     if cut.ground { 1 } else { 0 },
                     if cut.ladder { 1 } else { 0 },
                     if cut.reconstruct { 1 } else { 0 },
                     if cut.util_to_strength { 1 } else { 0 },
                     if cut.merge_support_veto { 1 } else { 0 },
+                    if cut.support_signal {1}else{0},if cut.schema_prototype {1}else{0},if cut.self_cues {1}else{0},
                 ),
             ),
             (
@@ -898,6 +899,9 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
                 cut.reconstruct = p[3] == "1";
                 cut.util_to_strength = p[4] == "1";
                 cut.merge_support_veto = p[5] == "1";
+                if let Some(v)=p.get(6){cut.support_signal=*v=="1";}
+                if let Some(v)=p.get(7){cut.schema_prototype=*v=="1";}
+                if let Some(v)=p.get(8){cut.self_cues=*v=="1";}
             }
             cut
         },
