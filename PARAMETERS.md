@@ -32,3 +32,11 @@ Limits: 128 representative groups, 64 identified observations per group, eight c
 `associations_learn` and `associations_reconstruct` are independent boolean settings. Enabling either alone is not evidence of an associative effect. Provider model, keys, requested temperature/reasoning and HTTP timeout use `.selmem`. Experimental calls cap actual HTTP attempts including retries. Keys are not written into manifests.
 
 Current GENESIS lives use one simulated hour per input, no sleep within twelve inputs and native reconstruction during intake. Final native/strict probes are separate readout interventions. These choices isolate short-term learning and are not optimized lifetime durations.
+
+### Expanded memory delivery (opt-in)
+
+`memory_context_tokens` adds a ceiling on serialized memory, using the configured
+token counter (default: conservative UTF-8 bytes). `memory_context_max_episodes`
+and `memory_context_episode_words` expand the episode count and per-episode length.
+`memory_context_words` remains an independent ceiling and now accepts up to 64000.
+See [configuration, accounting limits and the budget sweep](experiments/genesis/CONTEXT_BUDGET_SWEEP.md).

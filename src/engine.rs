@@ -955,13 +955,16 @@ impl SelectiveMemory {
         } else {
             RecallWrite::ReadOnly
         };
+        let previous_cap=self.profile.max_recall;
+        if self.memory_context_options.format==crate::MemoryContextFormat::Structured && self.memory_context_options.max_episodes!=4 {self.profile.max_recall=self.memory_context_options.max_episodes;}
         let (recalled, dump) = self.remember_with(&query, write, bias, marked);
+        self.profile.max_recall=previous_cap;
         // Structured delivery already enforces its episode and word budgets.
         // Do not discard selected evidence at the legacy two-scene boundary.
         let delivery_cap = if hold && self.memory_context_options.format == crate::MemoryContextFormat::Legacy {
             2
         } else {
-            4
+            self.memory_context_options.max_episodes
         };
         let delivered_ids: Vec<String> = if axioms_only { Vec::new() } else {
             recalled.iter().take(if hold { delivery_cap } else { usize::MAX }).map(|r| r.trace_id.clone()).collect()

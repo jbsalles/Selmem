@@ -13,24 +13,30 @@ pub enum MemoryUse { Legacy, Neutral, Experience }
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct MemoryContextOptions {
  pub format:MemoryContextFormat,pub usage:MemoryUse,
+ pub token_budget:Option<usize>,pub max_episodes:usize,pub episode_words:usize,
+ /// Counts tokens in serialized memory; default UTF-8 bytes conservatively bounds byte-based tokenizers.
+ pub token_counter:fn(&str)->usize,
  pub episodes:bool,pub dispositions:bool,pub associations:bool,pub affect:bool,pub words:usize,
 }
 impl Default for MemoryContextOptions {
  fn default()->Self { Self {format:MemoryContextFormat::Structured,usage:MemoryUse::Experience,
-  episodes:true,dispositions:true,associations:true,affect:true,words:600} }
+  token_budget:None,max_episodes:4,episode_words:160,token_counter:utf8_token_bound,episodes:true,dispositions:true,associations:true,affect:true,words:600} }
 }
 impl MemoryContextOptions {
  pub fn validate(&self)->Result<(),String>{
-  if !(32..=4000).contains(&self.words){return Err("memory_context_words must be in 32..4000".into());}
+  if self.max_episodes==0||self.max_episodes>64||self.episode_words==0||self.episode_words>4000{return Err("episode count 1..64 and episode words 1..4000 required".into());}
+  if self.token_budget.is_some_and(|n| !(512..=64000).contains(&n)){return Err("token budget must be 512..64000".into());}
+  if self.format==MemoryContextFormat::Legacy&&(self.token_budget.is_some()||self.max_episodes!=4||self.episode_words!=160){return Err("expanded delivery requires structured context".into());}
+  if !(32..=64000).contains(&self.words){return Err("memory_context_words must be in 32..64000".into());}
   if self.format==MemoryContextFormat::Legacy&&!(self.episodes&&self.dispositions&&self.associations&&self.affect){return Err("component cuts require memory_context=structured".into());}Ok(())
  }
  pub fn from_config(c:&Config)->Result<Self,String>{
   fn flag(c:&Config,k:&str)->Result<bool,String>{match c.resolve_or(None,k,"true").to_ascii_lowercase().as_str(){"true"|"on"|"1"=>Ok(true),"false"|"off"|"0"=>Ok(false),_=>Err(format!("{k} must be true or false"))}}
   let format=match c.resolve_or(None,"memory_context","structured").as_str(){"legacy"=>MemoryContextFormat::Legacy,"structured"=>MemoryContextFormat::Structured,_=>return Err("memory_context must be legacy or structured".into())};
   let usage=match c.resolve_or(None,"memory_use","experience").as_str(){"legacy"=>MemoryUse::Legacy,"neutral"=>MemoryUse::Neutral,"experience"=>MemoryUse::Experience,_=>return Err("memory_use must be legacy, neutral or experience".into())};
-  let o=Self{format,usage,episodes:flag(c,"memory_context_episodes")?,dispositions:flag(c,"memory_context_dispositions")?,associations:flag(c,"memory_context_associations")?,affect:flag(c,"memory_context_affect")?,words:c.resolve_or(None,"memory_context_words","600").parse().map_err(|_|"invalid memory_context_words")?};o.validate()?;Ok(o)
+  let o=Self{format,usage,token_budget:{let v=c.resolve_or(None,"memory_context_tokens","");if v.is_empty(){None}else{Some(v.parse().map_err(|_|"invalid memory_context_tokens")?)}},max_episodes:c.resolve_or(None,"memory_context_max_episodes","4").parse().map_err(|_|"invalid max episodes")?,episode_words:c.resolve_or(None,"memory_context_episode_words","160").parse().map_err(|_|"invalid episode words")?,token_counter:utf8_token_bound,episodes:flag(c,"memory_context_episodes")?,dispositions:flag(c,"memory_context_dispositions")?,associations:flag(c,"memory_context_associations")?,affect:flag(c,"memory_context_affect")?,words:c.resolve_or(None,"memory_context_words","600").parse().map_err(|_|"invalid memory_context_words")?};o.validate()?;Ok(o)
  }
- pub fn to_json(&self)->String{format!("{{\"format\":{},\"usage\":{},\"episodes\":{},\"dispositions\":{},\"associations\":{},\"affect\":{},\"word_budget\":{}}}",q(match self.format{MemoryContextFormat::Legacy=>"legacy",MemoryContextFormat::Structured=>"structured"}),q(match self.usage{MemoryUse::Legacy=>"legacy",MemoryUse::Neutral=>"neutral",MemoryUse::Experience=>"experience"}),self.episodes,self.dispositions,self.associations,self.affect,self.words)}
+ pub fn to_json(&self)->String{format!("{{\"format\":{},\"usage\":{},\"episodes\":{},\"dispositions\":{},\"associations\":{},\"affect\":{},\"word_budget\":{},\"token_budget\":{},\"max_episodes\":{},\"episode_words\":{}}}",q(match self.format{MemoryContextFormat::Legacy=>"legacy",MemoryContextFormat::Structured=>"structured"}),q(match self.usage{MemoryUse::Legacy=>"legacy",MemoryUse::Neutral=>"neutral",MemoryUse::Experience=>"experience"}),self.episodes,self.dispositions,self.associations,self.affect,self.words,self.token_budget.map(|n|n.to_string()).unwrap_or_else(||"null".into()),self.max_episodes,self.episode_words)}
 }
 #[derive(Clone,Debug)]
 pub struct MemoryEpisode{pub trace_id:String,pub narrative:String,pub attribution:Attribution,pub channel:Channel,pub fidelity:f32,pub confidence:f32,pub affect:Option<Mood>,pub scope_facets:Vec<crate::ContextFacet>,pub truncated:bool}
@@ -46,14 +52,14 @@ pub struct ContextStatement{pub statement:String,pub truncated:bool}
 pub struct MemoryContext{pub self_model:Vec<SelfPerspective>,pub agent_name:Option<String>,pub episodes:Vec<MemoryEpisode>,pub dispositions:Vec<AcquiredDisposition>,pub contextual_statements:Vec<ContextStatement>,pub associations:Vec<ActiveAssociation>,pub affect:Option<Mood>,pub content_words:usize}
 impl MemoryContext {
  pub fn from_selected(store:&MemoryStore,ids:&[String],narratives:&[String],axioms:&[String],mood:&Mood,o:&MemoryContextOptions,now:u64)->Self{
-  let mut c=Self::default();let mut remaining=o.words.min(4000);let mut seen=BTreeSet::new();
-  if o.episodes {for (id,narrative) in ids.iter().zip(narratives).take(4){let Some(t)=store.traces.get(id)else{continue};if t.suppressed||t.status==TraceStatus::Latent||!seen.insert(id){continue;}
+  let mut c=Self::default();let mut remaining=o.words.min(64000);let mut seen=BTreeSet::new();
+  if o.episodes {for (id,narrative) in ids.iter().zip(narratives).take(o.max_episodes){let Some(t)=store.traces.get(id)else{continue};if t.suppressed||t.status==TraceStatus::Latent||!seen.insert(id){continue;}
    if let Some(record)=super::dependency::record(t){
     // Do not expose a partial scoped rule or a dangling dependent exception.
-    if narrative.split_whitespace().count()>remaining.min(160){continue;}
+    if narrative.split_whitespace().count()>remaining.min(o.episode_words){continue;}
     if record.parent.is_some()&&!c.episodes.iter().any(|e| !e.truncated&&store.traces.get(&e.trace_id).is_some_and(|p|super::dependency::same_provenance(t,p)&&super::dependency::record(p).is_some_and(|r|super::dependency::is_parent(&record,&r)))){continue;}
    }
-   let (narrative,truncated)=clip(narrative,&mut remaining,160);if narrative.is_empty(){continue;}
+   let (narrative,truncated)=clip(narrative,&mut remaining,o.episode_words);if narrative.is_empty(){continue;}
    c.episodes.push(MemoryEpisode{trace_id:id.clone(),narrative,attribution:t.attribution,channel:t.channel,fidelity:t.fidelity,confidence:t.confidence,affect:o.affect.then(||Mood{valence:t.valence,arousal:t.arousal,disgust:t.disgust}),scope_facets:t.personal.scope_facets.clone(),truncated});}}
   let mut seen=BTreeSet::new();if o.dispositions{for line in axioms.iter().take(4){if !seen.insert(line){continue;}
    let mut matches:Vec<_>=store.living_axioms().into_iter().filter(|a|a.statement==*line).collect();matches.sort_by(|a,b|a.id.cmp(&b.id));
@@ -63,7 +69,7 @@ impl MemoryContext {
    }else{if store.axioms.values().any(|a|a.statement==*line){continue;}let(statement,truncated)=clip(line,&mut remaining,80);if !statement.is_empty(){c.contextual_statements.push(ContextStatement{statement,truncated});}}
   }}
   if o.associations&&store.associations.reconstruct{for (i,a) in c.episodes.iter().enumerate(){for b in c.episodes.iter().skip(i+1){let weight=store.associations.weight(&a.trace_id,&b.trace_id,now);if weight.is_finite()&&weight>0.0{c.associations.push(ActiveAssociation{a:a.trace_id.clone(),b:b.trace_id.clone(),weight});}}}}
-  c.affect=o.affect.then(||mood.clone());c.content_words=o.words.min(4000)-remaining;c
+  c.affect=o.affect.then(||mood.clone());c.content_words=o.words.min(64000)-remaining;c.enforce_tokens(o);c
  }
  pub fn attach_self_view(&mut self,store:&MemoryStore,query:&str,o:&MemoryContextOptions){
   self.attach_self_view_scoped(store,query,o,&[])
@@ -77,20 +83,33 @@ impl MemoryContext {
   *self=self.filtered(o);
  }
  pub fn filtered(&self,o:&MemoryContextOptions)->Self{
-  let mut c=self.clone();let mut remaining=o.words.min(4000);if !o.dispositions{c.self_model.clear();}c.self_model.truncate(4);for s in &mut c.self_model{let(t,x)=clip(&s.context,&mut remaining,20);s.context=t;s.truncated|=x;let(t,x)=clip(&s.statement,&mut remaining,60);s.statement=t;s.truncated|=x;}c.self_model.retain(|s|!s.statement.is_empty());if !o.episodes{c.episodes.clear();}c.episodes.truncate(4);
+  let mut c=self.clone();let mut remaining=o.words.min(64000);if !o.dispositions{c.self_model.clear();}c.self_model.truncate(4);for s in &mut c.self_model{let(t,x)=clip(&s.context,&mut remaining,20);s.context=t;s.truncated|=x;let(t,x)=clip(&s.statement,&mut remaining,60);s.statement=t;s.truncated|=x;}c.self_model.retain(|s|!s.statement.is_empty());if !o.episodes{c.episodes.clear();}c.episodes.truncate(o.max_episodes);
   let mut delivered_records=Vec::new();
   for e in &mut c.episodes{
    if let Some(record)=super::dependency::parse(&e.narrative){
-    if e.truncated||e.narrative.split_whitespace().count()>remaining.min(160)||(record.parent.is_some()&&!delivered_records.iter().any(|p|super::dependency::is_parent(&record,p))){e.narrative.clear();continue;}
+    if e.truncated||e.narrative.split_whitespace().count()>remaining.min(o.episode_words)||(record.parent.is_some()&&!delivered_records.iter().any(|p|super::dependency::is_parent(&record,p))){e.narrative.clear();continue;}
     delivered_records.push(record);
    }
-   let(t,x)=clip(&e.narrative,&mut remaining,160);e.narrative=t;e.truncated|=x;if !o.affect{e.affect=None;}
+   let(t,x)=clip(&e.narrative,&mut remaining,o.episode_words);e.narrative=t;e.truncated|=x;if !o.affect{e.affect=None;}
   }c.episodes.retain(|e|!e.narrative.is_empty());
   if !o.dispositions{c.dispositions.clear();c.contextual_statements.clear();}c.dispositions.truncate(4);c.contextual_statements.truncate(4-c.dispositions.len());
   for a in &mut c.dispositions{let(t,x)=clip(&a.statement,&mut remaining,80);a.statement=t;a.truncated|=x;}for a in &mut c.contextual_statements{let(t,x)=clip(&a.statement,&mut remaining,80);a.statement=t;a.truncated|=x;}
   c.dispositions.retain(|a|!a.statement.is_empty());c.contextual_statements.retain(|a|!a.statement.is_empty());if !o.associations{c.associations.clear();}
-  c.associations.retain(|a|c.episodes.iter().any(|e|e.trace_id==a.a)&&c.episodes.iter().any(|e|e.trace_id==a.b));c.associations.truncate(6);if !o.affect{c.affect=None;}c.content_words=o.words.min(4000)-remaining;c
+  c.associations.retain(|a|c.episodes.iter().any(|e|e.trace_id==a.a)&&c.episodes.iter().any(|e|e.trace_id==a.b));c.associations.truncate(6);if !o.affect{c.affect=None;}c.content_words=o.words.min(64000)-remaining;c.enforce_tokens(o);c
  }
+ fn enforce_tokens(&mut self,o:&MemoryContextOptions){
+  let Some(budget)=o.token_budget else{return;};
+  while (o.token_counter)(&self.to_json())>budget {
+   if self.associations.pop().is_some(){continue;}
+   if self.contextual_statements.pop().is_some(){self.recount();continue;}
+   if self.dispositions.pop().is_some(){self.recount();continue;}
+   if self.episodes.pop().is_some(){self.recount();continue;}
+   if self.self_model.pop().is_some(){self.recount();continue;}
+   if self.affect.take().is_some(){continue;}
+   break;
+  }
+ }
+ fn recount(&mut self){self.content_words=self.episodes.iter().map(|e|e.narrative.split_whitespace().count()).sum::<usize>()+self.self_model.iter().map(|s|s.context.split_whitespace().count()+s.statement.split_whitespace().count()).sum::<usize>()+self.dispositions.iter().map(|s|s.statement.split_whitespace().count()).sum::<usize>()+self.contextual_statements.iter().map(|s|s.statement.split_whitespace().count()).sum::<usize>();}
  pub fn to_json(&self)->String{
   let self_model=self.self_model.iter().map(|s|format!("{{\"trace_id\":{},\"role\":{},\"context\":{},\"statement\":{},\"certainty\":{},\"importance\":{},\"foundations_missing\":{},\"counterexamples\":{},\"scope_status\":{},\"scope_parent\":{},\"scope_facets\":{},\"truncated\":{}}}",q(&s.trace_id),q(&s.role),q(&s.context),q(&s.statement),number(s.certainty),number(s.importance),s.foundations_missing,s.counterexamples,q(&s.scope_status),s.scope_parent.as_ref().map(|x|q(x)).unwrap_or_else(||"null".into()),strings(&s.scope_facets.iter().map(|f|format!("{}={}",f.dimension,f.value)).collect::<Vec<_>>()),s.truncated)).collect::<Vec<_>>().join(",");
   let episodes=self.episodes.iter().map(|e|format!("{{\"trace_id\":{},\"narrative\":{},\"attribution\":{},\"channel\":{},\"fidelity\":{},\"confidence\":{},\"affect\":{},\"scope_facets\":{},\"truncated\":{}}}",q(&e.trace_id),q(&e.narrative),q(e.attribution.token()),q(match e.channel{Channel::Selfhood=>"selfhood",Channel::World=>"world",Channel::Log=>"log"}),number(e.fidelity),number(e.confidence),mood_json(e.affect.as_ref()),strings(&e.scope_facets.iter().map(|f|format!("{}={}",f.dimension,f.value)).collect::<Vec<_>>()),e.truncated)).collect::<Vec<_>>().join(",");
@@ -125,3 +144,6 @@ fn number(n:f32)->String{if n.is_finite(){n.to_string()}else{"null".into()}}
 fn strings(xs:&[String])->String{format!("[{}]",xs.iter().map(|s|q(s)).collect::<Vec<_>>().join(","))}
 fn mood_json(m:Option<&Mood>)->String{m.map(|m|format!("{{\"valence\":{},\"arousal\":{},\"disgust\":{}}}",number(m.valence),number(m.arousal),number(m.disgust))).unwrap_or_else(||"null".into())}
 fn clip(s:&str,remaining:&mut usize,cap:usize)->(String,bool){let n=s.split_whitespace().count();let k=n.min(*remaining).min(cap);*remaining-=k;if k==n{(s.into(),false)}else{(s.split_whitespace().take(k).collect::<Vec<_>>().join(" "),true)}}
+
+/// Safe conservative fallback for byte-based tokenizers; not an exact model token count.
+pub fn utf8_token_bound(s:&str)->usize{s.len()}
