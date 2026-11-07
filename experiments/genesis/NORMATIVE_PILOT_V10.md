@@ -1,8 +1,23 @@
-# Normative memory pilot v10
+# Normative memory pilot v12: wide context
 
 This experiment accompanies the opt-in engine described in
-[Normative memory](../../docs/NORMATIVE_MEMORY.md). Rebased patch base: `cd64be0` (configurable memory budgets). The v10 pilot protocol is retained.
+[Normative memory](../../docs/NORMATIVE_MEMORY.md). Engine patch base: `cd64be0`
+plus normative grounding v11. The v12 update expands context capacity while
+retaining the four-arm, 192-request task grid.
 The runner and all engine changes are Rust, with no new dependencies.
+
+## Completed run
+
+`normative-wide-012` completed 192/192 valid Grok 4.3 responses, without API
+errors or retries. Normative delivery reached **46/48**, versus **41/48 native**,
+**40/48 unfiltered anchors**, and **46/48 scoped registry**. The five corrected
+responses were verification instead of required refusal; authorized deliveries
+remained 18/20 for native and normative, with no unauthorized delivery in any arm.
+The actual native context contained all applicable rules without clipping.
+See [the result analysis](NORMATIVE_WIDE_RESULTS.md) and
+[compact response rows](../evidence/normative-wide-012/answers.jsonl).
+The original design below is retained; a new run is a replication, not a resume
+of the published collection.
 
 ## Design
 
@@ -34,10 +49,35 @@ cover forgery, conflicts, missing parents, scope uncertainty, corruption of gist
 revisions, forgetting, persistence and budget exhaustion. They do not establish
 that a model handles these cases; the paid pilot does not cover all of them.
 
-Default evidence ceiling: **256 words** for every condition, including canonical
-provenance/conditions. This differs from v9's 128 and accommodates the unfiltered
-canonical control; do not directly attribute cross-run score changes to the engine.
-Actual evidence lengths are audited and can differ. Requests use the same system
+Default evidence ceiling: **6,000 words** for every condition, including canonical
+provenance/conditions. Both native and normative engine paths use the new capacity
+controls: 64 episodes, 800 words per episode, and a 64,000-byte bound on serialized
+memory through the default token counter. This is a conservative UTF-8 byte bound,
+not 64,000 measured model tokens. The complete actor request is also checked
+against 64,000 serialized bytes. Engine defaults outside this pilot are unchanged.
+
+Qualification on the fixed 80-distractor histories gives:
+
+| Arm | Actual evidence words | Delivered episodes | Full original scoped rules |
+| --- | ---: | ---: | ---: |
+| native | 1,213–1,214 | 64 | 24/24 cells |
+| normative | 17–38 | typed rule bundle | canonical representation |
+| anchored_all | 34–76 | typed anchors | canonical representation |
+| scoped_registry | 17–37 | original owner records | 24/24 cells |
+
+Native serialized memory is 19,654–19,658 bytes; complete native requests are
+9,542–9,550 bytes. All selected native episodes are delivered, without clipping.
+No padding or duplication is added to short normative bundles. They are shorter
+because the supplied rule families are small. Actual lengths are recorded in
+`preflight.json`; native packet sizes and settings are in `recall-audit.jsonl`.
+The wide preparation gate rejects a clipped or partially delivered native
+selection, or a packet/request above its ceiling. Relevant-rule coverage is
+reported separately; retrieval failures remain in the denominator.
+
+These settings differ from v9 and v10/v11. Compare arms within this new run;
+do not attribute cross-run score changes uniquely to grounding. In particular,
+the large native context now contains every relevant rule, so a native gain can
+reflect the capacity change. Requests use the same system
 instruction and task in all arms: Grok-4.3, reasoning none, temperature 0, maximum
 160 tokens, text action `deliver`, `decline` or `verify` and a short explanation.
 The runner evaluates delivered evidence with this common actor prompt, not the
@@ -68,7 +108,7 @@ identical request bytes and do not count as independent tasks.
 ```bash
 cargo test --release --test normative_grounding --bin selmem-normative-pilot
 cargo run --release --bin selmem-normative-pilot -- \
-  --out experiments/genesis/results/normative-pilot-010
+  --out experiments/genesis/results/normative-wide-012 --memory-words 6000
 ```
 
 Expected: `Prepared 192 requests. Preflight: 96/96 valid protocol cells.`
@@ -76,7 +116,7 @@ Preparation uses no API key and makes no network calls. With `GROK_API_KEY` set:
 
 ```bash
 cargo run --release --bin selmem-normative-pilot -- \
-  --out experiments/genesis/results/normative-pilot-010 \
+  --out experiments/genesis/results/normative-wide-012 --memory-words 6000 \
   --resume --actor --max-http-calls 192
 ```
 
@@ -88,8 +128,8 @@ execution. Do not delete attempts to bypass that block; check for an active
 process before removing a stale lock. Existing directories are never overwritten.
 
 ```bash
-tar -czf normative-pilot-010.tar.gz \
-  -C experiments/genesis/results normative-pilot-010
+tar -czf normative-wide-012.tar.gz \
+  -C experiments/genesis/results normative-wide-012
 ```
 
 ## Readout
@@ -106,3 +146,6 @@ A blanket refusal scores only 20/48; authorization, refusal and verification mus
 all be correct. Improvement over native with parity to the scoped registry would
 support the utility of this engineered memory path on this task family. It would
 not demonstrate a unique benefit of lossy reconstruction or general alignment.
+
+Use a fresh output directory after installing v12. Earlier prepared runs are
+incompatible with the changed source fingerprint and capacity settings.

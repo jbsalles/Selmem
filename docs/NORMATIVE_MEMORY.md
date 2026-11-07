@@ -122,5 +122,15 @@ no normative anchors. The sealed archive is never used for recovery.
 ## Evaluation
 
 See [the bounded normative pilot](../experiments/genesis/NORMATIVE_PILOT_V10.md).
-No paid model result is claimed by the implementation. Existing v8/v9 runs remain
-historical controls and should not be resumed using a changed source fingerprint.
+The completed wide-context run recorded 192 valid Grok 4.3 responses. Normative
+delivery scored **46/48**, compared with **41/48** for native recall, **40/48** for
+unfiltered anchors and **46/48** for the scope-filtered registry. Native recall
+already contained all applicable rules. The five corrections concern explicit
+prohibitions; authorized delivery accuracy stayed 18/20 and unauthorized deliveries
+were zero in every arm. The actor still misapplied a planning-only prohibition to
+inspection. This is a small rule-following pilot, not proof of general alignment
+or a unique reconstruction benefit. [Results, limitations and source hashes](../experiments/genesis/NORMATIVE_WIDE_RESULTS.md).
+
+Existing v8/v9 runs remain historical controls and should not be resumed using
+a changed source fingerprint. The confidentiality assay is a separate protocol;
+these results must not be presented as its execution.

@@ -16,7 +16,7 @@
 <div class="wrap">
 <header>
 <a class="brand" href="https://github.com/jbsalles/Selmem/blob/main/README.md" aria-label="SelMem project readme">Sel<span>Mem</span></a>
-<nav aria-label="Page navigation"><a href="#findings">Findings</a><a href="#causal">Causal ablations</a><a href="#self">Contextual self</a><a href="#contextual">Transfer pilots</a><a href="#creativity">Creative examples</a><a href="#record">Run record</a><a href="https://github.com/jbsalles/Selmem">GitHub ↗</a></nav>
+<nav aria-label="Page navigation"><a href="#findings">Findings</a><a href="#causal">Causal ablations</a><a href="#normative">Normative memory</a><a href="#self">Contextual self</a><a href="#contextual">Transfer pilots</a><a href="#creativity">Creative examples</a><a href="#record">Run record</a><a href="https://github.com/jbsalles/Selmem">GitHub ↗</a></nav>
 </header>
 <main>
 <div class="hero">
@@ -53,6 +53,17 @@
 <tr><th scope="row">Neutral length placebo</th><td>288/576 (50.0%)</td><td>191/576 (33.2%)</td></tr>
 </tbody></table></div>
 <p class="note"><strong>Mechanism and limits.</strong> All 192 full-memory query cells delivered one contextual belief and two relevant episodes. This required the revised <code>context-cued</code> route; an earlier native run delivered no beliefs and only unrelated episodes. Swapped beliefs matched the donor pattern in only 52.6% of choices, and option reversal changed 24.0% of full-memory choices. The next causal test removes beliefs <em>before</em> retrieval. No new creativity or general semantic-RAG comparison is claimed. <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/genesis/CAUSAL_NATIVE_RESULTS.md">Full analysis, per-domain results and archive provenance</a> · <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/contextual/causal-v2-qualified-12-001/answers.csv">Compact answer rows</a>.</p>
+</section>
+<section id="normative" aria-labelledby="normative-title">
+<div class="section-head"><h2 id="normative-title">Preserving rules is only part of following them.</h2><p>Analysis November 8, 2026 · Grok 4.3 · reasoning none · 192 valid responses.</p></div>
+<div class="table-wrap"><table><caption class="label" style="text-align:left;margin:20px 0 8px">Normative wide-context pilot · 24 synthetic cells per arm, each repeated twice</caption><thead><tr><th scope="col">Delivered evidence</th><th scope="col">Correct decisions</th><th scope="col">Unauthorized deliveries</th></tr></thead><tbody>
+<tr><th scope="row">Wide native recall</th><td>41/48 (85.4%)</td><td>0</td></tr>
+<tr><th scope="row">All canonical anchors, unfiltered</th><td>40/48 (83.3%)</td><td>0</td></tr>
+<tr><th scope="row">Normative scope composition</th><td>46/48 (95.8%)</td><td>0</td></tr>
+<tr><th scope="row">Scope-filtered original registry</th><td>46/48 (95.8%)</td><td>0</td></tr>
+</tbody></table></div>
+<p class="note">Native recall contained <strong>all relevant rules</strong> in 64 unclipped episodes, totaling 1,213–1,214 words. Normative delivery corrected five responses that asked to verify an explicit prohibition instead of refusing. Correct authorized deliveries remained <strong>18/20</strong> in both arms. The remaining normative error applied a planning-only prohibition to inspection, which was still permitted.</p>
+<p class="note"><strong>Bounded finding.</strong> Better rule-following than wide native recall on this pilot, with <strong>parity to a simple scope-filtered registry</strong>. Typed semantics, scope composition, format and context length change together. This does not isolate reconstruction, demonstrate fewer unsafe actions, or establish general alignment. Two mirrored histories and identical repeats remain a small sample. <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/genesis/NORMATIVE_WIDE_RESULTS.md">Full results and provenance</a> · <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/normative-wide-012/answers.jsonl">192 compact response rows</a>.</p>
 </section>
 <section id="self" aria-labelledby="self-title">
 <div class="section-head"><h2 id="self-title">When a remembered self affects a choice.</h2><p>Grok 4.3 · October 2026 · scripted histories, matched actor choices; not independent lives.</p></div>

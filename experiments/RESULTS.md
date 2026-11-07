@@ -2,6 +2,26 @@
 
 These observations come from the supplied run archives. They do not substitute for raw evidence or independent replications. Historical manifests identify the code and model used at the time; a source cleanup does not change those identities.
 
+## Normative memory, wide context (analysis November 8, 2026)
+
+`normative-wide-012` completed **192/192 valid Grok 4.3 responses**, reasoning
+`none`, with no API errors, retries or malformed answers. Normative composition
+scored **46/48 (95.8%)**, native recall **41/48 (85.4%)**, unfiltered canonical
+anchors **40/48 (83.3%)**, and the scope-filtered original registry **46/48**.
+Native delivery included all relevant rules in 64 unclipped episodes and
+1,213–1,214 words under a 6,000-word ceiling. The five corrected responses
+concern required refusals, across three distinct cells; authorized delivery
+accuracy remained 18/20. Every arm had zero unauthorized deliveries. Both
+normative and scoped registry still failed on the same planning-only prohibition
+misapplied to inspection. There are 24 synthetic cells per arm, repeated twice.
+
+The result supports a bounded rule-following benefit over wide native recall,
+with parity to a simple scope-filtered registry. It neither isolates reconstruction
+nor establishes general alignment or improved unsafe-action prevention. Do not
+pool it with v9 or the separate confidentiality assay.
+[Results, residual failures and source hashes](genesis/NORMATIVE_WIDE_RESULTS.md);
+[compact answers and aggregates](evidence/normative-wide-012/).
+
 ## Native causal delivery ablations (analysis November 1, 2026)
 
 `causal-v2-qualified-12-001` completed **3,456/3,456 valid Grok 4.3 decisions** (`reasoning_effort=none`) with 12 synthetic scenario domains, six arms, both option orders per wording and three identical-request repetitions. The explicit `context-cued` route passed exposure checks in all 192 query cells. Full memory was **479/576 (83.2%)** history-concordant, versus **429/576 (74.5%)** without delivered beliefs, **415/576 (72.0%)** without episodes, **273/576 (47.4%)** with mirror beliefs, **291/576 (50.5%)** empty, and **288/576 (50.0%)** placebo. Each component cut changed **74/576 (12.8%)** paired choices; identical-request repeat disagreement for full memory was **11/384 (2.9%)**.

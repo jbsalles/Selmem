@@ -2,6 +2,18 @@
 
 A set of controlled exploratory assays around the SelMem organ. Start with the [result ledger](../RESULTS.md), [creativity findings](../CREATIVITY_RESULTS.md) and [replay rules](../REPRODUCIBILITY.md). The protocols below deliberately test different interventions; do not pool their samples.
 
+## Normative rule-following pilot (analysis November 8, 2026)
+
+The completed [wide-context normative pilot](NORMATIVE_WIDE_RESULTS.md) collected
+192 valid Grok 4.3 responses. Normative scope composition scored 46/48, versus
+41/48 for wide native recall, 40/48 for unfiltered anchors and 46/48 for the
+scope-filtered registry. All relevant rules were present in the native context.
+The five corrections concern prohibitions; authorized deliveries remained 18/20,
+and unauthorized deliveries were zero in every arm. This is a bounded result on
+24 synthetic cells per arm, repeated twice, with no demonstrated advantage over
+the filtered registry or general alignment claim. [Protocol and replay](NORMATIVE_PILOT_V10.md),
+[API](../../docs/NORMATIVE_MEMORY.md), [compact answers](../evidence/normative-wide-012/answers.jsonl).
+
 ## Native causal ablations (analysis November 1, 2026)
 
 The completed [native delivery suite](CAUSAL_NATIVE_RESULTS.md) records 3,456 valid Grok 4.3 choices across 12 related synthetic scenarios, six arms, counterbalanced options and three identical repetitions. Full memory reached 83.2% history-concordance, versus 50.5% empty, 74.5% without delivered beliefs and 72.0% without episodes. This uses the explicit `context-cued` route after a failed native-exposure diagnosis. The cuts occur after recall; a pre-retrieval belief lesion is the next causal test. [Compact answer table](../evidence/contextual/causal-v2-qualified-12-001/answers.csv) and [reproduction instructions](CAUSAL_NATIVE_RESULTS.md#evidence-and-reproduction).

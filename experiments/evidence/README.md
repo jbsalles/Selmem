@@ -19,6 +19,21 @@ No completed independent blind ratings are included. The source discussion's ear
 
 Dataset attribution: source conversations come from the official LoCoMo release by Snap Research: https://github.com/snap-research/locomo . These are conversation-derived creative tasks, not official LoCoMo benchmark scores. SelMem's MIT license does not relicense third-party dataset material. Model outputs are recorded observations, not verified real-world solutions.
 
+## Normative rule-following evidence
+
+The separate [normative-wide-012](normative-wide-012/) export contains all 192
+compact response rows, original aggregate counts and source-file hashes. It is a
+permission/revision pilot with two mirrored synthetic histories, 24 distinct
+cells per arm and two identical repeats. Normative composition scored 46/48,
+native recall 41/48, unfiltered anchors 40/48 and scope-filtered registry 46/48.
+All arms had zero unauthorized deliveries. These rows must not be pooled with
+creative proposals or causal-delivery choices. [Results and limitations](../genesis/NORMATIVE_WIDE_RESULTS.md).
+
+`answers.jsonl` and `summary.json` are byte-preserving copies of the source
+`responses.jsonl` and `report.json`; `provenance.json` records their identities.
+Full requests, provider envelopes, snapshots and audit logs remain in the
+separate complete archive. The compact export cannot resume collection.
+
 ## Native causal decision evidence
 
 The separate [causal-v2-qualified-12-001](contextual/causal-v2-qualified-12-001/) export contains 3,456 compact answer rows, six-arm summaries, domain counts, paired comparisons, native-exposure checks and original-file hashes. It is a post-recall delivery intervention on 24 saved synthetic histories across 12 scenarios sharing one behavioral axis. Full memory reached 479/576 history-concordant choices, versus 291/576 empty; these decision rows must not be pooled with the 276 creative proposal rows. No creativity scores are added. [Causal analysis and limits](../genesis/CAUSAL_NATIVE_RESULTS.md).

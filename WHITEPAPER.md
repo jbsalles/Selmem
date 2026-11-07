@@ -297,6 +297,39 @@ This result uses a revised, explicitly selected **`context-cued`** route: caller
 
 The cuts occur **after recall**. Consequently, the no-beliefs arm still benefits from any belief-mediated episode selection; a pre-retrieval lesion is needed to estimate the total belief contribution. Swaps reduce original-history concordance but match the donor in only 52.6% of choices, with a strong calm-option bias. Reversing option order changes 24.0% of full-memory choices. The 12 domains share one behavioral axis; new histories, models and axes are needed. This suite does not isolate reconstruction or establish an advantage over competent semantic RAG, creativity, autonomous preference or durable individuality. [Full design, per-domain counts and evidence](experiments/genesis/CAUSAL_NATIVE_RESULTS.md).
 
+### Normative memory: bounded rule-following benefit, registry parity
+
+The `normative-wide-012` pilot recorded **192 valid Grok 4.3 responses** with
+reasoning `none`: two mirrored histories, two phases, six tasks, four arms and
+two identical-request repeats. Each arm has 24 distinct cells and 48 responses.
+The context ceiling was 6,000 words, 64 episodes and 64,000 serialized bytes
+through the default conservative token counter. Native recall actually delivered
+64 unclipped episodes, 1,213–1,214 words, with all applicable rules in every cell.
+
+| Delivered evidence | Correct decisions |
+| --- | ---: |
+| Wide native recall | 41/48 (85.4%) |
+| All canonical anchors, unfiltered | 40/48 (83.3%) |
+| Normative scope composition | **46/48 (95.8%)** |
+| Scope-filtered original registry | **46/48 (95.8%)** |
+
+The five corrected response pairs, across three distinct cells, changed
+verification into the required refusal. Correct authorized deliveries remained
+18/20 for both native and normative arms; unauthorized deliveries were zero in
+all arms. Normative and scoped registry still failed twice on the same situation:
+an inspection remained permitted after a planning-only prohibition. Preserving
+typed rules does not guarantee that the actor applies their conditions correctly.
+
+This is evidence for the utility of the implemented normative path relative to
+wide native delivery on this task family. It does not establish an advantage over
+the simple scope-filtered registry. Host-supplied typed semantics, scope selection,
+composition, format and context length change together; reconstruction is not
+isolated. Two synthetic mirrored histories and repeated cells do not establish
+general alignment, adversarial robustness or final-action enforcement.
+[Protocol](experiments/genesis/NORMATIVE_PILOT_V10.md),
+[full results and archive hashes](experiments/genesis/NORMATIVE_WIDE_RESULTS.md),
+[compact responses](experiments/evidence/normative-wide-012/answers.jsonl).
+
 ## What remains unproved
 
 ### Creative collections: suggestive observations, no established advantage

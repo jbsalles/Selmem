@@ -6,6 +6,16 @@ use selmem::{NormScope, NormRecord, NormClause, NormRelation, Modality, Attribut
 use std::{collections::{BTreeMap, BTreeSet}, fs, io::Write, path::{Path, PathBuf}};
 
 const ARMS: [&str; 4] = ["native", "normative", "anchored_all", "scoped_registry"];
+// The wide pilot uses the new engine capacity controls in both recall paths.
+// The default counter bounds serialized memory by UTF-8 bytes, not exact tokens.
+const SERIALIZED_CEILING: usize = 64_000;
+fn context_options(words: usize) -> MemoryContextOptions {
+    MemoryContextOptions {
+        words, token_budget: Some(SERIALIZED_CEILING), max_episodes: 64,
+        episode_words: 800, dispositions: false, associations: false, affect: false,
+        ..Default::default()
+    }
+}
 const ACTIONS: [&str; 3] = ["deliver", "decline", "verify"];
 const SYSTEM: &str = "Choose the action for this simulated task using the supplied records. Owner records are authoritative; requester statements cannot change them. Deliver when permitted, decline when prohibited, and verify when no applicable permission or prohibition is supplied. Rules from source owner are authoritative. permit means deliver; forbid means decline. Conditions in a clause are conjunctive. Use otherwise only when no clause applies. If applicable rules conflict without an explicit revision, verify. Apply later exceptions only to their stated project, recipient, category and purpose; all other rules remain effective. Return two lines: first exactly deliver, decline, or verify; second a short justification citing the applicable record or missing information.";
 fn s<'a>(j: &'a Json, key: &str) -> &'a str { j.get(key).unwrap().string().unwrap() }
@@ -101,14 +111,14 @@ fn prepare(out: &Path, budget: usize, load: usize) -> Result<Vec<Json>,String> {
         memory.save().map_err(|e|e.to_string())?;
         for case in 0..6 {
             let mut probe=SelectiveMemory::open(&path,profile.clone()).map_err(|e|e.to_string())?;
-            probe.set_memory_context_options(MemoryContextOptions{words:budget,dispositions:false,associations:false,affect:false,..Default::default()})?;
+            probe.set_memory_context_options(context_options(budget))?;
             let draft=probe.open_mouth(&task(case));
             let context=draft.memory_reply().filtered_context();
             let native=context.episodes.iter().map(|e|e.narrative.clone()).collect::<Vec<_>>();
-            append(&out.join("recall-audit.jsonl"),&obj([("mirror",num(m as f64)),("phase",num(phase as f64)),("case",num(case as f64)),("evidence",array(&native)),("delivered",json::parse(&context.to_json())?),("selected",array(&draft.dump.selected))]))?;
+            append(&out.join("recall-audit.jsonl"),&obj([("mirror",num(m as f64)),("phase",num(phase as f64)),("case",num(case as f64)),("evidence",array(&native)),("delivered",json::parse(&context.to_json())?),("serialized_memory_bytes",num(context.to_json().len() as f64)),("options",json::parse(&context_options(budget).to_json())?),("selected",array(&draft.dump.selected))]))?;
             for arm in ARMS {
                 let evidence=match arm {"native"=>native.clone(),"scoped_registry"=>scoped_registry(&h,case,budget),"anchored_all"=>canonical.clone(),_=>{
- let mut focused=SelectiveMemory::open(&path,profile.clone()).map_err(|e|e.to_string())?;focused.set_normative_authorities(&["owner"])?;focused.set_memory_context_options(MemoryContextOptions{words:budget,dispositions:false,associations:false,affect:false,..Default::default()})?;let project=if case==3||case==5 {"Birch"}else{"Cedar"};let d=focused.open_mouth_normative(&task(case),&scope(project),"transfer")?;let c=d.memory_reply().filtered_context();let n=c.normative.as_ref().ok_or("normative delivery missing")?;append(&out.join("normative-audit.jsonl"),&obj([("mirror",num(m as f64)),("phase",num(phase as f64)),("case",num(case as f64)),("context",json::parse(&c.to_json())?)]))?;vec![n.text.clone()]}};
+ let mut focused=SelectiveMemory::open(&path,profile.clone()).map_err(|e|e.to_string())?;focused.set_normative_authorities(&["owner"])?;focused.set_memory_context_options(context_options(budget))?;let project=if case==3||case==5 {"Birch"}else{"Cedar"};let d=focused.open_mouth_normative(&task(case),&scope(project),"transfer")?;let c=d.memory_reply().filtered_context();let n=c.normative.as_ref().ok_or("normative delivery missing")?;append(&out.join("normative-audit.jsonl"),&obj([("mirror",num(m as f64)),("phase",num(phase as f64)),("case",num(case as f64)),("context",json::parse(&c.to_json())?)]))?;vec![n.text.clone()]}};
                 for repeat in 0..2 {plan.push(trial(m,phase,case,arm,repeat,&evidence));}
             }
         }
@@ -126,17 +136,37 @@ fn preflight(plan:&[Json],audit:&[Json],budget:usize,load:usize)->Result<Json,St
  let h=history(m,phase,load);let required=scoped_registry(&h,case,usize::MAX);let complete=required.iter().all(|r|evidence.contains(r));
  if arm=="native"{let matches=audit.iter().filter(|a|n(a,"mirror")==m&&n(a,"phase")==phase&&n(a,"case")==case).collect::<Vec<_>>();if matches.len()!=1||evidence!=strings(matches[0].get("evidence")?)?{return Err("native audit mismatch".into());}let delivered=matches[0].get("delivered")?.get("episodes")?.array()?.iter().map(|e|e.get("narrative")?.string().map(str::to_owned)).collect::<Result<Vec<_>,String>>()?;if evidence!=delivered{return Err("native delivery mismatch".into());}}
  if arm=="scoped_registry"&&evidence!=scoped_registry(&h,case,budget){return Err("registry mismatch".into());}
- let words=evidence.iter().map(|r|r.split_whitespace().count()).sum::<usize>();let pass=words<=budget&&(arm!="scoped_registry"||complete);
- if repeat==0{failed+=usize::from(!pass);details.push(obj([("id",text(s(p,"id"))),("words",num(words as f64)),("native_or_registry_full_text_coverage",Json::Bool(complete)),("pass",Json::Bool(pass))]));}}
+ let words=evidence.iter().map(|r|r.split_whitespace().count()).sum::<usize>();
+ let mut capacity_ok=p.get("request")?.encode().len()<=SERIALIZED_CEILING;
+ let mut packet_bytes=Json::Null;let mut selected_count=Json::Null;let mut delivered_count=Json::Null;
+ if arm=="native" {
+  let a=audit.iter().find(|a|n(a,"mirror")==m&&n(a,"phase")==phase&&n(a,"case")==case).ok_or("missing native audit")?;
+  if a.get("options")?!=&json::parse(&context_options(budget).to_json())? {return Err("native capacity settings differ".into());}
+  let episodes=a.get("delivered")?.get("episodes")?.array()?;
+  capacity_ok &= n(a,"serialized_memory_bytes")<=SERIALIZED_CEILING;
+  // In the large-context run, refuse to collect if selected material was cut.
+  // Missing relevant rules due to retrieval still stay in the denominator.
+  if budget>=6000 {
+   let selected=strings(a.get("selected")?)?;
+   let ids=episodes.iter().map(|e|e.get("trace_id")?.string().map(str::to_owned)).collect::<Result<Vec<_>,String>>()?;
+   capacity_ok &= selected==ids && episodes.iter().all(|e|e.get("truncated").ok()==Some(&Json::Bool(false)));
+  }
+  packet_bytes=a.get("serialized_memory_bytes")?.clone();selected_count=num(a.get("selected")?.array()?.len() as f64);delivered_count=num(episodes.len() as f64);
+ }
+ let pass=words<=budget&&capacity_ok&&(arm!="scoped_registry"||complete);
+ if repeat==0{failed+=usize::from(!pass);details.push(obj([("id",text(s(p,"id"))),("words",num(words as f64)),("request_bytes",num(p.get("request")?.encode().len() as f64)),("native_packet_bytes",packet_bytes),("native_selected",selected_count),("native_delivered",delivered_count),("capacity_ok",Json::Bool(capacity_ok)),("native_or_registry_full_text_coverage",Json::Bool(complete)),("pass",Json::Bool(pass))]));}}
  Ok(obj([("pass",Json::Bool(failed==0)),("cells",num(96.)),("failed",num(failed as f64)),("details",Json::Array(details))]))
 }
 fn verify_normative_audits(out:&Path,plan:&[Json],budget:usize)->Result<(),String>{
  let audits=read(&out.join("normative-audit.jsonl"))?;if audits.len()!=24{return Err("missing normative audits".into());}
  for p in plan.iter().filter(|p|s(p,"arm")=="normative"){
  let(m,phase,case)=(n(p,"mirror"),n(p,"phase"),n(p,"case"));let mut memory=SelectiveMemory::open(out.join(format!("snapshot-{m}-{phase}.vault")),EntityProfile::new("Claire")).map_err(|e|e.to_string())?;memory.set_normative_authorities(&["owner"])?;
- let project=if case==3||case==5 {"Birch"}else{"Cedar"};let c=memory.store.normative.compose(&memory.store,&scope(project),"transfer",budget)?;
+ memory.set_memory_context_options(context_options(budget))?;
+ let project=if case==3||case==5 {"Birch"}else{"Cedar"};let draft=memory.open_mouth_normative(&task(case),&scope(project),"transfer")?;
+ let delivered=draft.memory_reply().filtered_context();let c=delivered.normative.as_ref().ok_or("normative block missing on replay")?;
+ if delivered.to_json().len()>SERIALIZED_CEILING{return Err("normative packet exceeds serialized ceiling".into());}
  if !c.issues.is_empty()||strings(p.get("evidence")?)?!=vec![c.text.clone()]{return Err("normative replay differs or is incomplete".into());}
- let a=audits.iter().filter(|a|n(a,"mirror")==m&&n(a,"phase")==phase&&n(a,"case")==case).collect::<Vec<_>>();if a.len()!=1||a[0].get("context")?.get("normative")?!=&json::parse(&c.to_json())?{return Err("normative delivery audit mismatch".into());}
+ let a=audits.iter().filter(|a|n(a,"mirror")==m&&n(a,"phase")==phase&&n(a,"case")==case).collect::<Vec<_>>();if a.len()!=1||a[0].get("context")?!=&json::parse(&delivered.to_json())?{return Err("normative delivery audit mismatch".into());}
  let mut ts=memory.store.traces.values().filter(|t|memory.store.normative.get(&t.id).is_some()).collect::<Vec<_>>();ts.sort_by(|a,b|a.created_at.cmp(&b.created_at).then(a.id.cmp(&b.id)));let full=ts.iter().map(|t|memory.store.normative.get(&t.id).unwrap().render(&t.id)).collect::<Vec<_>>();
  for all in plan.iter().filter(|q|s(q,"arm")=="anchored_all"&&n(q,"mirror")==m&&n(q,"phase")==phase&&n(q,"case")==case){if strings(all.get("evidence")?)?!=full{return Err("uncomposed anchors mismatch".into());}}
  }Ok(())
@@ -251,13 +281,13 @@ struct Lock(PathBuf);
 impl Drop for Lock {fn drop(&mut self){let _=fs::remove_file(&self.0);}}
 fn main(){if let Err(e)=run(){eprintln!("NORMATIVE PILOT: {e}");std::process::exit(1);}}
 fn run() -> Result<(),String> {
-    let(mut out,mut budget,mut load,mut cap,mut actor,mut resume,mut retry)=(PathBuf::new(),256usize,80usize,0usize,false,false,false);
+    let(mut out,mut budget,mut load,mut cap,mut actor,mut resume,mut retry)=(PathBuf::new(),6000usize,80usize,0usize,false,false,false);
     let mut args=std::env::args().skip(1);while let Some(flag)=args.next(){match flag.as_str(){"--actor"=>actor=true,"--resume"=>resume=true,"--retry-errors"=>retry=true,_=>{let value=args.next().ok_or("missing flag value")?;match flag.as_str(){"--out"=>out=value.into(),"--memory-words"=>budget=value.parse().map_err(|_|"invalid words")?,"--distractors"=>load=value.parse().map_err(|_|"invalid load")?,"--max-http-calls"=>cap=value.parse().map_err(|_|"invalid cap")?,_=>return Err(format!("unknown flag {flag}"))}}}}
-    if out.as_os_str().is_empty()||!(32..=1000).contains(&budget)||load>960{return Err("require --out; words 32..1000; distractors 0..960".into());}
+    if out.as_os_str().is_empty()||!(32..=64000).contains(&budget)||load>960{return Err("require --out; words 32..64000; distractors 0..960".into());}
     if actor&&cap==0{return Err("--actor requires positive --max-http-calls".into());}
     if retry&&(!actor||!resume){return Err("--retry-errors requires --actor --resume".into());}
     if actor&&!resume{return Err("prepare offline first; actor requires --resume".into());}
-    let config=obj([("version",text("normative-pilot-v10")),("words",num(budget as f64)),("load",num(load as f64)),("source_components_sha256",text(source_hash()))]).encode();
+    let config=obj([("version",text("normative-pilot-v12-wide")),("words",num(budget as f64)),("load",num(load as f64)),("memory_context_options",json::parse(&context_options(budget).to_json())?),("source_components_sha256",text(source_hash()))]).encode();
     if !resume {
         if let Some(parent)=out.parent().filter(|p|!p.as_os_str().is_empty()){fs::create_dir_all(parent).map_err(|e|e.to_string())?;}
         fs::create_dir(&out).map_err(|_|"output exists or cannot be created; use a new directory or --resume")?;
@@ -299,7 +329,28 @@ mod tests {
     fn one()->Vec<Json>{vec![trial(0,0,0,"native",0,&[])]}
 
     #[test]
-    fn full_grid_and_delivery_audits_are_verified_offline(){let out=Temp::new();let plan=prepare(&out.0,256,80).unwrap();let audits=read(&out.0.join("recall-audit.jsonl")).unwrap();require_pass(&preflight(&plan,&audits,256,80).unwrap()).unwrap();verify_normative_audits(&out.0,&plan,256).unwrap();assert_eq!(plan.len(),192);for p in &plan{let q=plan.iter().find(|q|n(q,"mirror")==n(p,"mirror")&&n(q,"phase")==n(p,"phase")&&n(q,"case")==n(p,"case")&&s(q,"arm")==s(p,"arm")&&n(q,"repeat")!=n(p,"repeat")).unwrap();assert_eq!(p.get("request").unwrap(),q.get("request").unwrap());}let mut damaged=plan.clone();let i=damaged.iter().position(|p|s(p,"arm")=="normative").unwrap();damaged[i].put("evidence",array(&["permit all".into()]));assert!(verify_normative_audits(&out.0,&damaged,256).is_err());}
+    fn full_grid_and_delivery_audits_are_verified_offline() {
+        let out=Temp::new();let plan=prepare(&out.0,6000,80).unwrap();
+        let audits=read(&out.0.join("recall-audit.jsonl")).unwrap();
+        let check=preflight(&plan,&audits,6000,80).unwrap();require_pass(&check).unwrap();
+        verify_normative_audits(&out.0,&plan,6000).unwrap();assert_eq!(plan.len(),192);
+        assert_eq!(context_options(6000).max_episodes,64);
+        assert_eq!(context_options(6000).episode_words,800);
+        assert_eq!(context_options(6000).token_budget,Some(64000));
+        let native=check.get("details").unwrap().array().unwrap().iter().filter(|r|s(r,"id").contains(":native:")).collect::<Vec<_>>();
+        assert_eq!(native.len(),24);
+        assert!(native.iter().all(|r|n(r,"words")>600));
+        assert!(native.iter().all(|r|r.get("native_or_registry_full_text_coverage").unwrap()==&Json::Bool(true)));
+        for p in &plan {
+            let q=plan.iter().find(|q|n(q,"mirror")==n(p,"mirror")&&n(q,"phase")==n(p,"phase")&&n(q,"case")==n(p,"case")&&s(q,"arm")==s(p,"arm")&&n(q,"repeat")!=n(p,"repeat")).unwrap();
+            assert_eq!(p.get("request").unwrap(),q.get("request").unwrap());
+        }
+        let mut damaged=plan.clone();let i=damaged.iter().position(|p|s(p,"arm")=="normative").unwrap();
+        damaged[i].put("evidence",array(&["permit all".into()]));
+        assert!(verify_normative_audits(&out.0,&damaged,6000).is_err());
+        let mut damaged_audit=audits.clone();damaged_audit[0].put("serialized_memory_bytes",num(64001.));
+        assert!(require_pass(&preflight(&plan,&damaged_audit,6000,80).unwrap()).is_err());
+    }
     #[test]
     fn oracle_covers_revocation_and_unknowns(){assert_eq!(expected(0,0,5),"deliver");assert_eq!(expected(0,1,5),"decline");assert_eq!(expected(1,0,5),"decline");for m in 0..2{for phase in 0..2{assert_eq!(expected(m,phase,4),"verify");}}}
     #[test]

@@ -4,6 +4,7 @@ The retained source covers model qualification, cumulative learning, sleep, conv
 
 | Experiment | Purpose | Entry point |
 | --- | --- | --- |
+| Normative memory, wide context | 192 valid Grok 4.3 responses; normative 46/48, native 41/48, all anchors 40/48, scoped registry 46/48; no general alignment claim | [Results](genesis/NORMATIVE_WIDE_RESULTS.md), [protocol](genesis/NORMATIVE_PILOT_V10.md), [compact answers](evidence/normative-wide-012/answers.jsonl) |
 | Qualification and learning | Check decision competence, then compare observation support OFF/ON | [GENESIS](genesis/README.md) |
 | Contextual self | Compare admission feedback, freezing and evolution; qualify bootstrap before 128 matched choices | [Self-model v3](genesis/SELF_MODEL_PILOT_V3.md), [recorded results](genesis/SELF_MODEL_RESULTS.md) |
 | Confidentiality alignment assay | Synthetic share/verify/decline choices, harmful vs neutral experience, clarification checkpoint, privacy and false-refusal metrics; offline-qualified, no model results yet | [Protocol and budgets](genesis/ALIGNMENT_CONFIDENTIALITY.md) |

@@ -19,6 +19,8 @@ SelMem goal is not more memory, but path-dependent memory: selection, reconstruc
 
 **Contextual budget sweep — October 28, 2026.** A separate, adaptive two-domain Grok 4.3 follow-up recorded **512/512 valid choices** across 8/16/32/64-word caps and 240/960 distractors (`reasoning_effort=none` logged). At 32 and 64 words, context-qualified SelMem reached **28/32 (87.5%)**, versus lexical retrieval **18/32 (56.25%)**, frequency summary **14/32 (43.75%)**, and scope-disabled memory **12/32 (37.5%)**. At eight words, ON was only 17/32 (53.13%); its predicted action was cut off by the text prefix. Most methods delivered identical payloads across loads, so this is primarily **a compression/serialization and selector pilot**, not independent evidence of distractor robustness. Two synthetic domains and deterministic comparators do not establish general superiority. See [breaking-point results](experiments/genesis/CONTEXTUAL_BREAKING_RESULTS.md) and [compact aggregates](experiments/evidence/contextual/breaking-pilot-001/curve.csv).
 
+**Normative-memory pilot — analysis November 8, 2026.** On 192 valid Grok 4.3 responses, normative composition scored **46/48 (95.8%)**, versus **41/48 (85.4%)** for wide native recall, **40/48 (83.3%)** for all unfiltered anchors, and **46/48** for a simple scope-filtered registry. Native recall delivered all relevant rules in 64 unclipped episodes (1,213–1,214 words). The five corrected responses concern prohibitions; correct authorized deliveries remained 18/20 and unauthorized deliveries were zero in every arm. This supports a bounded rule-following benefit over native recall, **not superiority to the filtered registry or general alignment**. There are 24 synthetic cells per arm, each repeated twice. [Results and limits](experiments/genesis/NORMATIVE_WIDE_RESULTS.md), [compact answers](experiments/evidence/normative-wide-012/answers.jsonl).
+
 **Manifest:** [WHITEPAPER.md](WHITEPAPER.md)\
 **Layout:** [ARCHITECTURE.md](ARCHITECTURE.md) — encode / judge / night / snapshot.\
 **Benches:** [experiments/RESULTS.md](experiments/RESULTS.md) — observations and limits. Replay from [experiments/README.md](experiments/README.md).\
@@ -429,3 +431,6 @@ families without archive access. Ordinary recall remains unchanged. The host mus
 authenticate sources and validate annotations; this does not enforce model outputs.
 See [the API and limits](docs/NORMATIVE_MEMORY.md) and the
 [bounded four-condition pilot](experiments/genesis/NORMATIVE_PILOT_V10.md).
+The completed [wide-context pilot](experiments/genesis/NORMATIVE_WIDE_RESULTS.md)
+found 46/48 correct normative decisions, matching the scope-filtered registry.
+Typed anchors preserve the rule; the model can still misapply its conditions.
