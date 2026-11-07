@@ -420,3 +420,12 @@ to the episode-only prompts and cannot support an ablation claim.**
 [Measurements, limitations, archive hashes and next tests](experiments/genesis/SELF_BEHAVIOR_RESULTS.md).
 No persistent preference reversal or autonomous behavioral individuality has
 been established.
+
+### Experimental normative memory
+
+An opt-in Rust API attaches caller-authorized permission, prohibition and verification
+anchors to living traces, preserves explicit dependencies and composes bounded rule
+families without archive access. Ordinary recall remains unchanged. The host must
+authenticate sources and validate annotations; this does not enforce model outputs.
+See [the API and limits](docs/NORMATIVE_MEMORY.md) and the
+[bounded four-condition pilot](experiments/genesis/NORMATIVE_PILOT_V10.md).

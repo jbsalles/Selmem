@@ -38,6 +38,7 @@ pub fn run(
             continue;
         };
         for other in ids.iter().filter(|id| *id != &keep) {
+            if store.normative.get(&keep).is_some() || store.normative.get(other).is_some() { continue; }
             let similar = {
                 let a = store.traces.get(&keep);
                 let b = store.traces.get(other);

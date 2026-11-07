@@ -117,6 +117,7 @@ pub fn save(
         )?;
         writeln!(w, "embedding-space")?;
         write_blob(&mut w, store.embedding_space.as_deref().unwrap_or(""))?;
+        writeln!(w, "normative {}", store.normative.pack())?;
         writeln!(w, "associations {}", store.associations.encode())?;
         writeln!(w, "observation-evidence {}", store.observation_evidence.encode())?;
         writeln!(w, "measures {}", store.measures.len())?;
@@ -251,6 +252,8 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
                     }
                 } else if line == "embedding-space" {
                     store.embedding_space = empty_none(read_blob(&mut r)?);
+                } else if let Some(rest) = line.strip_prefix("normative ") {
+                    store.normative = crate::normative::NormativeMemory::unpack(rest).map_err(invalid)?;
                 } else if let Some(rest) = line.strip_prefix("associations ") {
                     store.associations =
                         crate::core::association::AssociationGraph::decode(rest)

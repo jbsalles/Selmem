@@ -9,6 +9,7 @@ impl Default for ContextualScopePolicy { fn default()->Self {Self{enabled:false}
 
 #[derive(Default)]
 pub struct MemoryStore {
+    pub normative: crate::normative::NormativeMemory,
     pub contextual_scope:ContextualScopePolicy,
     /// Last consolidation diagnostics, audit-only and deliberately not a second memory.
     pub self_consolidation_audit: Vec<super::self_model::SelfConsolidationAudit>,
@@ -203,6 +204,7 @@ impl MemoryStore {
             }
         }
         let trace = self.traces.remove(id)?;
+        self.normative.remove(id);
         self.associations.remove_trace(id);
         self.edges.remove(id);
         for neigh in self.edges.values_mut() {

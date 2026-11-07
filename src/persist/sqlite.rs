@@ -306,6 +306,7 @@ pub fn save(
             ("last_deep", deep.as_str()),
             ("merges_refused", &store.merges_refused.to_string()),
             ("pending", &store.pending_night.join("\t")),
+            ("normative", &store.normative.pack()),
             ("associations", &store.associations.encode()),
             ("observation_evidence", &store.observation_evidence.encode()),
             ("clock", &format!("{clock_jump} {clock_scale} {} {clock_origin}", if clock_detached { 1 } else { 0 })),
@@ -560,6 +561,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let mut pending_s = String::new();
     let mut clock_s = String::new();
     let mut associations_s = String::new();
+    let mut normative_s = String::new();
     let mut observation_evidence_s = String::new();
     let mut cut_s = String::new();
     let mut measures_s = String::new();
@@ -576,6 +578,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             "merges_refused" => refused_s = row[1].clone(),
             "pending" => pending_s = row[1].clone(),
             "clock" => clock_s = row[1].clone(),
+            "normative" => normative_s = row[1].clone(),
             "associations" => associations_s = row[1].clone(),
             "observation_evidence" => observation_evidence_s = row[1].clone(),
             "cut" => cut_s = row[1].clone(),
@@ -587,6 +590,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let mood = parse_mood(&mood_s)?;
     let mut store = MemoryStore::new();
     store.embedding_space = embedding_space;
+    if !normative_s.is_empty() { store.normative = crate::normative::NormativeMemory::unpack(&normative_s).map_err(|e|io::Error::new(io::ErrorKind::InvalidData,e))?; }
     if !observation_evidence_s.is_empty() {
         store.observation_evidence = crate::core::evidence::ObservationEvidence::decode(&observation_evidence_s)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;

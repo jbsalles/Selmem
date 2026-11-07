@@ -2,7 +2,22 @@
 #[path="../src/bin/selmem-locomo/json.rs"] #[allow(dead_code)] mod json;
 use selmem::{Config,EntityProfile,HttpNarrator,MemoryContext,MemoryContextFormat,MemoryContextOptions,MemoryReply,MemoryUse,Mood,Narrator,SelectiveMemory,WorkingTalk};
 use std::sync::{Arc,Mutex};
-#[test]fn defaults_are_structured_experience_in_library_and_config(){let o=MemoryContextOptions::default();assert_eq!(o.format,MemoryContextFormat::Structured);assert_eq!(o.usage,MemoryUse::Experience);assert_eq!(MemoryContextOptions::from_config(&Config::empty()).unwrap(),o);assert_eq!(SelectiveMemory::new(EntityProfile::new("Claire")).memory_context_options(),&o);}
+#[test]
+fn defaults_are_structured_experience_in_library_and_config() {
+ let o=MemoryContextOptions::default();
+ assert_eq!(o.format,MemoryContextFormat::Structured);
+ assert_eq!(o.usage,MemoryUse::Experience);
+ let configured=MemoryContextOptions::from_config(&Config::empty()).unwrap();
+ let memory=SelectiveMemory::new(EntityProfile::new("Claire"));
+ // Optimized builds may give the same function distinct addresses across
+ // codegen units. Verify settings and counter behavior rather than pointers.
+ for actual in [&o,&configured,memory.memory_context_options()] {
+  assert_eq!(actual.to_json(),o.to_json());
+  for sample in ["", "hello", "é", "memory with metadata"] {
+   assert_eq!((actual.token_counter)(sample),sample.len());
+  }
+ }
+}
 #[test]fn explicit_legacy_and_neutral_still_work(){let o=MemoryContextOptions::from_config(&Config::parse("memory_context=legacy\nmemory_use=legacy")).unwrap();assert_eq!(o.format,MemoryContextFormat::Legacy);assert_eq!(o.usage,MemoryUse::Legacy);let o=MemoryContextOptions::from_config(&Config::parse("memory_use=neutral")).unwrap();assert_eq!(o.usage,MemoryUse::Neutral);assert!(MemoryContextOptions::from_config(&Config::parse("memory_use=typo")).is_err());}
 #[test]fn default_http_uses_packet_and_contract_once(){let seen:Arc<Mutex<Vec<String>>>=Arc::new(Mutex::new(vec![]));let copy=seen.clone();let http=HttpNarrator::parse("http://example.invalid","grok-4.3",None).unwrap().with_transport(Arc::new(move|_,_,body|{copy.lock().unwrap().push(body.into());Ok("{\"choices\":[{\"message\":{\"content\":\"reply\"}}]}".into())}));let c=MemoryContext::default();let t=WorkingTalk::default();let m=Mood::default();let o=MemoryContextOptions::default();let r=MemoryReply{user:"hello",memories:&[],axioms:&[],mood:&m,talk:&t,reading:"SHOULD_NOT_LEAK",context:&c,options:&o};assert_eq!(http.reply_with_context(&r),"reply");let rows=seen.lock().unwrap();assert_eq!(rows.len(),1);assert!(rows[0].contains("Consider relevant memories"));assert!(!rows[0].contains("SHOULD_NOT_LEAK"));json::parse(&rows[0]).unwrap();}
 #[test]fn neutral_differs_from_experience_only_by_contract(){let c=MemoryContext::default();let t=WorkingTalk::default();let m=Mood::default();let mut o=MemoryContextOptions::default();o.usage=MemoryUse::Neutral;let r=MemoryReply{user:"",memories:&[],axioms:&[],mood:&m,talk:&t,reading:"",context:&c,options:&o};let neutral=r.system_prompt();assert!(!neutral.contains("Speak from the reading profile"));o.usage=MemoryUse::Experience;let r=MemoryReply{user:"",memories:&[],axioms:&[],mood:&m,talk:&t,reading:"",context:&c,options:&o};assert_eq!(r.system_prompt(),format!("{}\n{}",neutral,selmem::recall::memory_context::MEMORY_USE_CONTRACT));}

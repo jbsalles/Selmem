@@ -107,3 +107,6 @@ pub use HttpNarrator as LLMNarrator;
 pub use encode::semantic::{EventSemantics, LexicalInterpreter, SemanticInterpreter};
 pub use recall::memory_context::{MemoryContext, MemoryContextFormat, MemoryContextOptions, MemoryReply, MemoryUse};
 pub use recall::choice::{ChoiceMode, ChoiceOptions, Influence};
+
+pub mod normative;
+pub use normative::{Modality, NormClause, NormRecord, NormRelation, NormScope, NormativeContext};

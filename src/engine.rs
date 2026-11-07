@@ -85,6 +85,39 @@ impl MouthDraft {
     pub fn delivery_audit_json(&self, narrator: &dyn Narrator) -> String { self.memory_reply().audit_json(narrator.supports_memory_context()) }
 }
 impl SelectiveMemory {
+    /// Host trust configuration, never inferred from text. Reapply after loading.
+    pub fn set_normative_authorities(&mut self, sources: &[&str]) -> Result<(), String> {
+        self.store.normative.set_authorities(sources)
+    }
+    /// Bind caller-validated semantics to an admitted external trace.
+    /// The host must authenticate the source and validate its annotation.
+    pub fn register_normative(&mut self, trace_id: &str, record: crate::NormRecord) -> Result<(), String> {
+        let t=self.store.traces.get(trace_id).ok_or("carrier trace missing")?;
+        if t.source!=record.source || t.attribution!=crate::Attribution::External || t.suppressed || t.status!=crate::TraceStatus::Active {
+            return Err("normative carrier must be active, external and source-matched".into());
+        }
+        self.store.normative.register(trace_id,record)
+    }
+    /// Opt-in normative focus: complete living rule families under the context budget.
+    /// Does not expose ordinary episodes, dispositions or working history in this draft.
+    /// The user's current request remains available. Ordinary open_mouth is unchanged.
+    pub fn open_mouth_normative(&mut self, user: &str, scope: &crate::NormScope, action: &str) -> Result<MouthDraft, String> {
+        if self.memory_context_options.format!=crate::MemoryContextFormat::Structured || !self.memory_context_options.episodes {
+            return Err("normative focus requires structured episodic delivery".into());
+        }
+        if self.mouth_held { return Err("a mouth is already open".into()); }
+        let context=self.store.normative.compose(&self.store,scope,action,self.memory_context_options.words)?;
+        let memory_context=crate::MemoryContext { agent_name:Some(self.profile.name.clone()), normative:Some(context), ..Default::default() }.filtered(&self.memory_context_options);
+        if self.memory_context_options.token_budget.is_some_and(|budget|(self.memory_context_options.token_counter)(&memory_context.to_json())>budget) {
+            return Err("token budget cannot fit the normative incomplete-context marker".into());
+        }
+        let mut draft=self.open_mouth(user);
+        draft.memory_context=memory_context;
+        draft.memories=vec![draft.memory_context.normative.as_ref().unwrap().text.clone()];
+        draft.axioms.clear(); draft.reading.clear(); draft.talk=WorkingTalk::default();
+        Ok(draft)
+    }
+
     pub fn set_memory_context_options(&mut self, options: crate::MemoryContextOptions) -> Result<(), String> {
         options.validate()?; self.memory_context_options = options; Ok(())
     }
