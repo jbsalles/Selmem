@@ -97,9 +97,24 @@ fn extract_entities(event: &str) -> Vec<String> {
             low.as_str(),
             "i" | "me" | "she" | "he" | "they" | "we" | "him" | "her" | "you"
         );
-        let grammatical = matches!(low.as_str(),
-            "a"|"an"|"the"|"this"|"that"|"these"|"those"|"first"|"second"|"third"|
-            "yesterday"|"today"|"hello"|"hi"|"hey"|"observation");
+        let grammatical = matches!(
+            low.as_str(),
+            "a" | "an"
+                | "the"
+                | "this"
+                | "that"
+                | "these"
+                | "those"
+                | "first"
+                | "second"
+                | "third"
+                | "yesterday"
+                | "today"
+                | "hello"
+                | "hi"
+                | "hey"
+                | "observation"
+        );
         let named = !grammatical && w.chars().next().map(|c| c.is_uppercase()).unwrap_or(false);
         if pronoun || named {
             if !out.iter().any(|e: &String| e.eq_ignore_ascii_case(w)) {
@@ -183,13 +198,21 @@ pub fn legacy_stake(event: &str) -> (StakeKind, Bearer, LossKind, String, Option
     } else {
         StakeKind::None
     };
-    let words: Vec<_> = low.split_whitespace()
-        .map(|w|w.trim_matches(|c:char|!c.is_alphanumeric())).collect();
+    let words: Vec<_> = low
+        .split_whitespace()
+        .map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()))
+        .collect();
     let bearer = if super::core::reported_speech(event).is_some() {
         Bearer::Other
-    } else if words.iter().any(|w| matches!(*w, "i" | "i'm" | "i’ve" | "i've" | "i’m")) {
+    } else if words
+        .iter()
+        .any(|w| matches!(*w, "i" | "i'm" | "i’ve" | "i've" | "i’m"))
+    {
         Bearer::Self_
-    } else if words.iter().any(|w|matches!(*w,"she"|"he"|"they"|"you")) {
+    } else if words
+        .iter()
+        .any(|w| matches!(*w, "she" | "he" | "they" | "you"))
+    {
         Bearer::Other
     } else {
         Bearer::World

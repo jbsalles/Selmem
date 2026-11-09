@@ -1,8 +1,8 @@
 //! Data-driven narrative cases from tests/cases/*.json
 use selmem::encode::scoring::lexical_similarity;
 use selmem::{
-    AxiomLayer, Channel, EntityProfile, IdentityAxiom, SelectiveMemory, fingerprint,
-    singularity_distance, EncodeInput,
+    fingerprint, singularity_distance, AxiomLayer, Channel, EncodeInput, EntityProfile,
+    IdentityAxiom, SelectiveMemory,
 };
 
 #[test]
@@ -187,10 +187,7 @@ fn check(
             "{name}: reconstruction stuck to the log"
         );
         assert!(
-            mem.store
-                .archives
-                .values()
-                .any(|a| a.verbatim == src),
+            mem.store.archives.values().any(|a| a.verbatim == src),
             "{name}: the log must still sit in the seal or 'not verbatim' is an empty-store pass"
         );
     }
@@ -224,7 +221,8 @@ fn check(
         } else {
             String::new()
         };
-        let texts_differ = rec.is_empty() || rec_b.is_empty() || lexical_similarity(&rec, &rec_b) < 0.99;
+        let texts_differ =
+            rec.is_empty() || rec_b.is_empty() || lexical_similarity(&rec, &rec_b) < 0.99;
         assert!(
             d > 0.0 || texts_differ,
             "{name}: clones interchangeable d={d:.4}"
@@ -239,7 +237,10 @@ fn field_str(json: &str, key: &str) -> Option<String> {
 fn field_f32(json: &str, key: &str) -> Option<f32> {
     let pat = format!("\"{key}\"");
     let i = json.find(&pat)?;
-    let after = json[i + pat.len()..].trim_start().strip_prefix(':')?.trim_start();
+    let after = json[i + pat.len()..]
+        .trim_start()
+        .strip_prefix(':')?
+        .trim_start();
     let num: String = after
         .chars()
         .take_while(|c| c.is_ascii_digit() || *c == '.' || *c == '-')
@@ -250,7 +251,10 @@ fn field_f32(json: &str, key: &str) -> Option<f32> {
 fn field_bool(json: &str, key: &str) -> Option<bool> {
     let pat = format!("\"{key}\"");
     let i = json.find(&pat)?;
-    let after = json[i + pat.len()..].trim_start().strip_prefix(':')?.trim_start();
+    let after = json[i + pat.len()..]
+        .trim_start()
+        .strip_prefix(':')?
+        .trim_start();
     if after.starts_with("true") {
         Some(true)
     } else if after.starts_with("false") {
@@ -267,7 +271,10 @@ fn field_u32(json: &str, key: &str) -> Option<u32> {
 fn field_str_array(json: &str, key: &str) -> Option<Vec<String>> {
     let pat = format!("\"{key}\"");
     let i = json.find(&pat)?;
-    let after = json[i + pat.len()..].trim_start().strip_prefix(':')?.trim_start();
+    let after = json[i + pat.len()..]
+        .trim_start()
+        .strip_prefix(':')?
+        .trim_start();
     let start = after.find('[')?;
     let rest = &after[start + 1..];
     let end = rest.find(']')?;
@@ -293,7 +300,10 @@ fn field_str_array(json: &str, key: &str) -> Option<Vec<String>> {
 fn object_field(json: &str, key: &str) -> Option<String> {
     let pat = format!("\"{key}\"");
     let i = json.find(&pat)?;
-    let after = json[i + pat.len()..].trim_start().strip_prefix(':')?.trim_start();
+    let after = json[i + pat.len()..]
+        .trim_start()
+        .strip_prefix(':')?
+        .trim_start();
     if !after.starts_with('{') {
         return None;
     }
@@ -317,7 +327,10 @@ fn object_array(json: &str, key: &str) -> Vec<String> {
     let mut rest = inner.trim();
     while let Some(obj) = slice_balanced(rest, '{', '}') {
         out.push(obj.to_string());
-        rest = rest[obj.len()..].trim_start().trim_start_matches(',').trim_start();
+        rest = rest[obj.len()..]
+            .trim_start()
+            .trim_start_matches(',')
+            .trim_start();
         if rest.is_empty() {
             break;
         }

@@ -1,6 +1,6 @@
 //! Salience gate: S, τ, write the lived trace and the sealed archive.
 
-use crate::core::model::{now_secs, new_id, ArchiveRecord, Channel, MemoryTrace, TraceStatus};
+use crate::core::model::{new_id, now_secs, ArchiveRecord, Channel, MemoryTrace, TraceStatus};
 use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
 use crate::encode::embed::{novelty_emb, Embedder};
@@ -30,7 +30,9 @@ pub fn encode_with_parts(
         input.disgust = s.disgust;
         input.self_relevance = s.self_relevance;
         input.goal_align = s.goal_relevance;
-        if input.attribution == crate::core::model::Attribution::None { input.attribution = s.attribution; }
+        if input.attribution == crate::core::model::Attribution::None {
+            input.attribution = s.attribution;
+        }
         input.schema = s.schema.clone();
     }
     encode_with_interpreter(store, profile, input, embedder, proposed, None)
@@ -44,30 +46,79 @@ pub fn encode_with_interpreter(
     proposed: Option<&[String]>,
     interpreter: Option<&dyn super::semantic::SemanticInterpreter>,
 ) -> EncodeDecision {
-    if let Err(reason)=input.personal.validate(){return EncodeDecision{kept:false,score:0.0,reason,trace_id:None,archive_id:String::new(),parts:0,kept_n:0};}
-    if input.personal.role!=crate::SelfRole::Episode && (input.attribution!=crate::Attribution::Internal||input.channel!=Channel::Selfhood){return EncodeDecision{kept:false,score:0.0,reason:"self propositions require explicit internal attribution and Selfhood".into(),trace_id:None,archive_id:String::new(),parts:0,kept_n:0};}
-    if input.personal.appraisal.at==0&&input.personal.role==crate::SelfRole::Episode&&input.channel==Channel::Selfhood {input.personal.appraisal=crate::core::self_model::appraise_scoped(store,input.event,input.schema.as_deref(),&input.personal.scope_facets,&crate::recall::NullScorer);}
-    if input.personal.evidence!=crate::SelfEvidence::Observation {input.personal.appraisal.opening=false;}
+    if let Err(reason) = input.personal.validate() {
+        return EncodeDecision {
+            kept: false,
+            score: 0.0,
+            reason,
+            trace_id: None,
+            archive_id: String::new(),
+            parts: 0,
+            kept_n: 0,
+        };
+    }
+    if input.personal.role != crate::SelfRole::Episode
+        && (input.attribution != crate::Attribution::Internal || input.channel != Channel::Selfhood)
+    {
+        return EncodeDecision {
+            kept: false,
+            score: 0.0,
+            reason: "self propositions require explicit internal attribution and Selfhood".into(),
+            trace_id: None,
+            archive_id: String::new(),
+            parts: 0,
+            kept_n: 0,
+        };
+    }
+    if input.personal.appraisal.at == 0
+        && input.personal.role == crate::SelfRole::Episode
+        && input.channel == Channel::Selfhood
+    {
+        input.personal.appraisal = crate::core::self_model::appraise_scoped(
+            store,
+            input.event,
+            input.schema.as_deref(),
+            &input.personal.scope_facets,
+            &crate::recall::NullScorer,
+        );
+    }
+    if input.personal.evidence != crate::SelfEvidence::Observation {
+        input.personal.appraisal.opening = false;
+    }
     let annotated = input.semantics.is_some() || interpreter.is_some();
     // Resolve once at the boundary. The gate never infers psychological labels.
     if input.semantics.is_none() {
         let backend = interpreter.unwrap_or(&super::semantic::LexicalInterpreter);
         match backend.interpret_event(input.event) {
             Ok(mut s) => {
-                if interpreter.is_none() { s.core.polarity = input.valence.clamp(-1.0, 1.0); }
+                if interpreter.is_none() {
+                    s.core.polarity = input.valence.clamp(-1.0, 1.0);
+                }
                 input.semantics = Some(s);
             }
-            Err(reason) => return EncodeDecision {
-                kept: false, score: 0.0, reason, trace_id: None,
-                archive_id: String::new(), parts: 0, kept_n: 0,
-            },
+            Err(reason) => {
+                return EncodeDecision {
+                    kept: false,
+                    score: 0.0,
+                    reason,
+                    trace_id: None,
+                    archive_id: String::new(),
+                    parts: 0,
+                    kept_n: 0,
+                }
+            }
         }
     }
     if let Some(semantics) = &input.semantics {
         if let Err(reason) = semantics.validate() {
             return EncodeDecision {
-                kept: false, score: 0.0, reason, trace_id: None,
-                archive_id: String::new(), parts: 0, kept_n: 0,
+                kept: false,
+                score: 0.0,
+                reason,
+                trace_id: None,
+                archive_id: String::new(),
+                parts: 0,
+                kept_n: 0,
             };
         }
     }
@@ -86,7 +137,17 @@ pub fn encode_with_interpreter(
     if store.embedding_space.as_deref() != Some(embedder.space_id().as_str()) {
         store.reindex(embedder);
     }
-    if parts.len()>1&&input.personal.role!=crate::SelfRole::Episode{return EncodeDecision{kept:false,score:0.0,reason:"self propositions must be atomic".into(),trace_id:None,archive_id:String::new(),parts:parts.len(),kept_n:0};}
+    if parts.len() > 1 && input.personal.role != crate::SelfRole::Episode {
+        return EncodeDecision {
+            kept: false,
+            score: 0.0,
+            reason: "self propositions must be atomic".into(),
+            trace_id: None,
+            archive_id: String::new(),
+            parts: parts.len(),
+            kept_n: 0,
+        };
+    }
     if parts.len() == 1 {
         return encode_one(store, profile, input, embedder, None);
     }
@@ -97,28 +158,47 @@ pub fn encode_with_interpreter(
     let backend = interpreter.unwrap_or(&lexical);
     if annotated && interpreter.is_none() && input.part_semantics.is_none() {
         return EncodeDecision {
-            kept: false, score: 0.0,
+            kept: false,
+            score: 0.0,
             reason: "multipart annotations require a per-slice semantic interpreter".into(),
-            trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
+            trace_id: None,
+            archive_id: String::new(),
+            parts: parts.len(),
+            kept_n: 0,
         };
     }
     let annotations = if let Some(annotations) = input.part_semantics.take() {
         if annotations.len() != parts.len() || annotations.iter().any(|s| s.validate().is_err()) {
             return EncodeDecision {
-                kept: false, score: 0.0, reason: "invalid per-slice annotations".into(),
-                trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
+                kept: false,
+                score: 0.0,
+                reason: "invalid per-slice annotations".into(),
+                trace_id: None,
+                archive_id: String::new(),
+                parts: parts.len(),
+                kept_n: 0,
             };
         }
         annotations
     } else {
         let mut annotations = Vec::new();
         for part in &parts {
-            match backend.interpret_event(part).and_then(|s| { s.validate()?; Ok(s) }) {
+            match backend.interpret_event(part).and_then(|s| {
+                s.validate()?;
+                Ok(s)
+            }) {
                 Ok(s) => annotations.push(s),
-                Err(reason) => return EncodeDecision {
-                    kept: false, score: 0.0, reason: format!("semantic interpretation failed: {reason}"),
-                    trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
-                },
+                Err(reason) => {
+                    return EncodeDecision {
+                        kept: false,
+                        score: 0.0,
+                        reason: format!("semantic interpretation failed: {reason}"),
+                        trace_id: None,
+                        archive_id: String::new(),
+                        parts: parts.len(),
+                        kept_n: 0,
+                    }
+                }
             }
         }
         annotations
@@ -138,13 +218,16 @@ pub fn encode_with_interpreter(
     let mut first_archive = String::new();
     let mut best = 0.0_f32;
     let mut last_reason = String::new();
-    for (index,(part, semantics)) in parts.iter().zip(annotations).enumerate() {
+    for (index, (part, semantics)) in parts.iter().zip(annotations).enumerate() {
         let mut slice = EncodeInput::new(part);
         slice.semantics = Some(semantics.clone());
-        slice.personal=input.personal.clone();
+        slice.personal = input.personal.clone();
         // Whole-event evidence cannot be assigned to an arbitrary fragment.
-        slice.personal.appraisal.supports.clear();slice.personal.appraisal.contradicts.clear();
-        if index>0{slice.personal.appraisal.opening=false;}
+        slice.personal.appraisal.supports.clear();
+        slice.personal.appraisal.contradicts.clear();
+        if index > 0 {
+            slice.personal.appraisal.opening = false;
+        }
         slice.source = input.source;
         slice.observation_id = input.observation_id;
         slice.valence = input.valence;
@@ -168,7 +251,9 @@ pub fn encode_with_interpreter(
             if annotated {
                 slice.self_relevance = semantics.self_relevance;
                 slice.goal_align = semantics.goal_relevance;
-                if slice.attribution == crate::core::model::Attribution::None { slice.attribution = semantics.attribution; }
+                if slice.attribution == crate::core::model::Attribution::None {
+                    slice.attribution = semantics.attribution;
+                }
             }
             slice.schema = semantics.schema;
         }
@@ -214,13 +299,18 @@ fn encode_one(
 ) -> EncodeDecision {
     let embedded = embedder.embed_result(input.event);
     let learned = embedder.semantic_similarity()
-        && matches!(&embedded, crate::encode::embed::EmbeddingResult::External(_));
+        && matches!(
+            &embedded,
+            crate::encode::embed::EmbeddingResult::External(_)
+        );
     let embedding = match embedded {
         crate::encode::embed::EmbeddingResult::External(v)
         | crate::encode::embed::EmbeddingResult::Fallback(v) => v,
     };
     let nov = if !learned || embedding.is_empty() {
-        let gists: Vec<String> = novelty_vs.map(|(_, g)| g.clone()).unwrap_or_else(|| store.traces.values().map(|t| t.gist.clone()).collect());
+        let gists: Vec<String> = novelty_vs
+            .map(|(_, g)| g.clone())
+            .unwrap_or_else(|| store.traces.values().map(|t| t.gist.clone()).collect());
         novelty(input.event, &gists)
     } else if let Some((existing, gists)) = novelty_vs {
         if existing.is_empty() {
@@ -255,9 +345,13 @@ fn encode_one(
         score += profile.w_self * 0.30 * (input.self_congruence - 0.5);
     }
 
-    let a=&input.personal.appraisal;
-    if store.self_policy.selection&&input.channel==Channel::Selfhood {score+=0.25*a.continuity.max(a.revision);}
-    let personal_admission=store.self_policy.selection&&input.channel==Channel::Selfhood&&(a.revision>=0.8||a.continuity>=0.8||a.opening);
+    let a = &input.personal.appraisal;
+    if store.self_policy.selection && input.channel == Channel::Selfhood {
+        score += 0.25 * a.continuity.max(a.revision);
+    }
+    let personal_admission = store.self_policy.selection
+        && input.channel == Channel::Selfhood
+        && (a.revision >= 0.8 || a.continuity >= 0.8 || a.opening);
     let mut threshold = profile.encode_threshold;
     if input.channel.verbatim() {
         threshold *= 0.6;
@@ -269,7 +363,11 @@ fn encode_one(
         threshold = threshold.min(0.2);
     }
 
-    if !personal_admission && score < threshold && input.permanence < 0.8 && !input.channel.verbatim() {
+    if !personal_admission
+        && score < threshold
+        && input.permanence < 0.8
+        && !input.channel.verbatim()
+    {
         return EncodeDecision {
             kept: false,
             score,
@@ -393,8 +491,13 @@ fn encode_one(
         confidence: 1.0,
         origin: crate::core::model::EvidenceOrigin::Event,
     });
-    if store.self_policy.selection && trace.personal.appraisal.revision>=0.8 {trace.personal.protected_until=now_secs().saturating_add(86400);}
-    if trace.personal.role!=crate::SelfRole::Episode {trace.reality.verifiable=false;trace.confidence=trace.personal.certainty;}
+    if store.self_policy.selection && trace.personal.appraisal.revision >= 0.8 {
+        trace.personal.protected_until = now_secs().saturating_add(86400);
+    }
+    if trace.personal.role != crate::SelfRole::Episode {
+        trace.reality.verifiable = false;
+        trace.confidence = trace.personal.certainty;
+    }
     trace.clamp();
     associate(store, &trace);
     let tid = store.add_trace(trace);

@@ -21,10 +21,14 @@ pub fn accept_core(proposed: &str, event: &str) -> Option<String> {
     if p.is_empty() || p.chars().count() < 8 {
         return None;
     }
-    if p.chars().count() > 1000 { return None; }
+    if p.chars().count() > 1000 {
+        return None;
+    }
     let p = p.to_string();
     if let Some((speaker, _)) = reported_speech(event) {
-        if reported_speech(&p).map(|(s, _)| s) != Some(speaker) { return None; }
+        if reported_speech(&p).map(|(s, _)| s) != Some(speaker) {
+            return None;
+        }
     }
     let ev = content_tokens(event);
     let pr = content_tokens(&p);
@@ -36,12 +40,19 @@ pub fn accept_core(proposed: &str, event: &str) -> Option<String> {
     }
     // Preserve source order, including short names and pronouns.
     let words = |s: &str| -> Vec<String> {
-        s.split_whitespace().map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase())
-            .filter(|w| !w.is_empty()).collect()
+        s.split_whitespace()
+            .map(|w| {
+                w.trim_matches(|c: char| !c.is_alphanumeric())
+                    .to_lowercase()
+            })
+            .filter(|w| !w.is_empty())
+            .collect()
     };
     let source = words(event);
     let mut remaining = source.iter();
-    if words(&p).iter().any(|w| !remaining.any(|e| e == w)) { return None; }
+    if words(&p).iter().any(|w| !remaining.any(|e| e == w)) {
+        return None;
+    }
     if polarity_flipped(event, &p) {
         return None;
     }
@@ -162,11 +173,19 @@ pub fn reported_speech(event: &str) -> Option<(&str, &str)> {
     let speaker = speaker.trim();
     // Transport timestamps are not part of the quoted speaker's identity.
     let speaker = if speaker.starts_with("Conversation on ") {
-        speaker.rsplit_once(": ").map_or(speaker, |(_, name)| name.trim())
-    } else { speaker };
-    if speaker.is_empty() || speaker.split_whitespace().count() > 6
-        || speaker.chars().any(|c| !(c.is_alphabetic() || c == ' ' || c == '-' || c == '\''))
-        || matches!(speaker.to_lowercase().as_str(), "i" | "we" | "you") {
+        speaker
+            .rsplit_once(": ")
+            .map_or(speaker, |(_, name)| name.trim())
+    } else {
+        speaker
+    };
+    if speaker.is_empty()
+        || speaker.split_whitespace().count() > 6
+        || speaker
+            .chars()
+            .any(|c| !(c.is_alphabetic() || c == ' ' || c == '-' || c == '\''))
+        || matches!(speaker.to_lowercase().as_str(), "i" | "we" | "you")
+    {
         return None;
     }
     Some((speaker, body.trim()))
@@ -175,35 +194,66 @@ pub fn reported_speech(event: &str) -> Option<(&str, &str)> {
 /// Reported observations keep complete sentences in source order within 64 words.
 /// Unframed experiences retain the existing 32-word selective baseline.
 pub fn extractive_core(event: &str) -> String {
-    let Some((speaker, body)) = reported_speech(event) else { return unframed_core(event); };
+    let Some((speaker, body)) = reported_speech(event) else {
+        return unframed_core(event);
+    };
     let greeting = |s: &str| {
         let clean = s.trim_matches(|c: char| !c.is_alphanumeric());
         let low = clean.to_lowercase();
-        if matches!(low.as_str(), "how are you" | "how are you doing" | "how're ya doin" | "how are ya") { return true; }
+        if matches!(
+            low.as_str(),
+            "how are you" | "how are you doing" | "how're ya doin" | "how are ya"
+        ) {
+            return true;
+        }
         let mut words = clean.split_whitespace();
         let first = words.next().unwrap_or("").to_lowercase();
-        if !matches!(first.as_str(), "hello" | "hi" | "hey") { return false; }
+        if !matches!(first.as_str(), "hello" | "hi" | "hey") {
+            return false;
+        }
         match (words.next(), words.next()) {
             (None, None) => true,
-            (Some(name), None) => name == "there" || name.chars().next().is_some_and(char::is_uppercase),
+            (Some(name), None) => {
+                name == "there" || name.chars().next().is_some_and(char::is_uppercase)
+            }
             _ => false,
         }
     };
     let mut out = format!("{speaker} said: ");
     let mut started = false;
-    for sentence in body.split_inclusive(['.', '!', '?', ';', '\n']).map(str::trim).filter(|s| !s.is_empty()) {
-        if !started && greeting(sentence) { continue; }
+    for sentence in body
+        .split_inclusive(['.', '!', '?', ';', '\n'])
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if !started && greeting(sentence) {
+            continue;
+        }
         started = true;
         let available = 64usize.saturating_sub(out.split_whitespace().count());
         if sentence.split_whitespace().count() > available {
             if out.ends_with(": ") {
-                out.push_str(&sentence.split_whitespace().take(available).collect::<Vec<_>>().join(" "));
+                out.push_str(
+                    &sentence
+                        .split_whitespace()
+                        .take(available)
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                );
             }
             break;
         }
-        if !out.ends_with(' ') { out.push(' '); }
+        if !out.ends_with(' ') {
+            out.push(' ');
+        }
         out.push_str(sentence);
     }
-    if !started { return event.split_whitespace().take(64).collect::<Vec<_>>().join(" "); }
+    if !started {
+        return event
+            .split_whitespace()
+            .take(64)
+            .collect::<Vec<_>>()
+            .join(" ");
+    }
     out
 }

@@ -1,6 +1,6 @@
 # Architecture
 
-SelMem is a Rust memory library with a daemon, terminal client and two experiment adapters. The current organ includes optional cumulative observation support; earlier benchmark source hashes identify historical versions, not a frozen current organ.
+SelMem is a Rust memory library with a daemon, terminal client and multiple experiment adapters. The current organ includes optional cumulative observation support; earlier benchmark source hashes identify historical versions, not a frozen current organ.
 
 | Directory | Responsibility |
 | --- | --- |
@@ -48,3 +48,26 @@ Axiom family matching uses `stake_kind`, `bearer`, `loss_kind` and `stake_mark`.
 The new reader accepts old files. Missing axiom context is recovered only from unanimous existing lived support, excluding traits and incomplete/mixed support. Explicitly saved empty context remains empty. No sealed archive or heuristic parsing of axiom prose is used. Legacy SQLite trace stakes use the same lived-gist fallback as legacy flat traces; original omitted annotations cannot be guaranteed recoverable. Existing historical duplicates are preserved rather than silently deleted. Updated SQLite schemas are migrated on load/save; old binaries should not be used to write the new format.
 
 Regression coverage includes both containers, explicit empty fields, legacy loading and twenty forced-deep nights with reopening between each. The original sleep experiment remains an observation of the older codec, not evidence from the corrected engine.
+
+## Shared experiment infrastructure (post-refactor)
+
+`src/util/` owns the dependency-free JSON and SHA-256 implementations; both are
+used by the library and experimental executables. `src/experiment_support.rs`
+contains reusable journal I/O. The synthetic retention, creative replay, and
+contextual transfer harnesses share source under `src/bin/shared/`. Protocols
+remain separate and use their original executable entrypoints.
+
+`engine/ingest.rs` and `engine/mouth.rs` implement the original public engine
+facade; `recall/retrieve/ranking.rs` indexes evidence and scores candidates; `selection.rs` chooses traces; `pipeline.rs` reconstructs, grounds and writes back, and
+`core/self_model/scope.rs` handles belief context qualification and recovery; `consolidation.rs` handles belief consolidation.
+No behavioral redesign is implied by relocating these functions.
+
+Reproducibility: the old evidence keeps its original implementation hashes.
+Any run started after this refactor has a different source identity. Never
+resume an interrupted historical paid run against the refactored source.
+
+Read-only recall scaling can be measured with
+`cargo run --release --bin selmem-bench-recall -- 100 500 1000`.
+Report p50/p95 latency alongside stored trace/axiom counts and score hashes. A benchmark
+is not evidence of an optimization until a baseline and after-run agree on
+fixtures, memory counts and selected core fingerprints.

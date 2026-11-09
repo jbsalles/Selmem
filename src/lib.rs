@@ -64,49 +64,54 @@ pub mod persist;
 #[doc(hidden)]
 pub mod recall;
 
-mod engine;
-pub use core::self_model::{SelfMemory, SelfRole, SelfPolicy, SelfEvidence, Appraisal, ContextFacet, ScopeStatus};
+pub mod experiment_support;
+pub mod util;
 
-pub use core::model::{
-    advance_hours, clock_scale, now_secs, set_clock_scale, ArchiveRecord, AxiomLayer, Channel,
-    Attribution, DriftEvent, DriftKind, EvidenceOrigin, IdentityAxiom, InterpretationStamp, MemoryClock, MemoryOperation, MemoryTrace, Mood, OrganCut, RealityAnchor, RecallTally, SemanticCore,
-    SchemaCenter,
-    RecalledMemory, TraceStatus,
+mod engine;
+pub use core::self_model::{
+    Appraisal, ContextFacet, ScopeStatus, SelfEvidence, SelfMemory, SelfPolicy, SelfRole,
 };
-pub use core::talk::{TalkTurn, WorkingTalk, ACTIVE_GAP_SECS, MAX_SESSION_SECS};
-pub use core::profile::Voice;
+
+pub use config::Config;
+pub use core::model::{
+    advance_hours, clock_scale, now_secs, set_clock_scale, ArchiveRecord, Attribution, AxiomLayer,
+    Channel, DriftEvent, DriftKind, EvidenceOrigin, IdentityAxiom, InterpretationStamp,
+    MemoryClock, MemoryOperation, MemoryTrace, Mood, OrganCut, RealityAnchor, RecallTally,
+    RecalledMemory, SchemaCenter, SemanticCore, TraceStatus,
+};
 #[doc(inline)]
 pub use core::profile::EntityProfile;
+pub use core::profile::Voice;
 #[doc(inline)]
 pub use core::store::MemoryStore;
+pub use core::talk::{TalkTurn, WorkingTalk, ACTIVE_GAP_SECS, MAX_SESSION_SECS};
+pub use dream::singularite::distance as singularity_distance;
 pub use dream::{
     detail_retention, evaluate_budget, fingerprint, seed_anchor, stability_days, DreamReport,
     Fingerprint, NightKind, NIGHT_PASSES, SHALLOW_PASSES,
 };
-pub use dream::singularite::distance as singularity_distance;
 pub use encode::embed::{cosine, EmbedLog, Embedder, EmbeddingResult, HashEmbedder, HttpEmbedder};
+#[doc(inline)]
+pub use encode::EncodeInput;
 pub use encode::{
     accept_core, encode_with_parts, lossless_parts, measure_congruence, needs_split,
     parse_segment_reply, segment_facts, split_event, EncodeDecision,
 };
 #[doc(inline)]
-pub use encode::EncodeInput;
-#[doc(inline)]
 pub use engine::SelectiveMemory;
-pub use config::Config;
 pub use net::api;
+pub use recall::stance::{charged_mood, is_charged, isolated_stance, query_hits_episode};
 pub use recall::{
     FailurePolicy, HttpNarrator, HttpScorer, LlmCallLog, Narrator, NullScorer, PropositionLabel,
     PropositionScorer, RecallBias, RecallWrite, RetrievalDump, RuleNarrator, SpeakOnlyHttp,
 };
-pub use recall::stance::{
-    charged_mood, isolated_stance, is_charged, query_hits_episode,
-};
 pub use HttpNarrator as LLMNarrator;
 
 pub use encode::semantic::{EventSemantics, LexicalInterpreter, SemanticInterpreter};
-pub use recall::memory_context::{MemoryContext, MemoryContextFormat, MemoryContextOptions, MemoryReply, MemoryUse};
 pub use recall::choice::{ChoiceMode, ChoiceOptions, Influence};
+pub use recall::memory_context::{
+    MemoryContext, MemoryContextFormat, MemoryContextOptions, MemoryReply, MemoryUse,
+};
 
 pub mod normative;
 pub use normative::{Modality, NormClause, NormRecord, NormRelation, NormScope, NormativeContext};

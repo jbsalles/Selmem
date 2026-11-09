@@ -200,7 +200,11 @@ pub fn skip_rewrite(store: &MemoryStore, id: &str) -> bool {
     let Some(t) = store.traces.get(id) else {
         return true;
     };
-    if t.personal.role!=crate::SelfRole::Episode || t.personal.protected_until>crate::now_secs() || t.channel.verbatim() || t.status == TraceStatus::Latent {
+    if t.personal.role != crate::SelfRole::Episode
+        || t.personal.protected_until > crate::now_secs()
+        || t.channel.verbatim()
+        || t.status == TraceStatus::Latent
+    {
         return true;
     }
     match t.attribution {

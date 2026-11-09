@@ -1,6 +1,15 @@
-use super::{json::{self,num,obj,text,Json},native,sha256};
-use std::{collections::BTreeMap,fs::{self,OpenOptions},io::{Seek,SeekFrom,Write},path::{Path,PathBuf},sync::atomic::{AtomicU64,Ordering}};
-pub(super) type Result<T> = std::result::Result<T,String>;
+use super::{
+    json::{self, num, obj, text, Json},
+    native, sha256,
+};
+use std::{
+    collections::BTreeMap,
+    fs::{self, OpenOptions},
+    io::{Seek, SeekFrom, Write},
+    path::{Path, PathBuf},
+    sync::atomic::{AtomicU64, Ordering},
+};
+pub(super) type Result<T> = std::result::Result<T, String>;
 const SYSTEM: &str = "You make decisions in a fictional community. Use supplied memory as fallible past experience. Return only the requested JSON. No agent name or experimental condition is part of your role.";
 static SERIAL: AtomicU64 = AtomicU64::new(1);
 pub(super) fn s<'a>(v: &'a Json, key: &str) -> Result<&'a str> {
@@ -55,7 +64,8 @@ pub(super) fn log(path: &Path, value: &Json) -> Result<()> {
     file.write_all(format!("{}\n", value.encode()).as_bytes())
         .map_err(|e| e.to_string())?;
     file.sync_all().map_err(|e| e.to_string())
-}pub(super) struct Rng(u64);
+}
+pub(super) struct Rng(u64);
 impl Rng {
     pub(super) fn new(seed: u64) -> Self {
         Self(seed.max(1))
@@ -77,7 +87,8 @@ impl Rng {
             xs.swap(i, j);
         }
     }
-}pub(super) struct Provider {
+}
+pub(super) struct Provider {
     pub(super) mock: bool,
     pub(super) model: String,
     endpoint: String,
@@ -125,7 +136,14 @@ impl Provider {
     pub(super) fn ask(&mut self, prompt: Json, mode: &str) -> Result<Json> {
         self.ask_with(prompt, mode, SYSTEM, 0., self.seed)
     }
-    pub(super) fn ask_with(&mut self, prompt: Json, mode: &str, system: &str, temperature: f64, seed: Option<u64>) -> Result<Json> {
+    pub(super) fn ask_with(
+        &mut self,
+        prompt: Json,
+        mode: &str,
+        system: &str,
+        temperature: f64,
+        seed: Option<u64>,
+    ) -> Result<Json> {
         let timer = super::progress::Call::start(format!(
             "{mode} model={}{}",
             self.model,
@@ -176,9 +194,29 @@ impl Provider {
             if let Some(seed) = seed {
                 body.put("seed", num(seed as f64));
             }
-            if mode=="life_creative" {body.put(selmem::recall::http::token_cap_field(&self.endpoint,&self.model),num(400.));}
-            if mode=="life_choice" {body.put(selmem::recall::http::token_cap_field(&self.endpoint,&self.model),num(64.));}
-            if ["preview_retell","preview_guard"].contains(&mode){body.put(selmem::recall::http::token_cap_field(&self.endpoint,&self.model),num(if mode=="preview_retell"{2000.}else{600.}));body.put("response_format",obj([("type",text("json_object"))]));}
+            if mode == "life_creative" {
+                body.put(
+                    selmem::recall::http::token_cap_field(&self.endpoint, &self.model),
+                    num(400.),
+                );
+            }
+            if mode == "life_choice" {
+                body.put(
+                    selmem::recall::http::token_cap_field(&self.endpoint, &self.model),
+                    num(64.),
+                );
+            }
+            if ["preview_retell", "preview_guard"].contains(&mode) {
+                body.put(
+                    selmem::recall::http::token_cap_field(&self.endpoint, &self.model),
+                    num(if mode == "preview_retell" {
+                        2000.
+                    } else {
+                        600.
+                    }),
+                );
+                body.put("response_format", obj([("type", text("json_object"))]));
+            }
             let reasoning = selmem::Config::get().reasoning();
             body.put("reasoning_effort", text(reasoning));
             let raw = json::parse(&super::transport::post(
@@ -192,8 +230,23 @@ impl Provider {
                 .array()?
                 .first()
                 .ok_or("missing response choice")?;
-            let content=s(choice.get("message")?, "content")?;
-            let reply=if ["preview_retell","preview_guard"].contains(&mode)&&choice.get("finish_reason").and_then(Json::string)!=Ok("stop"){obj([("invalid_output",text("incomplete provider response"))])}else{match json::parse(content) {Ok(v)=>v,Err(_) if mode=="life_creative"||["preview_retell","preview_guard"].contains(&mode)=>obj([("invalid_output",text(content))]),Err(e)=>return Err(e)}};
+            let content = s(choice.get("message")?, "content")?;
+            let reply = if ["preview_retell", "preview_guard"].contains(&mode)
+                && choice.get("finish_reason").and_then(Json::string) != Ok("stop")
+            {
+                obj([("invalid_output", text("incomplete provider response"))])
+            } else {
+                match json::parse(content) {
+                    Ok(v) => v,
+                    Err(_)
+                        if mode == "life_creative"
+                            || ["preview_retell", "preview_guard"].contains(&mode) =>
+                    {
+                        obj([("invalid_output", text(content))])
+                    }
+                    Err(e) => return Err(e),
+                }
+            };
             Ok((reply, raw))
         })();
         timer.finish(result.is_ok());
@@ -225,10 +278,22 @@ impl Provider {
     }
 }
 #[derive(Clone)]
-pub(super) struct Memory { pub(super) arch:String, pub(super) path:PathBuf, config:Json }
+pub(super) struct Memory {
+    pub(super) arch: String,
+    pub(super) path: PathBuf,
+    config: Json,
+}
 impl Memory {
-    pub(super) fn configuration(&self)->Json{self.config.clone()}
-    pub(super) fn new(arch:&str,path:PathBuf,config:&Json)->Self{Self{arch:arch.into(),path,config:config.clone()}}
+    pub(super) fn configuration(&self) -> Json {
+        self.config.clone()
+    }
+    pub(super) fn new(arch: &str, path: PathBuf, config: &Json) -> Self {
+        Self {
+            arch: arch.into(),
+            path,
+            config: config.clone(),
+        }
+    }
     pub(super) fn call(&self, op: &str, extra: Json) -> Result<Json> {
         let request = merge(
             &obj([
@@ -258,10 +323,28 @@ impl Memory {
         result
     }
 
-    pub(super) fn init(&self)->Result<()> {
-        if self.path.exists(){return Err("refusing existing memory".into());}
-        if !["selmem_full","selmem_no_sleep","selmem_no_recon"].contains(&self.arch.as_str()){return Err("unsupported native architecture".into());}
-        self.call("init",obj([("architecture",text(&self.arch)),("associations_learn",self.config.get("associations_learn")?.clone()),("associations_reconstruct",self.config.get("associations_reconstruct")?.clone())]))?;Ok(())
+    pub(super) fn init(&self) -> Result<()> {
+        if self.path.exists() {
+            return Err("refusing existing memory".into());
+        }
+        if !["selmem_full", "selmem_no_sleep", "selmem_no_recon"].contains(&self.arch.as_str()) {
+            return Err("unsupported native architecture".into());
+        }
+        self.call(
+            "init",
+            obj([
+                ("architecture", text(&self.arch)),
+                (
+                    "associations_learn",
+                    self.config.get("associations_learn")?.clone(),
+                ),
+                (
+                    "associations_reconstruct",
+                    self.config.get("associations_reconstruct")?.clone(),
+                ),
+            ]),
+        )?;
+        Ok(())
     }
     pub(super) fn copy(&self, path: PathBuf) -> Result<Self> {
         if let Some(parent) = path.parent() {
@@ -278,23 +361,62 @@ impl Memory {
         })
     }
 
-    pub(super) fn ingest(&self,event:&Json,step:usize,_provider:&mut Provider)->Result<Json>{
-        super::progress::line(format!("EVENT step={step} id={} architecture={}",s(event,"id")?,self.arch));
-        self.call("tick",obj([("hours",self.config.get("hours_per_interaction")?.clone())]))?;
-        let mut receipt=self.call("live",obj([("event",event.clone())]))?;
-        log(&self.path.parent().ok_or("snapshot has no parent")?.join("encoding-receipts.jsonl"),&obj([("snapshot",text(self.path.to_string_lossy())),("step",num(step as f64)),("event",event.clone()),("receipt",receipt.clone())]))?;
-        let recall=self.call("recall",obj([("query",event.get("recall_query")?.clone())]))?;
-        receipt.put("live_recall",recall);
-        if step % (n(&self.config,"sleep_every")? as usize)==0 && self.arch!="selmem_no_sleep"{self.call("sleep",obj([]))?;}
+    pub(super) fn ingest(
+        &self,
+        event: &Json,
+        step: usize,
+        _provider: &mut Provider,
+    ) -> Result<Json> {
+        super::progress::line(format!(
+            "EVENT step={step} id={} architecture={}",
+            s(event, "id")?,
+            self.arch
+        ));
+        self.call(
+            "tick",
+            obj([("hours", self.config.get("hours_per_interaction")?.clone())]),
+        )?;
+        let mut receipt = self.call("live", obj([("event", event.clone())]))?;
+        log(
+            &self
+                .path
+                .parent()
+                .ok_or("snapshot has no parent")?
+                .join("encoding-receipts.jsonl"),
+            &obj([
+                ("snapshot", text(self.path.to_string_lossy())),
+                ("step", num(step as f64)),
+                ("event", event.clone()),
+                ("receipt", receipt.clone()),
+            ]),
+        )?;
+        let recall = self.call(
+            "recall",
+            obj([("query", event.get("recall_query")?.clone())]),
+        )?;
+        receipt.put("live_recall", recall);
+        if step % (n(&self.config, "sleep_every")? as usize) == 0 && self.arch != "selmem_no_sleep"
+        {
+            self.call("sleep", obj([]))?;
+        }
         Ok(receipt)
     }
-    pub(super) fn context(&self,query:&str)->Result<(Json,Json)>{
-        let result=self.call("probe",obj([("query",text(query))]))?;
-        let context=obj([("memories",result.get("memories")?.clone()),("axioms",result.get("axioms")?.clone()),("reading",result.get("reading")?.clone())]);
-        Ok((context,result))
+    pub(super) fn context(&self, query: &str) -> Result<(Json, Json)> {
+        let result = self.call("probe", obj([("query", text(query))]))?;
+        let context = obj([
+            ("memories", result.get("memories")?.clone()),
+            ("axioms", result.get("axioms")?.clone()),
+            ("reading", result.get("reading")?.clone()),
+        ]);
+        Ok((context, result))
     }
     #[cfg(test)]
-    pub(super) fn lesion(&self,kind:&str,roots:&[Json])->Result<Json>{self.call("lesion",obj([("kind",text(kind)),("roots",arr(roots.iter().cloned()))]))}
+    pub(super) fn lesion(&self, kind: &str, roots: &[Json]) -> Result<Json> {
+        self.call(
+            "lesion",
+            obj([("kind", text(kind)), ("roots", arr(roots.iter().cloned()))]),
+        )
+    }
 }
 pub(super) fn configured_mouth(
     cfg: &selmem::Config,
@@ -314,21 +436,68 @@ pub(super) fn configured_mouth(
     let url = if named.is_some() { None } else { llm };
     cfg.mouth(url, flags.get("--model").cloned(), plug, "gpt-4o-mini")
 }
-pub(super) fn campaign_config(cfg:&selmem::Config,flags:&BTreeMap<String,String>,_quick:bool,mock:bool)->Result<Json>{
-    let mut config=json::parse(include_str!("../../../experiments/genesis/config.json"))?;
-    for key in ["associations_learn","associations_reconstruct","observation_evidence"] {
-        if let Some(v)=cfg.resolve(None,key){config.put(key,Json::Bool(match v.as_str(){"true"=>true,"false"=>false,_=>return Err(format!("{key} must be true or false"))}));}
+pub(super) fn campaign_config(
+    cfg: &selmem::Config,
+    flags: &BTreeMap<String, String>,
+    _quick: bool,
+    mock: bool,
+) -> Result<Json> {
+    let mut config = json::parse(include_str!("../../../experiments/genesis/config.json"))?;
+    for key in [
+        "associations_learn",
+        "associations_reconstruct",
+        "observation_evidence",
+    ] {
+        if let Some(v) = cfg.resolve(None, key) {
+            config.put(
+                key,
+                Json::Bool(match v.as_str() {
+                    "true" => true,
+                    "false" => false,
+                    _ => return Err(format!("{key} must be true or false")),
+                }),
+            );
+        }
     }
-    let backend=flags.get("--memory-backend").map(String::as_str).unwrap_or(if mock{"rules"}else{"http"});
-    if !["rules","http"].contains(&backend){return Err("memory backend must be rules|http".into());}
-    config.put("memory_backend",text(backend));
-    if backend=="http" {
-        let mouth=configured_mouth(cfg,flags)?.ok_or("configure a provider in .selmem")?;
-        for (key,value) in [("memory_endpoint",&mouth.url),("scorer_endpoint",&mouth.url),("memory_model",&mouth.model),("scorer_model",&mouth.model),("memory_plug",&mouth.plug)]{config.put(key,text(value));}
+    let backend = flags
+        .get("--memory-backend")
+        .map(String::as_str)
+        .unwrap_or(if mock { "rules" } else { "http" });
+    if !["rules", "http"].contains(&backend) {
+        return Err("memory backend must be rules|http".into());
     }
-    for (flag,key,default,allowed) in [
-        ("--lifecycle-backend","lifecycle_backend",if mock{"rules"}else{"http"},&["rules","http"][..]),
-        ("--reconstruction-policy","reconstruction_policy","native",&["native","strict"][..]),
-    ]{let v=flags.get(flag).map(String::as_str).unwrap_or(default);if !allowed.contains(&v){return Err(format!("invalid {flag}"));}config.put(key,text(v));}
+    config.put("memory_backend", text(backend));
+    if backend == "http" {
+        let mouth = configured_mouth(cfg, flags)?.ok_or("configure a provider in .selmem")?;
+        for (key, value) in [
+            ("memory_endpoint", &mouth.url),
+            ("scorer_endpoint", &mouth.url),
+            ("memory_model", &mouth.model),
+            ("scorer_model", &mouth.model),
+            ("memory_plug", &mouth.plug),
+        ] {
+            config.put(key, text(value));
+        }
+    }
+    for (flag, key, default, allowed) in [
+        (
+            "--lifecycle-backend",
+            "lifecycle_backend",
+            if mock { "rules" } else { "http" },
+            &["rules", "http"][..],
+        ),
+        (
+            "--reconstruction-policy",
+            "reconstruction_policy",
+            "native",
+            &["native", "strict"][..],
+        ),
+    ] {
+        let v = flags.get(flag).map(String::as_str).unwrap_or(default);
+        if !allowed.contains(&v) {
+            return Err(format!("invalid {flag}"));
+        }
+        config.put(key, text(v));
+    }
     Ok(config)
 }

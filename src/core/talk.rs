@@ -22,13 +22,12 @@ const MAX_TURNS: usize = 80;
 const MAX_LINE: usize = 220;
 
 const LIGHT: &[&str] = &[
-    "alors", "quoi", "donc", "mais", "comme", "cette", "cette", "tres",
-    "très", "plus", "dans", "pour", "avec", "sans", "comment", "pourquoi",
-    "quand", "quoi", "oui", "non", "bien", "tout", "rien", "cela", "cette",
-    "what", "about", "think", "that", "this", "when", "just", "very", "well",
-    "how", "why", "and", "the", "you", "toi", "tu", "te", "ton", "tes",
-    "mon", "mes", "une", "des", "les", "est", "suis", "pas", "plus",
-    "pense", "penses", "dis", "dit", "vois", "voir", "encore", "toujours",
+    "alors", "quoi", "donc", "mais", "comme", "cette", "cette", "tres", "très", "plus", "dans",
+    "pour", "avec", "sans", "comment", "pourquoi", "quand", "quoi", "oui", "non", "bien", "tout",
+    "rien", "cela", "cette", "what", "about", "think", "that", "this", "when", "just", "very",
+    "well", "how", "why", "and", "the", "you", "toi", "tu", "te", "ton", "tes", "mon", "mes",
+    "une", "des", "les", "est", "suis", "pas", "plus", "pense", "penses", "dis", "dit", "vois",
+    "voir", "encore", "toujours",
 ];
 
 #[derive(Clone, Debug)]
@@ -85,8 +84,7 @@ impl WorkingTalk {
             None => return false,
         };
         let open = self.opened_at.unwrap_or(last);
-        now.saturating_sub(last) <= ACTIVE_GAP_SECS
-            && now.saturating_sub(open) <= MAX_SESSION_SECS
+        now.saturating_sub(last) <= ACTIVE_GAP_SECS && now.saturating_sub(open) <= MAX_SESSION_SECS
     }
 
     fn pulse_at(&mut self, now: u64) {

@@ -17,7 +17,12 @@ fn same_sign_different_stake_stays_two_traces() {
     mem.live_with(hour("The mandate was withdrawn after the review.", -0.6));
     mem.live_with(hour("The promise was kept after the review.", -0.6));
     mem.sleep();
-    let n = mem.store.traces.values().filter(|t| t.status != selmem::core::model::TraceStatus::Myth).count();
+    let n = mem
+        .store
+        .traces
+        .values()
+        .filter(|t| t.status != selmem::core::model::TraceStatus::Myth)
+        .count();
     assert!(n >= 2, "two stakes must not collapse, living={n}");
 }
 
@@ -29,11 +34,21 @@ fn withdrawn_and_cancelled_do_not_share_an_axiom() {
         mem.live_with(hour("The mandate was cancelled after the review.", -0.7));
         mem.sleep();
     }
-    let axioms: Vec<_> = mem.store.living_axioms().into_iter().map(|a| a.statement.clone()).collect();
+    let axioms: Vec<_> = mem
+        .store
+        .living_axioms()
+        .into_iter()
+        .map(|a| a.statement.clone())
+        .collect();
     let joined = axioms.join(" | ");
-    assert!(joined.contains("withdrawn") && joined.contains("cancelled"), "{joined}");
     assert!(
-        axioms.iter().all(|s| !(s.contains("withdrawn") && s.contains("cancelled"))),
+        joined.contains("withdrawn") && joined.contains("cancelled"),
+        "{joined}"
+    );
+    assert!(
+        axioms
+            .iter()
+            .all(|s| !(s.contains("withdrawn") && s.contains("cancelled"))),
         "one axiom melted both marks: {joined}"
     );
 }
@@ -45,7 +60,12 @@ fn axiom_carries_stake_vector() {
         mem.live_with(hour("The mandate was withdrawn after the review.", -0.7));
         mem.sleep();
     }
-    let ax = mem.store.living_axioms().into_iter().find(|a| a.statement.contains("stake=")).expect("axiom");
+    let ax = mem
+        .store
+        .living_axioms()
+        .into_iter()
+        .find(|a| a.statement.contains("stake="))
+        .expect("axiom");
     assert_eq!(ax.stake_kind, StakeKind::Limit);
     assert!(ax.statement.contains("stake=limit"), "{}", ax.statement);
     assert!(ax.statement.contains("bearer="));
@@ -66,4 +86,3 @@ fn marked_absence_is_a_trace() {
     mem.live_with(hour("The reply never arrived.", -0.4));
     assert!(mem.store.traces.values().any(|t| t.absence.is_some()));
 }
-

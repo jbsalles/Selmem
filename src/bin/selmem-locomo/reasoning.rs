@@ -12,11 +12,13 @@ pub fn validate(raw: &str) -> Result<String, String> {
 }
 
 pub fn validate_source(source: &Path, protocol: &Json, protocol_hash: &str) -> Result<(), String> {
-    let raw = fs::read_to_string(source.join("manifest.json")).map_err(|e| format!("cannot read memory-source manifest: {e}"))?;
+    let raw = fs::read_to_string(source.join("manifest.json"))
+        .map_err(|e| format!("cannot read memory-source manifest: {e}"))?;
     let manifest = json::parse(&raw)?;
     if manifest.get("protocol_sha256")?.string()? != protocol_hash
         || manifest.get("dataset_sha256")?.string()? != protocol.get("dataset_sha256")?.string()?
-        || manifest.get("sample_id")?.string()? != protocol.get("sample_id")?.string()? {
+        || manifest.get("sample_id")?.string()? != protocol.get("sample_id")?.string()?
+    {
         return Err("memory source must use the same protocol, dataset and sample".into());
     }
     if manifest.get("organ_revision")?.string()? != super::ORGAN_REVISION {
@@ -27,8 +29,16 @@ pub fn validate_source(source: &Path, protocol: &Json, protocol_hash: &str) -> R
     if !(status.starts_with("complete") || status.starts_with("technical rehearsal complete")) {
         return Err("memory source must be a completed run".into());
     }
-    for name in ["full_a", "full_b", "full_null_a", "full_null_b", "nosleep_a", "nosleep_b"] {
-        let bytes = fs::read(source.join(format!("{name}.selmem"))).map_err(|e| format!("missing source snapshot {name}: {e}"))?;
+    for name in [
+        "full_a",
+        "full_b",
+        "full_null_a",
+        "full_null_b",
+        "nosleep_a",
+        "nosleep_b",
+    ] {
+        let bytes = fs::read(source.join(format!("{name}.selmem")))
+            .map_err(|e| format!("missing source snapshot {name}: {e}"))?;
         if hashes.get(name)?.string()? != sha256::hex(&bytes) {
             return Err(format!("source snapshot checksum mismatch: {name}"));
         }
@@ -51,8 +61,8 @@ pub fn copy_snapshot(source: &Path, name: &str, target: &Path) -> Result<(), Str
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::json::{obj, text};
+    use super::*;
     #[test]
     fn explicit_effort_has_no_silent_provider_default() {
         assert_eq!(validate("none").unwrap(), "none");
@@ -62,18 +72,55 @@ mod tests {
     }
     #[test]
     fn reuse_requires_matching_protocol_and_preserves_snapshot_bytes() {
-        let root = std::env::temp_dir().join(format!("selmem-reasoning-reuse-{}", std::process::id()));
+        let root =
+            std::env::temp_dir().join(format!("selmem-reasoning-reuse-{}", std::process::id()));
         fs::create_dir_all(&root).unwrap();
-        let protocol = obj([("dataset_sha256", text("dataset")), ("sample_id", text("sample"))]);
-        let mut manifest = obj([("protocol_sha256", text("protocol")), ("dataset_sha256", text("dataset")), ("sample_id", text("sample")), ("status", text("complete")), ("organ_revision", text(super::super::ORGAN_REVISION))]);
+        let protocol = obj([
+            ("dataset_sha256", text("dataset")),
+            ("sample_id", text("sample")),
+        ]);
+        let mut manifest = obj([
+            ("protocol_sha256", text("protocol")),
+            ("dataset_sha256", text("dataset")),
+            ("sample_id", text("sample")),
+            ("status", text("complete")),
+            ("organ_revision", text(super::super::ORGAN_REVISION)),
+        ]);
         fs::write(root.join("manifest.json"), manifest.encode()).unwrap();
         assert!(validate_source(&root, &protocol, "wrong-protocol").is_err());
         assert!(validate_source(&root, &protocol, "protocol").is_err());
-        for name in ["full_a", "full_b", "full_null_a", "full_null_b", "nosleep_a", "nosleep_b"] {
-            fs::write(root.join(format!("{name}.selmem")), format!("snapshot:{name}")).unwrap();
+        for name in [
+            "full_a",
+            "full_b",
+            "full_null_a",
+            "full_null_b",
+            "nosleep_a",
+            "nosleep_b",
+        ] {
+            fs::write(
+                root.join(format!("{name}.selmem")),
+                format!("snapshot:{name}"),
+            )
+            .unwrap();
         }
-        let hashes = ["full_a", "full_b", "full_null_a", "full_null_b", "nosleep_a", "nosleep_b"]
-            .into_iter().map(|name| (name.to_string(), text(sha256::hex(&fs::read(root.join(format!("{name}.selmem"))).unwrap())))).collect();
+        let hashes = [
+            "full_a",
+            "full_b",
+            "full_null_a",
+            "full_null_b",
+            "nosleep_a",
+            "nosleep_b",
+        ]
+        .into_iter()
+        .map(|name| {
+            (
+                name.to_string(),
+                text(sha256::hex(
+                    &fs::read(root.join(format!("{name}.selmem"))).unwrap(),
+                )),
+            )
+        })
+        .collect();
         manifest.put("memory_snapshot_sha256", Json::Object(hashes));
         fs::write(root.join("manifest.json"), manifest.encode()).unwrap();
         validate_source(&root, &protocol, "protocol").unwrap();
@@ -85,10 +132,29 @@ mod tests {
         fs::write(root.join("manifest.json"), manifest.encode()).unwrap();
         let target = root.join("copy.selmem");
         copy_snapshot(&root, "full_a", &target).unwrap();
-        assert_eq!(fs::read(&target).unwrap(), fs::read(root.join("full_a.selmem")).unwrap());
+        assert_eq!(
+            fs::read(&target).unwrap(),
+            fs::read(root.join("full_a.selmem")).unwrap()
+        );
         let mut checked = manifest;
-        let hashes = ["full_a", "full_b", "full_null_a", "full_null_b", "nosleep_a", "nosleep_b"]
-            .into_iter().map(|name| (name.to_string(), text(sha256::hex(&fs::read(root.join(format!("{name}.selmem"))).unwrap())))).collect();
+        let hashes = [
+            "full_a",
+            "full_b",
+            "full_null_a",
+            "full_null_b",
+            "nosleep_a",
+            "nosleep_b",
+        ]
+        .into_iter()
+        .map(|name| {
+            (
+                name.to_string(),
+                text(sha256::hex(
+                    &fs::read(root.join(format!("{name}.selmem"))).unwrap(),
+                )),
+            )
+        })
+        .collect();
         checked.put("memory_snapshot_sha256", Json::Object(hashes));
         fs::write(root.join("manifest.json"), checked.encode()).unwrap();
         validate_source(&root, &protocol, "protocol").unwrap();
@@ -99,7 +165,8 @@ mod tests {
     #[test]
     fn copied_book_has_identical_read_only_context() {
         use selmem::{EncodeInput, EntityProfile, SelectiveMemory};
-        let root = std::env::temp_dir().join(format!("selmem-reasoning-context-{}", std::process::id()));
+        let root =
+            std::env::temp_dir().join(format!("selmem-reasoning-context-{}", std::process::id()));
         fs::create_dir_all(&root).unwrap();
         let mut memory = SelectiveMemory::new(EntityProfile::new("Claire")).detach_clock();
         memory.clock.origin_real = 4_102_444_800;
@@ -121,5 +188,4 @@ mod tests {
         assert_eq!(fs::read(&copy).unwrap(), before);
         fs::remove_dir_all(root).unwrap();
     }
-
 }

@@ -51,7 +51,9 @@ impl Default for MemoryClock {
 
 impl MemoryClock {
     pub fn detach(mut self) -> Self {
-        if self.origin_real == 0 { self.origin_real = wall_secs(); }
+        if self.origin_real == 0 {
+            self.origin_real = wall_secs();
+        }
         self.detached = true;
         self
     }
@@ -580,7 +582,10 @@ impl MemoryTrace {
 
     /// Certainty of the current gist. Access is only how easy the hour is to find.
     pub fn recompute_confidence(&mut self) {
-        if self.personal.role!=super::self_model::SelfRole::Episode {self.confidence=self.personal.certainty;return;}
+        if self.personal.role != super::self_model::SelfRole::Episode {
+            self.confidence = self.personal.certainty;
+            return;
+        }
         let mut penalty = 0.0f32;
         let mut confab = false;
         let mut polish = 0u32;

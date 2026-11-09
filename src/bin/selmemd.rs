@@ -16,13 +16,23 @@ fn main() {
     let kind = cfg.resolve_or(flag(&args, "--profile"), "profile", "tender");
     let key = cfg.resolve(flag(&args, "--api-key"), "api_key");
     let embed_url = cfg.resolve(flag(&args, "--embed"), "embed");
-    let public_demo = cfg.resolve(None, "public_demo").map(|s| matches!(s.as_str(), "1" | "true" | "yes")).unwrap_or(false);
-    let token = if public_demo { None } else { cfg.resolve(flag(&args, "--token"), "token") };
-    let visitors = public_demo.then(|| Arc::new(sessions::Sessions::new(profile_for_demo(&name, &kind))));
+    let public_demo = cfg
+        .resolve(None, "public_demo")
+        .map(|s| matches!(s.as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false);
+    let token = if public_demo {
+        None
+    } else {
+        cfg.resolve(flag(&args, "--token"), "token")
+    };
+    let visitors =
+        public_demo.then(|| Arc::new(sessions::Sessions::new(profile_for_demo(&name, &kind))));
     if let Some(visitors) = visitors.clone() {
         std::thread::spawn(move || loop {
             std::thread::sleep(std::time::Duration::from_secs(60));
-            if let Err(e) = visitors.purge_expired() { eprintln!("session cleanup: {e}"); }
+            if let Err(e) = visitors.purge_expired() {
+                eprintln!("session cleanup: {e}");
+            }
         });
     }
 
@@ -31,9 +41,18 @@ fn main() {
         _ => EntityProfile::tender(name),
     };
 
-    let mut mem = if public_demo { SelectiveMemory::new(profile) } else { SelectiveMemory::open(&path, profile).expect("failed to open memory") };
-    mem.set_memory_context_options(selmem::MemoryContextOptions::from_config(cfg)
-        .unwrap_or_else(|e| { eprintln!("{e}"); std::process::exit(1); })).expect("validated delivery options");
+    let mut mem = if public_demo {
+        SelectiveMemory::new(profile)
+    } else {
+        SelectiveMemory::open(&path, profile).expect("failed to open memory")
+    };
+    mem.set_memory_context_options(
+        selmem::MemoryContextOptions::from_config(cfg).unwrap_or_else(|e| {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }),
+    )
+    .expect("validated delivery options");
     if let Some(v) = cfg
         .resolve(flag(&args, "--ground-overlap"), "ground_overlap")
         .and_then(|s| s.parse().ok())
@@ -53,37 +72,45 @@ fn main() {
         mem.profile.narrator_firmness = v;
     }
     if !public_demo {
-    let mouth = match cfg.mouth(flag(&args, "--llm"), flag(&args, "--model"), flag(&args, "--plug"), "llama3") {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("{e}");
-            std::process::exit(1);
+        let mouth = match cfg.mouth(
+            flag(&args, "--llm"),
+            flag(&args, "--model"),
+            flag(&args, "--plug"),
+            "llama3",
+        ) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("{e}");
+                std::process::exit(1);
+            }
+        };
+        if let Some(mouth) = mouth {
+            match mem.set_plug(&mouth.plug, &mouth.url, &mouth.model, mouth.api_key) {
+                Ok(()) => eprintln!("HTTP narrator attached  {} {}", mouth.plug, mouth.model),
+                Err(e) => eprintln!("{e}; repli RuleNarrator"),
+            }
         }
-    };
-    if let Some(mouth) = mouth {
-        match mem.set_plug(&mouth.plug, &mouth.url, &mouth.model, mouth.api_key) {
-            Ok(()) => eprintln!("HTTP narrator attached  {} {}", mouth.plug, mouth.model),
-            Err(e) => eprintln!("{e}; repli RuleNarrator"),
+        if let Some(url) = flag(&args, "--scorer").or(cfg.resolve(None, "scorer")) {
+            let model = cfg.resolve_or(flag(&args, "--scorer-model"), "scorer_model", "llama3");
+            let key = cfg.resolve(None, "scorer_key").or(key.clone());
+            if let Some(s) = selmem::HttpScorer::parse(&url, model, key) {
+                mem = mem.with_scorer(Box::new(s));
+                eprintln!("scorer attached  {url}");
+            }
+        } else {
+            eprintln!("scorer absent");
         }
-    }
-    if let Some(url) = flag(&args, "--scorer").or(cfg.resolve(None, "scorer")) {
-        let model = cfg.resolve_or(flag(&args, "--scorer-model"), "scorer_model", "llama3");
-        let key = cfg.resolve(None, "scorer_key").or(key.clone());
-        if let Some(s) = selmem::HttpScorer::parse(&url, model, key) {
-            mem = mem.with_scorer(Box::new(s));
-            eprintln!("scorer attached  {url}");
+        if let Some(url) = embed_url {
+            let emodel = cfg.resolve_or(
+                flag(&args, "--embed-model"),
+                "embed_model",
+                "text-embedding-3-small",
+            );
+            if let Some(e) = HttpEmbedder::parse(&url, emodel, key.clone()) {
+                mem = mem.with_embedder(Box::new(e));
+                eprintln!("HTTP embeddings attached");
+            }
         }
-    } else {
-        eprintln!("scorer absent");
-    }
-    if let Some(url) = embed_url {
-        let emodel = cfg.resolve_or(flag(&args, "--embed-model"), "embed_model", "text-embedding-3-small");
-        if let Some(e) = HttpEmbedder::parse(&url, emodel, key.clone()) {
-            mem = mem.with_embedder(Box::new(e));
-            eprintln!("HTTP embeddings attached");
-        }
-    }
-
     }
 
     let mem = Arc::new(Mutex::new(Some(mem)));
@@ -121,7 +148,9 @@ fn handle_conn(
     token: Option<&str>,
     visitors: Option<&sessions::Sessions>,
 ) -> std::io::Result<()> {
-    stream.set_read_timeout(Some(std::time::Duration::from_secs(90))).ok();
+    stream
+        .set_read_timeout(Some(std::time::Duration::from_secs(90)))
+        .ok();
     let mut buf = vec![0u8; 8192];
     let mut data = Vec::new();
     loop {
@@ -150,17 +179,35 @@ fn handle_conn(
                     content_len = v.trim().parse().unwrap_or(0);
                 }
                 if l.starts_with("authorization:") {
-                    auth = line.split_once(':').map(|(_, v)| v.trim().to_string()).unwrap_or_default();
+                    auth = line
+                        .split_once(':')
+                        .map(|(_, v)| v.trim().to_string())
+                        .unwrap_or_default();
                 }
                 if l.starts_with("cookie:") {
-                    cookies = line.split_once(':').map(|(_, v)| v.trim().to_string()).unwrap_or_default();
+                    cookies = line
+                        .split_once(':')
+                        .map(|(_, v)| v.trim().to_string())
+                        .unwrap_or_default();
                 }
                 if l.starts_with("x-selmem-session:") {
-                    visitor_id = Some(line.split_once(':').map(|(_, v)| v.trim().to_string()).unwrap_or_default());
+                    visitor_id = Some(
+                        line.split_once(':')
+                            .map(|(_, v)| v.trim().to_string())
+                            .unwrap_or_default(),
+                    );
                 }
-                if l.starts_with("x-forwarded-proto:") { secure = l.split_once(':').map(|(_, v)| v.trim() == "https").unwrap_or(false); }
+                if l.starts_with("x-forwarded-proto:") {
+                    secure = l
+                        .split_once(':')
+                        .map(|(_, v)| v.trim() == "https")
+                        .unwrap_or(false);
+                }
                 if l.starts_with("x-selmem-audit:") {
-                    audit_role = l.split_once(':').map(|(_, v)| v.trim() == "1").unwrap_or(false);
+                    audit_role = l
+                        .split_once(':')
+                        .map(|(_, v)| v.trim() == "1")
+                        .unwrap_or(false);
                 }
             }
             let content_len = content_len.min(1_000_000);
@@ -172,17 +219,34 @@ fn handle_conn(
                 }
                 data.extend_from_slice(&buf[..n]);
             }
-            let body = String::from_utf8_lossy(&data[body_start..body_start + content_len.min(data.len().saturating_sub(body_start))]).to_string();
+            let body = String::from_utf8_lossy(
+                &data[body_start
+                    ..body_start + content_len.min(data.len().saturating_sub(body_start))],
+            )
+            .to_string();
             if method == "GET" && (path == "/" || path == "/ui" || path == "/index.html") {
                 write_http_ct(&mut stream, 200, "text/html; charset=utf-8", UI)?;
                 return Ok(());
             }
             if method == "GET" && path == "/session" {
                 if let Some(visitors) = visitors {
-                    let Some((id, _)) = visitors.resolve(visitor_id.as_deref().unwrap_or_else(|| sessions::cookie_id(&cookies)), true)? else {
-                        return write_http(&mut stream, 503, "{\"error\":\"demo full; try again later\"}");
+                    let Some((id, _)) = visitors.resolve(
+                        visitor_id
+                            .as_deref()
+                            .unwrap_or_else(|| sessions::cookie_id(&cookies)),
+                        true,
+                    )?
+                    else {
+                        return write_http(
+                            &mut stream,
+                            503,
+                            "{\"error\":\"demo full; try again later\"}",
+                        );
                     };
-                    let cookie = format!("Set-Cookie: selmem_session={id}; HttpOnly; SameSite=Strict; Path=/{}\r\n", if secure { "; Secure" } else { "" });
+                    let cookie = format!(
+                        "Set-Cookie: selmem_session={id}; HttpOnly; SameSite=Strict; Path=/{}\r\n",
+                        if secure { "; Secure" } else { "" }
+                    );
                     let state = format!("{{\"public_demo\":true,\"session_id\":\"{id}\",\"memory_lifetime_hours\":24}}");
                     return write_http_extra(&mut stream, 200, "application/json", &state, &cookie);
                 }
@@ -207,12 +271,20 @@ fn handle_conn(
             }
             let session;
             let organ = if let Some(visitors) = visitors {
-                let Some((_, selected)) = visitors.resolve(visitor_id.as_deref().unwrap_or_else(|| sessions::cookie_id(&cookies)), false)? else {
+                let Some((_, selected)) = visitors.resolve(
+                    visitor_id
+                        .as_deref()
+                        .unwrap_or_else(|| sessions::cookie_id(&cookies)),
+                    false,
+                )?
+                else {
                     return write_http(&mut stream, 401, "{\"error\":\"session expired\"}");
                 };
                 session = selected;
                 session.as_ref()
-            } else { mem };
+            } else {
+                mem
+            };
             let res = dispatch_unlocked(organ, &method, path, query, &body, visitors.is_some())?;
             write_http(&mut stream, res.status, &res.body)?;
             return Ok(());
@@ -223,7 +295,6 @@ fn handle_conn(
     }
     Ok(())
 }
-
 
 fn dispatch_unlocked(
     mem: &Mutex<Option<SelectiveMemory>>,
@@ -243,17 +314,27 @@ fn dispatch_unlocked(
             Err(res) => return Ok(res),
         };
         let (draft, narrator, failures_before) = {
-            let mut slot = mem.lock().map_err(|_| {
-                std::io::Error::new(std::io::ErrorKind::Other, "memory locked")
-            })?;
+            let mut slot = mem
+                .lock()
+                .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "memory locked"))?;
             let Some(g) = slot.as_mut() else {
                 return Ok(busy());
             };
             if g.mouth_held() {
                 return Ok(busy());
             }
-            if public_demo && (g.llm.url.is_empty() || g.llm.key.as_ref().map(|key| key.trim().is_empty()).unwrap_or(true)) {
-                return Ok(selmem::api::HttpResponse { status: 400, body: "{\"error\":\"No, LLM setup, please configure it in options\"}".into() });
+            if public_demo
+                && (g.llm.url.is_empty()
+                    || g.llm
+                        .key
+                        .as_ref()
+                        .map(|key| key.trim().is_empty())
+                        .unwrap_or(true))
+            {
+                return Ok(selmem::api::HttpResponse {
+                    status: 400,
+                    body: "{\"error\":\"No, LLM setup, please configure it in options\"}".into(),
+                });
             }
             let narrator = g.narrator_arc();
             let failures_before = narrator.failure_log().failures;
@@ -262,15 +343,17 @@ fn dispatch_unlocked(
         };
         let reply = draft.reply(narrator.as_ref());
         let call_log = narrator.failure_log();
-        let mut slot = mem.lock().map_err(|_| {
-            std::io::Error::new(std::io::ErrorKind::Other, "memory locked")
-        })?;
+        let mut slot = mem
+            .lock()
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "memory locked"))?;
         let Some(g) = slot.as_mut() else {
             return Ok(busy());
         };
         if call_log.failures > failures_before {
             g.cancel_mouth(&draft);
-            let mut detail = call_log.llm_error.unwrap_or_else(|| "provider request failed".into());
+            let mut detail = call_log
+                .llm_error
+                .unwrap_or_else(|| "provider request failed".into());
             if let Some(key) = g.llm.key.as_deref().filter(|key| !key.is_empty()) {
                 detail = detail.replace(key, "[redacted]");
             }
@@ -281,16 +364,22 @@ fn dispatch_unlocked(
         }
         g.close_mouth(&draft, &reply);
         if let Err(e) = g.save() {
-            return Ok(api::HttpResponse { status: 500, body: format!("{{\"error\":\"memory persistence failed: {}\"}}", api::json_esc(&e.to_string())) });
+            return Ok(api::HttpResponse {
+                status: 500,
+                body: format!(
+                    "{{\"error\":\"memory persistence failed: {}\"}}",
+                    api::json_esc(&e.to_string())
+                ),
+            });
         }
         return Ok(api::mouth_body(path, &reply, g));
     }
     let external = method == "POST";
     if external {
         let mut organ = {
-            let mut slot = mem.lock().map_err(|_| {
-                std::io::Error::new(std::io::ErrorKind::Other, "memory locked")
-            })?;
+            let mut slot = mem
+                .lock()
+                .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "memory locked"))?;
             let Some(organ) = slot.as_mut() else {
                 return Ok(busy());
             };
@@ -300,20 +389,28 @@ fn dispatch_unlocked(
             let organ = slot.take().unwrap();
             organ
         };
-        let res = if public_demo { api::dispatch_public(&mut organ, method, path, query, body) } else { api::dispatch(&mut organ, method, path, query, body) };
-        let mut slot = mem.lock().map_err(|_| {
-            std::io::Error::new(std::io::ErrorKind::Other, "memory locked")
-        })?;
+        let res = if public_demo {
+            api::dispatch_public(&mut organ, method, path, query, body)
+        } else {
+            api::dispatch(&mut organ, method, path, query, body)
+        };
+        let mut slot = mem
+            .lock()
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "memory locked"))?;
         *slot = Some(organ);
         return Ok(res);
     }
-    let mut slot = mem.lock().map_err(|_| {
-        std::io::Error::new(std::io::ErrorKind::Other, "memory locked")
-    })?;
+    let mut slot = mem
+        .lock()
+        .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "memory locked"))?;
     let Some(g) = slot.as_mut() else {
         return Ok(busy());
     };
-    Ok(if public_demo { api::dispatch_public(g, method, path, query, body) } else { api::dispatch(g, method, path, query, body) })
+    Ok(if public_demo {
+        api::dispatch_public(g, method, path, query, body)
+    } else {
+        api::dispatch(g, method, path, query, body)
+    })
 }
 
 fn find_headers_end(data: &[u8]) -> Option<usize> {
@@ -326,11 +423,22 @@ fn write_http(stream: &mut TcpStream, status: u16, body: &str) -> std::io::Resul
     write_http_ct(stream, status, "application/json; charset=utf-8", body)
 }
 
-fn write_http_ct(stream: &mut TcpStream, status: u16, ctype: &str, body: &str) -> std::io::Result<()> {
+fn write_http_ct(
+    stream: &mut TcpStream,
+    status: u16,
+    ctype: &str,
+    body: &str,
+) -> std::io::Result<()> {
     write_http_extra(stream, status, ctype, body, "")
 }
 
-fn write_http_extra(stream: &mut TcpStream, status: u16, ctype: &str, body: &str, extra: &str) -> std::io::Result<()> {
+fn write_http_extra(
+    stream: &mut TcpStream,
+    status: u16,
+    ctype: &str,
+    body: &str,
+    extra: &str,
+) -> std::io::Result<()> {
     let reason = match status {
         200 => "OK",
         204 => "No Content",
@@ -359,7 +467,11 @@ fn flag(args: &[String], name: &str) -> Option<String> {
 }
 
 fn profile_for_demo(name: &str, kind: &str) -> EntityProfile {
-    if kind == "austere" { EntityProfile::austere(name) } else { EntityProfile::tender(name) }
+    if kind == "austere" {
+        EntityProfile::austere(name)
+    } else {
+        EntityProfile::tender(name)
+    }
 }
 
 #[cfg(test)]
@@ -368,9 +480,14 @@ mod chat_errors {
     use std::time::{Duration, Instant};
 
     // Real HTTP transport, local provider only: no API credits or network service.
-    fn provider(responses: Vec<(u16, &'static str)>) -> (String, std::thread::JoinHandle<Vec<String>>) {
+    fn provider(
+        responses: Vec<(u16, &'static str)>,
+    ) -> (String, std::thread::JoinHandle<Vec<String>>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-        let url = format!("http://{}/v1/chat/completions", listener.local_addr().unwrap());
+        let url = format!(
+            "http://{}/v1/chat/completions",
+            listener.local_addr().unwrap()
+        );
         listener.set_nonblocking(true).unwrap();
         let worker = std::thread::spawn(move || {
             let mut requests = Vec::new();
@@ -379,23 +496,38 @@ mod chat_errors {
                 let mut stream = loop {
                     match listener.accept() {
                         Ok((stream, _)) => break stream,
-                        Err(e) if e.kind() == std::io::ErrorKind::WouldBlock && Instant::now() < deadline => std::thread::sleep(Duration::from_millis(10)),
+                        Err(e)
+                            if e.kind() == std::io::ErrorKind::WouldBlock
+                                && Instant::now() < deadline =>
+                        {
+                            std::thread::sleep(Duration::from_millis(10))
+                        }
                         Err(e) => panic!("local provider was not called: {e}"),
                     }
                 };
-                stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(5)))
+                    .unwrap();
                 let mut data = Vec::new();
                 let mut buffer = [0; 4096];
                 loop {
                     let n = stream.read(&mut buffer).unwrap();
-                    assert!(n > 0); data.extend_from_slice(&buffer[..n]);
+                    assert!(n > 0);
+                    data.extend_from_slice(&buffer[..n]);
                     assert!(data.len() < 65536);
                     if let Some(pos) = data.windows(4).position(|w| w == b"\r\n\r\n") {
                         let headers = String::from_utf8_lossy(&data[..pos]);
-                        let length: usize = headers.lines().find_map(|line| {
-                            line.to_ascii_lowercase().strip_prefix("content-length:").map(|v| v.trim().parse().unwrap())
-                        }).unwrap();
-                        if data.len() >= pos + 4 + length { break; }
+                        let length: usize = headers
+                            .lines()
+                            .find_map(|line| {
+                                line.to_ascii_lowercase()
+                                    .strip_prefix("content-length:")
+                                    .map(|v| v.trim().parse().unwrap())
+                            })
+                            .unwrap();
+                        if data.len() >= pos + 4 + length {
+                            break;
+                        }
                     }
                 }
                 requests.push(String::from_utf8(data).unwrap());
@@ -408,7 +540,8 @@ mod chat_errors {
 
     fn organ(url: &str) -> Arc<Mutex<Option<SelectiveMemory>>> {
         let mut mem = SelectiveMemory::new(EntityProfile::new("Claire"));
-        mem.set_llm(url, "local-mock", Some("dummy-secret".into())).unwrap();
+        mem.set_llm(url, "local-mock", Some("dummy-secret".into()))
+            .unwrap();
         Arc::new(Mutex::new(Some(mem)))
     }
 
@@ -416,22 +549,30 @@ mod chat_errors {
     fn provider_failure_is_an_http_error_and_next_turn_can_recover() {
         let (url, worker) = provider(vec![
             (401, r#"{"error":{"message":"Invalid key dummy-secret"}}"#),
-            (200, r#"{"choices":[{"message":{"content":"Hello from the configured model."}}]}"#),
+            (
+                200,
+                r#"{"choices":[{"message":{"content":"Hello from the configured model."}}]}"#,
+            ),
         ]);
         let mem = organ(&url);
-        let failed = dispatch_unlocked(&mem, "POST", "/turn", "", r#"{"text":"Hello"}"#, false).unwrap();
+        let failed =
+            dispatch_unlocked(&mem, "POST", "/turn", "", r#"{"text":"Hello"}"#, false).unwrap();
         assert_eq!(failed.status, 502);
         assert!(failed.body.contains("HTTP 401"));
         assert!(!failed.body.contains("dummy-secret"));
         assert!(!failed.body.contains("\"reply\""));
         {
-            let slot = mem.lock().unwrap(); let g = slot.as_ref().unwrap();
-            assert!(!g.mouth_held()); assert!(g.talk.turns.is_empty());
+            let slot = mem.lock().unwrap();
+            let g = slot.as_ref().unwrap();
+            assert!(!g.mouth_held());
+            assert!(g.talk.turns.is_empty());
         }
-        let success = dispatch_unlocked(&mem, "POST", "/turn", "", r#"{"text":"Try again"}"#, false).unwrap();
+        let success =
+            dispatch_unlocked(&mem, "POST", "/turn", "", r#"{"text":"Try again"}"#, false).unwrap();
         assert_eq!(success.status, 200);
         assert!(success.body.contains("Hello from the configured model."));
-        let slot = mem.lock().unwrap(); let g = slot.as_ref().unwrap();
+        let slot = mem.lock().unwrap();
+        let g = slot.as_ref().unwrap();
         assert_eq!(g.talk.turns.len(), 1);
         assert!(!g.talk.render().contains("Invalid key"));
         assert_eq!(worker.join().unwrap().len(), 2);
@@ -439,11 +580,18 @@ mod chat_errors {
 
     #[test]
     fn unreadable_and_rate_limited_replies_never_become_rules_chat() {
-        for response in [(429, r#"{"error":{"message":"Rate limit exceeded"}}"#),
-            (200, "not JSON"), (200, r#"{"choices":[{"message":{"content":""}}]}"#)] {
-            let (url, worker) = provider(vec![response]); let mem = organ(&url);
-            let result = dispatch_unlocked(&mem, "POST", "/speak", "", r#"{"text":"Hello"}"#, false).unwrap();
-            assert_eq!(result.status, 502); assert!(result.body.contains("LLM request failed"));
+        for response in [
+            (429, r#"{"error":{"message":"Rate limit exceeded"}}"#),
+            (200, "not JSON"),
+            (200, r#"{"choices":[{"message":{"content":""}}]}"#),
+        ] {
+            let (url, worker) = provider(vec![response]);
+            let mem = organ(&url);
+            let result =
+                dispatch_unlocked(&mem, "POST", "/speak", "", r#"{"text":"Hello"}"#, false)
+                    .unwrap();
+            assert_eq!(result.status, 502);
+            assert!(result.body.contains("LLM request failed"));
             assert!(!result.body.contains("I am Claire"));
             assert!(mem.lock().unwrap().as_ref().unwrap().talk.turns.is_empty());
             worker.join().unwrap();
@@ -452,10 +600,16 @@ mod chat_errors {
 
     #[test]
     fn public_chat_requires_setup_before_opening_a_turn() {
-        let mem = Arc::new(Mutex::new(Some(SelectiveMemory::new(EntityProfile::new("Claire")))));
-        let result = dispatch_unlocked(&mem, "POST", "/turn", "", r#"{"text":"Hello"}"#, true).unwrap();
-        assert_eq!(result.status, 400); assert!(result.body.contains("please configure it in options"));
-        let slot = mem.lock().unwrap(); let g = slot.as_ref().unwrap();
-        assert!(!g.mouth_held()); assert!(g.talk.is_empty());
+        let mem = Arc::new(Mutex::new(Some(SelectiveMemory::new(EntityProfile::new(
+            "Claire",
+        )))));
+        let result =
+            dispatch_unlocked(&mem, "POST", "/turn", "", r#"{"text":"Hello"}"#, true).unwrap();
+        assert_eq!(result.status, 400);
+        assert!(result.body.contains("please configure it in options"));
+        let slot = mem.lock().unwrap();
+        let g = slot.as_ref().unwrap();
+        assert!(!g.mouth_held());
+        assert!(g.talk.is_empty());
     }
 }

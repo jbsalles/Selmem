@@ -31,7 +31,7 @@ pub fn prune_orphaned_archives(store: &mut MemoryStore) {
         .values()
         .filter_map(|t| t.archive_id.as_deref())
         .collect();
-    store.archives.retain(|id, a| {
-        used.contains(id.as_str()) || a.released_from.is_some()
-    });
+    store
+        .archives
+        .retain(|id, a| used.contains(id.as_str()) || a.released_from.is_some());
 }

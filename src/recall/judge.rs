@@ -3,7 +3,7 @@
 //! No `MemoryTrace`, no profile, no I/O. A float cut may be passed in
 //! (`is_grounding_miss`). Embeddings rank recall; they do not decide this.
 
-use crate::encode::scoring::{lexical_similarity};
+use crate::encode::scoring::lexical_similarity;
 
 /// How the spoken sentence sits relative to the frozen core.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -81,8 +81,18 @@ const CAUSE: &[&str] = &[
 ];
 
 const NEG: &[&str] = &[
-    " not ", "n't", " never ", " no longer ", " nobody ", " nothing ",
-    " pas ", " jamais ", " plus ", " aucun ", " nulle ", " personne ",
+    " not ",
+    "n't",
+    " never ",
+    " no longer ",
+    " nobody ",
+    " nothing ",
+    " pas ",
+    " jamais ",
+    " plus ",
+    " aucun ",
+    " nulle ",
+    " personne ",
 ];
 
 pub fn overlap_with_core(generated: &str, core: &str) -> f32 {
@@ -128,7 +138,11 @@ fn finish(kind: DetachKind, overlap: f32, generated: &str, core: &str) -> CoreJu
     } else {
         1.0
     };
-    let polarity_match = if contradicts(&pad(generated), &pad(core)) { 0.0 } else { 1.0 };
+    let polarity_match = if contradicts(&pad(generated), &pad(core)) {
+        0.0
+    } else {
+        1.0
+    };
     let novelty = (1.0 - overlap).clamp(0.0, 1.0);
     CoreJudgement {
         kind,
@@ -143,8 +157,12 @@ fn finish(kind: DetachKind, overlap: f32, generated: &str, core: &str) -> CoreJu
 }
 
 fn causal_mismatch(generated: &str, core: &str) -> bool {
-    let Some(g) = cause_clause(generated) else { return false };
-    let Some(c) = cause_clause(core) else { return false };
+    let Some(g) = cause_clause(generated) else {
+        return false;
+    };
+    let Some(c) = cause_clause(core) else {
+        return false;
+    };
     lexical_similarity(g, c) < 0.34
 }
 
@@ -167,11 +185,12 @@ fn entity_overlap(a: &str, b: &str) -> f32 {
     if ea.is_empty() || eb.is_empty() {
         return 0.0;
     }
-    let hit = ea.iter().filter(|e| eb.iter().any(|x| x.eq_ignore_ascii_case(e))).count();
+    let hit = ea
+        .iter()
+        .filter(|e| eb.iter().any(|x| x.eq_ignore_ascii_case(e)))
+        .count();
     hit as f32 / ea.len().max(eb.len()) as f32
 }
-
-
 
 /// Miss if the kind is unauthorized, or if the identity gate fails the cut.
 pub fn is_grounding_miss(
@@ -191,10 +210,10 @@ fn pad(s: &str) -> String {
 }
 
 fn extra_cause(generated: &str, core: &str) -> bool {
-    CAUSE.iter().any(|m| generated.contains(m) && !core.contains(m))
+    CAUSE
+        .iter()
+        .any(|m| generated.contains(m) && !core.contains(m))
 }
-
-
 
 fn has_neg(s: &str) -> bool {
     NEG.iter().any(|n| s.contains(n))

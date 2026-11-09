@@ -35,7 +35,7 @@ fn build(store: &MemoryStore, schema: &str) -> Option<SchemaCenter> {
         .traces
         .values()
         .filter(|t| t.schema.as_deref() == Some(schema))
-        .filter(|t| t.channel != Channel::Log && t.personal.role==crate::SelfRole::Episode)
+        .filter(|t| t.channel != Channel::Log && t.personal.role == crate::SelfRole::Episode)
         .filter(|t| t.status != TraceStatus::Latent)
         .collect();
     hours.sort_by(|a, b| hub_key(b).cmp(&hub_key(a)).then_with(|| a.id.cmp(&b.id)));
@@ -57,9 +57,7 @@ fn build(store: &MemoryStore, schema: &str) -> Option<SchemaCenter> {
             h.gist.clone()
         }
     } else {
-        axiom
-            .map(|a| a.statement.clone())
-            .unwrap_or_default()
+        axiom.map(|a| a.statement.clone()).unwrap_or_default()
     };
     if core.trim().is_empty() {
         return None;
@@ -112,8 +110,13 @@ pub fn gravitate(store: &mut MemoryStore) -> u32 {
             if hub.as_deref() == Some(id.as_str()) {
                 continue;
             }
-            let Some(t) = store.traces.get(&id) else { continue };
-            if t.personal.role!=crate::SelfRole::Episode || t.channel.verbatim() || t.status == TraceStatus::Latent {
+            let Some(t) = store.traces.get(&id) else {
+                continue;
+            };
+            if t.personal.role != crate::SelfRole::Episode
+                || t.channel.verbatim()
+                || t.status == TraceStatus::Latent
+            {
                 continue;
             }
             if t.attribution != Attribution::Internal {

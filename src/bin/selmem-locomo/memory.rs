@@ -266,9 +266,8 @@ mod selection_filename_regression {
 
     #[test]
     fn generic_selection_training_preserves_snapshot_and_source() {
-        let dir = std::env::temp_dir().join(format!(
-            "selmem-generic-selection-{}", std::process::id()
-        ));
+        let dir =
+            std::env::temp_dir().join(format!("selmem-generic-selection-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("raw-baseline-fixture.selmem");
         let events = [Event::Turn {
@@ -280,11 +279,19 @@ mod selection_filename_regression {
         }];
         let protocol = json::parse(r#"{"event_valences":{"D1:1":0.7}}"#).unwrap();
         let result = train(&events, &protocol, Some("D1:1"), "selection", &path);
-        assert!(result.is_ok(), "generic training failed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "generic training failed: {:?}",
+            result.err()
+        );
         assert!(path.exists());
         assert!(path.with_extension("audit.jsonl").exists());
         let mem = SelectiveMemory::open(&path, EntityProfile::new("Claire")).unwrap();
-        assert!(mem.store.traces.values().any(|t| t.source == "locomo:test:D1:1"));
+        assert!(mem
+            .store
+            .traces
+            .values()
+            .any(|t| t.source == "locomo:test:D1:1"));
         fs::remove_dir_all(dir).unwrap();
     }
 }

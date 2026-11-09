@@ -1,5 +1,5 @@
-use crate::net::httpx::{extract_json_array_f32, json_esc, post_json};
 use crate::encode::scoring::token_set;
+use crate::net::httpx::{extract_json_array_f32, json_esc, post_json};
 
 pub const EMBED_DIM: usize = 96;
 
@@ -30,8 +30,12 @@ impl Default for EmbedLog {
 
 pub trait Embedder: Send + Sync {
     /// Dense hash sketches are lexical fallbacks, not evidence of semantic proximity.
-    fn semantic_similarity(&self) -> bool { true }
-    fn space_id(&self) -> String { std::any::type_name::<Self>().to_string() }
+    fn semantic_similarity(&self) -> bool {
+        true
+    }
+    fn space_id(&self) -> String {
+        std::any::type_name::<Self>().to_string()
+    }
     fn embed(&self, text: &str) -> Vec<f32> {
         match self.embed_result(text) {
             EmbeddingResult::External(v) | EmbeddingResult::Fallback(v) => v,
@@ -54,7 +58,11 @@ pub struct HttpEmbedder {
 }
 
 impl HttpEmbedder {
-    pub fn parse(endpoint: &str, model: impl Into<String>, api_key: Option<String>) -> Option<Self> {
+    pub fn parse(
+        endpoint: &str,
+        model: impl Into<String>,
+        api_key: Option<String>,
+    ) -> Option<Self> {
         if !(endpoint.starts_with("http://") || endpoint.starts_with("https://")) {
             return None;
         }
@@ -72,7 +80,9 @@ impl HttpEmbedder {
 }
 
 impl Embedder for HttpEmbedder {
-    fn space_id(&self) -> String { format!("http:{}:{}", self.url, self.model) }
+    fn space_id(&self) -> String {
+        format!("http:{}:{}", self.url, self.model)
+    }
     fn embed_result(&self, text: &str) -> EmbeddingResult {
         let body = format!(
             "{{\"model\":\"{}\",\"input\":\"{}\"}}",
@@ -84,7 +94,13 @@ impl Embedder for HttpEmbedder {
         }
         match post_json(&self.url, self.api_key.as_deref(), &body) {
             Ok(raw) => match extract_json_array_f32(&raw, "embedding") {
-                Some(v) if !v.is_empty() && v.iter().all(|x| x.is_finite()) && v.iter().any(|x| *x != 0.0) => EmbeddingResult::External(v),
+                Some(v)
+                    if !v.is_empty()
+                        && v.iter().all(|x| x.is_finite())
+                        && v.iter().any(|x| *x != 0.0) =>
+                {
+                    EmbeddingResult::External(v)
+                }
                 _ => self.fell_back(text, "unreadable embedding"),
             },
             Err(e) => self.fell_back(text, &e),
@@ -110,8 +126,12 @@ impl HttpEmbedder {
 }
 
 impl Embedder for HashEmbedder {
-    fn semantic_similarity(&self) -> bool { false }
-    fn space_id(&self) -> String { "hash96-v1".into() }
+    fn semantic_similarity(&self) -> bool {
+        false
+    }
+    fn space_id(&self) -> String {
+        "hash96-v1".into()
+    }
     fn embed_result(&self, text: &str) -> EmbeddingResult {
         EmbeddingResult::External(self.embed_hash(text))
     }
@@ -206,8 +226,13 @@ mod consistency_tests {
     use super::*;
     #[test]
     fn provider_failure_cannot_smuggle_hash_vectors_into_remote_space() {
-        let e=HttpEmbedder::parse("http://localhost:1/embeddings","remote",None).unwrap();
-        match e.fell_back("some text","injected outage") {EmbeddingResult::Fallback(v)=>assert!(v.is_empty()),_=>panic!("expected fallback")}
-        assert!(e.embed_log().fallback_used);assert_eq!(e.embed_log().backend,"lexical");assert!(e.space_id().contains("remote"));
+        let e = HttpEmbedder::parse("http://localhost:1/embeddings", "remote", None).unwrap();
+        match e.fell_back("some text", "injected outage") {
+            EmbeddingResult::Fallback(v) => assert!(v.is_empty()),
+            _ => panic!("expected fallback"),
+        }
+        assert!(e.embed_log().fallback_used);
+        assert_eq!(e.embed_log().backend, "lexical");
+        assert!(e.space_id().contains("remote"));
     }
 }

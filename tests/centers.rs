@@ -1,8 +1,6 @@
 //! P4: schema centers. Periphery of an Internal hour can fall toward the hub.
 
-use selmem::{
-    Attribution, Channel, EncodeInput, EntityProfile, SelectiveMemory, TraceStatus,
-};
+use selmem::{Attribution, Channel, EncodeInput, EntityProfile, SelectiveMemory, TraceStatus};
 
 fn charged<'a>(text: &'a str, schema: &str, attr: Attribution) -> EncodeInput<'a> {
     let mut ev = EncodeInput::new(text);
@@ -66,9 +64,10 @@ fn one_hour_without_axiom_has_no_center() {
     let mut p = EntityProfile::tender("A");
     p.encode_threshold = 0.05;
     let mut mem = SelectiveMemory::new(p);
-    assert!(mem
-        .live_with(dull("The standup was at nine.", "daily"))
-        .kept);
+    assert!(
+        mem.live_with(dull("The standup was at nine.", "daily"))
+            .kept
+    );
     let _ = mem.sleep_deep();
     assert!(
         !mem.store.centers.contains_key("daily"),

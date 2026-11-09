@@ -1,5 +1,5 @@
-use selmem::{fingerprint, singularity_distance, Channel, EntityProfile, SelectiveMemory};
 use selmem::EncodeInput;
+use selmem::{fingerprint, singularity_distance, Channel, EntityProfile, SelectiveMemory};
 
 struct Scene {
     event: &'static str,
@@ -27,7 +27,8 @@ fn scenes() -> Vec<Scene> {
             permanence: 0.4,
         },
         Scene {
-            event: "You cancelled at the last moment, for no reason, after I had prepared everything.",
+            event:
+                "You cancelled at the last moment, for no reason, after I had prepared everything.",
             valence: -0.62,
             arousal: 0.7,
             disgust: 0.48,

@@ -4,9 +4,8 @@ use selmem::{EncodeInput, EntityProfile, SelectiveMemory, WorkingTalk};
 
 fn seed_injustice() -> SelectiveMemory {
     let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire"));
-    let mut ev = EncodeInput::new(
-        "The project was cancelled for no reason; they stole the credit.",
-    );
+    let mut ev =
+        EncodeInput::new("The project was cancelled for no reason; they stole the credit.");
     ev.valence = -0.82;
     ev.arousal = 0.78;
     ev.disgust = 0.55;
@@ -20,10 +19,7 @@ fn seed_injustice() -> SelectiveMemory {
 #[test]
 fn light_followup_keeps_the_topic() {
     let mut talk = WorkingTalk::default();
-    talk.hear(
-        "The project was cancelled for no reason",
-        Some("injustice"),
-    );
+    talk.hear("The project was cancelled for no reason", Some("injustice"));
     let before = talk.topic.clone();
     talk.hear("Et alors, tu en penses quoi ?", None);
     assert_eq!(talk.topic, before);
@@ -62,7 +58,11 @@ fn frame_keeps_the_active_conversation() {
     let mut talk = WorkingTalk::default();
     let t0 = 1_700_000_000;
     for i in 0..9 {
-        talk.record_at(t0 + i * 30, &format!("user {i} projet"), &format!("reply {i}"));
+        talk.record_at(
+            t0 + i * 30,
+            &format!("user {i} projet"),
+            &format!("reply {i}"),
+        );
     }
     assert_eq!(talk.turns.len(), 9);
     assert!(talk.turns[0].user.contains("user 0"));
@@ -74,7 +74,11 @@ fn frame_keeps_the_active_conversation() {
 fn silence_over_ten_minutes_ends_the_thread() {
     let mut talk = WorkingTalk::default();
     let t0 = 1_700_000_000;
-    talk.hear_at(t0, "The project was cancelled for no reason", Some("injustice"));
+    talk.hear_at(
+        t0,
+        "The project was cancelled for no reason",
+        Some("injustice"),
+    );
     talk.record_at(t0, "on en parlait", "I remember it");
     assert!(!talk.is_empty());
     talk.refresh_at(t0 + selmem::ACTIVE_GAP_SECS);
@@ -132,10 +136,7 @@ fn speak_followup_still_recalls_the_marked_hour() {
     let mut mem = seed_injustice();
     let _ = mem.speak("We were talking about the cancelled project.");
     let hits = mem.remember(&mem.talk.recall_query("Et alors, tu en penses quoi ?"));
-    assert!(
-        !hits.is_empty(),
-        "topic-mixed cue must find the lived hour"
-    );
+    assert!(!hits.is_empty(), "topic-mixed cue must find the lived hour");
     let blob = hits
         .iter()
         .map(|h| h.narrative.to_lowercase())
@@ -204,14 +205,27 @@ fn sleep_after_chat_writes_the_book_not_the_frame() {
     );
 
     // Admission may retain more than one turn. HashMap order is not chronology.
-    let hour = talk_hours.iter().copied().find(|hour| {
-        let Some(archive) = hour.archive_id.as_ref().and_then(|id| mem.store.archives.get(id)) else { return false };
-        let text = archive.verbatim.to_lowercase();
-        text.contains("projet") || text.contains("credit") || text.contains("injust")
-    }).expect("the salient project turn must survive the sitting");
+    let hour = talk_hours
+        .iter()
+        .copied()
+        .find(|hour| {
+            let Some(archive) = hour
+                .archive_id
+                .as_ref()
+                .and_then(|id| mem.store.archives.get(id))
+            else {
+                return false;
+            };
+            let text = archive.verbatim.to_lowercase();
+            text.contains("projet") || text.contains("credit") || text.contains("injust")
+        })
+        .expect("the salient project turn must survive the sitting");
     assert!(!hour.gist.is_empty(), "book is gist");
     assert!(!hour.core.is_empty(), "book is core");
-    let aid = hour.archive_id.as_ref().expect("kept hour has a sealed archive");
+    let aid = hour
+        .archive_id
+        .as_ref()
+        .expect("kept hour has a sealed archive");
     let verbatim = mem.store.archives[aid].verbatim.to_lowercase();
     assert!(
         verbatim.contains("projet")
@@ -243,10 +257,7 @@ fn sleep_after_chat_writes_the_book_not_the_frame() {
     );
 
     let _ = mem.speak_isolated("Et le projet ?");
-    assert!(
-        mem.talk.is_empty(),
-        "probes must not resurrect the frame"
-    );
+    assert!(mem.talk.is_empty(), "probes must not resurrect the frame");
 }
 
 #[test]
@@ -326,10 +337,7 @@ fn persist_does_not_write_the_thread() {
     assert!(!loaded.store.traces.is_empty());
     let tid = loaded.store.traces.keys().next().unwrap().clone();
     assert!(
-        loaded
-            .audit(&tid)
-            .unwrap()
-            .contains("cancelled")
+        loaded.audit(&tid).unwrap().contains("cancelled")
             || loaded.audit(&tid).unwrap().contains("project"),
         "the hour must still be in the seal after reload"
     );
@@ -353,13 +361,7 @@ fn http_turn_speak_and_clear() {
     assert_eq!(listed.status, 200);
     assert!(listed.body.contains("project") || listed.body.contains("injustice"));
 
-    let follow = selmem::api::dispatch(
-        &mut mem,
-        "POST",
-        "/speak",
-        "",
-        r#"{"text":"Et alors ?"}"#,
-    );
+    let follow = selmem::api::dispatch(&mut mem, "POST", "/speak", "", r#"{"text":"Et alors ?"}"#);
     assert_eq!(follow.status, 200);
     assert!(mem.talk.turns.len() >= 2);
 

@@ -19,8 +19,8 @@ mod echo;
 use std::sync::Mutex;
 
 use selmem::{
-    fingerprint, set_clock_scale, singularity_distance, Channel, EncodeInput,
-    EntityProfile, RecallBias, RecallWrite, SelectiveMemory, TraceStatus,
+    fingerprint, set_clock_scale, singularity_distance, Channel, EncodeInput, EntityProfile,
+    RecallBias, RecallWrite, SelectiveMemory, TraceStatus,
 };
 
 static CLOCK: Mutex<()> = Mutex::new(());
@@ -82,10 +82,8 @@ fn alludes_vow(text: &str) -> bool {
         return true;
     }
     let t = text.to_lowercase();
-    let scene = t.contains("marc")
-        || t.contains("inès")
-        || t.contains("ines")
-        || t.contains("lyon");
+    let scene =
+        t.contains("marc") || t.contains("inès") || t.contains("ines") || t.contains("lyon");
     let act = t.contains("said nothing")
         || t.contains("not allowed")
         || t.contains("given away")
@@ -151,7 +149,11 @@ fn mild<'a>(text: &'a str) -> EncodeInput<'a> {
     ev
 }
 
-fn active_hit(mem: &SelectiveMemory, hits: &[selmem::RecalledMemory], pred: impl Fn(&str) -> bool) -> bool {
+fn active_hit(
+    mem: &SelectiveMemory,
+    hits: &[selmem::RecalledMemory],
+    pred: impl Fn(&str) -> bool,
+) -> bool {
     hits.iter().any(|h| {
         pred(&h.narrative)
             && mem
@@ -275,8 +277,20 @@ fn horizon_year_one_stream() {
         let kept_date = kept_date.expect("A must keep the 3 January reason");
         dump_ranks("A vow-probe", &mut a, PROBE, &t0, &kept_date);
         dump_ranks("B vow-probe", &mut b, PROBE, &t0, &kept_date);
-        dump_ranks("A copier", &mut a, "when did the copier jam", &t0, &kept_date);
-        dump_ranks("B copier", &mut b, "when did the copier jam", &t0, &kept_date);
+        dump_ranks(
+            "A copier",
+            &mut a,
+            "when did the copier jam",
+            &t0,
+            &kept_date,
+        );
+        dump_ranks(
+            "B copier",
+            &mut b,
+            "when did the copier jam",
+            &t0,
+            &kept_date,
+        );
         let d_book = singularity_distance(&fingerprint(&a), &fingerprint(&b));
 
         let a_vow = a.store.traces.contains_key(&t0)
@@ -320,16 +334,28 @@ fn horizon_year_one_stream() {
             "horizon 360d  pre_Dfp={pre:.3} Dfp={d_book:.3}  \
              vow book A/B={a_vow}/{b_vow} retrieve A/B={hit_vow_a}/{hit_vow_b}"
         );
-        eprintln!("  date kept  retrieve January A/B={jan_a}/{jan_b}  lunch 4412 A/B={lunch_a}/{lunch_b}");
-        eprintln!("  living January A/B={}/{}", has_january(&living_a), has_january(&living_b));
+        eprintln!(
+            "  date kept  retrieve January A/B={jan_a}/{jan_b}  lunch 4412 A/B={lunch_a}/{lunch_b}"
+        );
+        eprintln!(
+            "  living January A/B={}/{}",
+            has_january(&living_a),
+            has_january(&living_b)
+        );
         eprintln!("  A mouth: {speak_a}");
         eprintln!("  B mouth: {speak_b}");
 
-        assert!(d_book > pre, "pair must split (pre={pre:.3} year={d_book:.3})");
+        assert!(
+            d_book > pre,
+            "pair must split (pre={pre:.3} year={d_book:.3})"
+        );
         assert!(a_vow && !b_vow, "vow must stay on A only");
         assert!(hit_vow_a && !hit_vow_b, "retrieve vow A yes B no");
 
-        assert!(jan_a, "A was given a reason on day {FORGET_DAY} to keep 3 January");
+        assert!(
+            jan_a,
+            "A was given a reason on day {FORGET_DAY} to keep 3 January"
+        );
         assert!(!jan_b, "B had no reason; 3 January must slip");
         assert!(has_january(&living_a), "A living book still holds January");
         assert!(!has_january(&living_b), "B living book still holds January");
@@ -428,7 +454,10 @@ fn horizon_same_treatment() {
         let jan_c = has_january(&active_blob(&c));
         eprintln!("horizon same-treatment pre_Dfp={pre:.3} Dfp={d:.3} vow A/A'={vow_a}/{vow_c} jan={jan_a}/{jan_c}");
         assert!(vow_a && vow_c, "both clones received the vow");
-        assert!(jan_a && jan_c, "both clones received the keep-January reason");
+        assert!(
+            jan_a && jan_c,
+            "both clones received the keep-January reason"
+        );
         assert!(
             (d - pre).abs() < 1e-6,
             "same treatment must not split the book (pre={pre:.3} year={d:.3})"

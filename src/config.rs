@@ -33,7 +33,8 @@ impl Config {
     }
 
     pub fn discover() -> Self {
-        if let Some(p) = flag_from_args("--config").or_else(|| std::env::var("SELMEM_CONFIG").ok()) {
+        if let Some(p) = flag_from_args("--config").or_else(|| std::env::var("SELMEM_CONFIG").ok())
+        {
             return Self::load_path(Path::new(&p)).unwrap_or_default();
         }
         for candidate in [".selmem", "selmem.conf"] {
@@ -82,10 +83,7 @@ impl Config {
                 values.insert(key, val);
             }
         }
-        Self {
-            path: None,
-            values,
-        }
+        Self { path: None, values }
     }
 
     pub fn file(&self, key: &str) -> Option<&str> {
@@ -221,7 +219,11 @@ impl Config {
         names.extend(extra);
         names
             .into_iter()
-            .filter_map(|n| self.mouth_named(&n, None, None, "gpt-4o-mini").ok().flatten())
+            .filter_map(|n| {
+                self.mouth_named(&n, None, None, "gpt-4o-mini")
+                    .ok()
+                    .flatten()
+            })
             .collect()
     }
 
@@ -250,7 +252,10 @@ pub fn expand_plug(name: &str) -> Option<(&'static str, &'static str)> {
 }
 
 fn normalize_key(raw: &str) -> String {
-    let k = raw.trim().trim_start_matches("SELMEM_").to_ascii_lowercase();
+    let k = raw
+        .trim()
+        .trim_start_matches("SELMEM_")
+        .to_ascii_lowercase();
     match k.as_str() {
         "defaultllm" | "default_llm" => "default_llm".into(),
         "key" | "apikey" => "api_key".into(),

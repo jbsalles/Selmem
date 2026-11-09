@@ -42,7 +42,8 @@ pub fn lexical_similarity(a: &str, b: &str) -> f32 {
 /// Keep the stored event intact; strip this wrapper only for comparison.
 pub fn event_content(text: &str) -> &str {
     if text.starts_with("Conversation on ") {
-        text.split_once(" said:").map_or(text, |(_, body)| body.trim())
+        text.split_once(" said:")
+            .map_or(text, |(_, body)| body.trim())
     } else {
         text
     }

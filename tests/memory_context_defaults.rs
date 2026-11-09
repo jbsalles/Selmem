@@ -1,31 +1,278 @@
 //! Default-delivery regression checks, using recorded requests only.
-#[path="../src/bin/selmem-locomo/json.rs"] #[allow(dead_code)] mod json;
-use selmem::{Config,EntityProfile,HttpNarrator,MemoryContext,MemoryContextFormat,MemoryContextOptions,MemoryReply,MemoryUse,Mood,Narrator,SelectiveMemory,WorkingTalk};
-use std::sync::{Arc,Mutex};
+use selmem::util::json;
+use selmem::{
+    Config, EntityProfile, HttpNarrator, MemoryContext, MemoryContextFormat, MemoryContextOptions,
+    MemoryReply, MemoryUse, Mood, Narrator, SelectiveMemory, WorkingTalk,
+};
+use std::sync::{Arc, Mutex};
 #[test]
 fn defaults_are_structured_experience_in_library_and_config() {
- let o=MemoryContextOptions::default();
- assert_eq!(o.format,MemoryContextFormat::Structured);
- assert_eq!(o.usage,MemoryUse::Experience);
- let configured=MemoryContextOptions::from_config(&Config::empty()).unwrap();
- let memory=SelectiveMemory::new(EntityProfile::new("Claire"));
- // Optimized builds may give the same function distinct addresses across
- // codegen units. Verify settings and counter behavior rather than pointers.
- for actual in [&o,&configured,memory.memory_context_options()] {
-  assert_eq!(actual.to_json(),o.to_json());
-  for sample in ["", "hello", "é", "memory with metadata"] {
-   assert_eq!((actual.token_counter)(sample),sample.len());
-  }
- }
+    let o = MemoryContextOptions::default();
+    assert_eq!(o.format, MemoryContextFormat::Structured);
+    assert_eq!(o.usage, MemoryUse::Experience);
+    let configured = MemoryContextOptions::from_config(&Config::empty()).unwrap();
+    let memory = SelectiveMemory::new(EntityProfile::new("Claire"));
+    // Optimized builds may give the same function distinct addresses across
+    // codegen units. Verify settings and counter behavior rather than pointers.
+    for actual in [&o, &configured, memory.memory_context_options()] {
+        assert_eq!(actual.to_json(), o.to_json());
+        for sample in ["", "hello", "é", "memory with metadata"] {
+            assert_eq!((actual.token_counter)(sample), sample.len());
+        }
+    }
 }
-#[test]fn explicit_legacy_and_neutral_still_work(){let o=MemoryContextOptions::from_config(&Config::parse("memory_context=legacy\nmemory_use=legacy")).unwrap();assert_eq!(o.format,MemoryContextFormat::Legacy);assert_eq!(o.usage,MemoryUse::Legacy);let o=MemoryContextOptions::from_config(&Config::parse("memory_use=neutral")).unwrap();assert_eq!(o.usage,MemoryUse::Neutral);assert!(MemoryContextOptions::from_config(&Config::parse("memory_use=typo")).is_err());}
-#[test]fn default_http_uses_packet_and_contract_once(){let seen:Arc<Mutex<Vec<String>>>=Arc::new(Mutex::new(vec![]));let copy=seen.clone();let http=HttpNarrator::parse("http://example.invalid","grok-4.3",None).unwrap().with_transport(Arc::new(move|_,_,body|{copy.lock().unwrap().push(body.into());Ok("{\"choices\":[{\"message\":{\"content\":\"reply\"}}]}".into())}));let c=MemoryContext::default();let t=WorkingTalk::default();let m=Mood::default();let o=MemoryContextOptions::default();let r=MemoryReply{user:"hello",memories:&[],axioms:&[],mood:&m,talk:&t,reading:"SHOULD_NOT_LEAK",context:&c,options:&o};assert_eq!(http.reply_with_context(&r),"reply");let rows=seen.lock().unwrap();assert_eq!(rows.len(),1);assert!(rows[0].contains("Consider relevant memories"));assert!(!rows[0].contains("SHOULD_NOT_LEAK"));json::parse(&rows[0]).unwrap();}
-#[test]fn neutral_differs_from_experience_only_by_contract(){let c=MemoryContext::default();let t=WorkingTalk::default();let m=Mood::default();let mut o=MemoryContextOptions::default();o.usage=MemoryUse::Neutral;let r=MemoryReply{user:"",memories:&[],axioms:&[],mood:&m,talk:&t,reading:"",context:&c,options:&o};let neutral=r.system_prompt();assert!(!neutral.contains("Speak from the reading profile"));o.usage=MemoryUse::Experience;let r=MemoryReply{user:"",memories:&[],axioms:&[],mood:&m,talk:&t,reading:"",context:&c,options:&o};assert_eq!(r.system_prompt(),format!("{}\n{}",neutral,selmem::recall::memory_context::MEMORY_USE_CONTRACT));}
-#[test]fn empty_control_has_no_invented_affect_or_dispositions(){let c=MemoryContext::default();assert!(c.episodes.is_empty()&&c.dispositions.is_empty()&&c.affect.is_none());json::parse(&c.to_json()).unwrap();}
+#[test]
+fn explicit_legacy_and_neutral_still_work() {
+    let o = MemoryContextOptions::from_config(&Config::parse(
+        "memory_context=legacy\nmemory_use=legacy",
+    ))
+    .unwrap();
+    assert_eq!(o.format, MemoryContextFormat::Legacy);
+    assert_eq!(o.usage, MemoryUse::Legacy);
+    let o = MemoryContextOptions::from_config(&Config::parse("memory_use=neutral")).unwrap();
+    assert_eq!(o.usage, MemoryUse::Neutral);
+    assert!(MemoryContextOptions::from_config(&Config::parse("memory_use=typo")).is_err());
+}
+#[test]
+fn default_http_uses_packet_and_contract_once() {
+    let seen: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(vec![]));
+    let copy = seen.clone();
+    let http = HttpNarrator::parse("http://example.invalid", "grok-4.3", None)
+        .unwrap()
+        .with_transport(Arc::new(move |_, _, body| {
+            copy.lock().unwrap().push(body.into());
+            Ok("{\"choices\":[{\"message\":{\"content\":\"reply\"}}]}".into())
+        }));
+    let c = MemoryContext::default();
+    let t = WorkingTalk::default();
+    let m = Mood::default();
+    let o = MemoryContextOptions::default();
+    let r = MemoryReply {
+        user: "hello",
+        memories: &[],
+        axioms: &[],
+        mood: &m,
+        talk: &t,
+        reading: "SHOULD_NOT_LEAK",
+        context: &c,
+        options: &o,
+    };
+    assert_eq!(http.reply_with_context(&r), "reply");
+    let rows = seen.lock().unwrap();
+    assert_eq!(rows.len(), 1);
+    assert!(rows[0].contains("Consider relevant memories"));
+    assert!(!rows[0].contains("SHOULD_NOT_LEAK"));
+    json::parse(&rows[0]).unwrap();
+}
+#[test]
+fn neutral_differs_from_experience_only_by_contract() {
+    let c = MemoryContext::default();
+    let t = WorkingTalk::default();
+    let m = Mood::default();
+    let mut o = MemoryContextOptions::default();
+    o.usage = MemoryUse::Neutral;
+    let r = MemoryReply {
+        user: "",
+        memories: &[],
+        axioms: &[],
+        mood: &m,
+        talk: &t,
+        reading: "",
+        context: &c,
+        options: &o,
+    };
+    let neutral = r.system_prompt();
+    assert!(!neutral.contains("Speak from the reading profile"));
+    o.usage = MemoryUse::Experience;
+    let r = MemoryReply {
+        user: "",
+        memories: &[],
+        axioms: &[],
+        mood: &m,
+        talk: &t,
+        reading: "",
+        context: &c,
+        options: &o,
+    };
+    assert_eq!(
+        r.system_prompt(),
+        format!(
+            "{}\n{}",
+            neutral,
+            selmem::recall::memory_context::MEMORY_USE_CONTRACT
+        )
+    );
+}
+#[test]
+fn empty_control_has_no_invented_affect_or_dispositions() {
+    let c = MemoryContext::default();
+    assert!(c.episodes.is_empty() && c.dispositions.is_empty() && c.affect.is_none());
+    json::parse(&c.to_json()).unwrap();
+}
 
-fn lived()->(SelectiveMemory,Vec<String>){let mut o=SelectiveMemory::new(EntityProfile::new("Claire")).detach_clock();let mut ids=vec![];for (src,line) in [("one","At the team meeting I taught a neighbor dance steps."),("two","At the team meeting Jon shared his studio plans.")]{let mut e=selmem::EncodeInput::new(line);e.permanence=1.0;e.self_relevance=0.9;e.arousal=0.7;e.source=src;e.observation_id=Some(src);e.attribution=selmem::Attribution::External;let d=o.live_with(e);assert!(d.kept);ids.push(d.trace_id.unwrap());}for a in o.store.archives.values_mut(){a.verbatim="SEALED_SENTINEL".into();} (o,ids)}
-#[test]fn only_selected_lived_text_is_exposed_and_archive_is_absent(){let(o,ids)=lived();let text=vec!["I felt delighted about that dance!".into()];let c=MemoryContext::from_selected(&o.store,&ids[..1],&text,&[],&o.mood,&MemoryContextOptions::default(),o.clock.now());assert_eq!(c.episodes[0].narrative,text[0]);assert_eq!(c.episodes[0].attribution,selmem::Attribution::External);let raw=c.to_json();assert!(!raw.contains("SEALED_SENTINEL"));assert!(!raw.contains(&ids[1]));json::parse(&raw).unwrap();}
-#[test]fn cuts_and_word_budget_are_reapplied_to_a_frozen_packet(){let(o,ids)=lived();let c=MemoryContext::from_selected(&o.store,&ids[..1],&["a word ".repeat(500)],&[],&o.mood,&MemoryContextOptions::default(),o.clock.now());let mut opts=MemoryContextOptions::default();opts.words=32;opts.affect=false;let cut=c.filtered(&opts);assert_eq!(cut.content_words,32);assert!(cut.episodes[0].truncated);assert!(cut.affect.is_none()&&cut.episodes[0].affect.is_none());opts.episodes=false;assert!(c.filtered(&opts).episodes.is_empty());}
-#[test]fn graph_delivery_uses_existing_selected_edges_and_both_switches(){use selmem::core::association::{Association,AssociationGraph};let(mut o,ids)=lived();o.store.associations.reconstruct=true;o.store.associations.pairs.insert(AssociationGraph::key(&ids[0],&ids[1]),Association{weight:0.6,co_recall_episodes:4,last_episode:4,updated_at:o.clock.now()});let c=MemoryContext::from_selected(&o.store,&ids,&["one".into(),"two".into()],&[],&o.mood,&MemoryContextOptions::default(),o.clock.now());assert_eq!(c.associations.len(),1);let mut opts=MemoryContextOptions::default();opts.associations=false;assert!(c.filtered(&opts).associations.is_empty());opts.associations=true;opts.episodes=false;assert!(c.filtered(&opts).associations.is_empty());}
-#[test]fn existing_visible_motif_is_not_promoted_to_belief_or_self(){use selmem::core::model::{Bearer,LossKind,StakeKind};let(mut o,ids)=lived();let a=selmem::IdentityAxiom{id:"ax".into(),statement:"A dance motif".into(),support_trace_ids:vec![ids[0].clone()],valence:0.2,strength:0.3,created_at:o.clock.now(),superseded_by:None,schema:None,layer:selmem::AxiomLayer::Motif,stake_kind:StakeKind::None,bearer:Bearer::Other,loss_kind:LossKind::None,stake_mark:String::new()};o.store.axioms.insert(a.id.clone(),a.clone());let c=MemoryContext::from_selected(&o.store,&[],&[],&[a.statement],&o.mood,&MemoryContextOptions::default(),o.clock.now());assert_eq!(c.dispositions[0].layer,selmem::AxiomLayer::Motif);assert_eq!(c.dispositions[0].attribution,"external");}
-#[test]fn unsupported_rules_keep_their_old_path_until_a_component_is_cut(){let c=MemoryContext::default();let t=WorkingTalk::default();let m=Mood::default();let mut opts=MemoryContextOptions::default();let mem=vec!["FORBIDDEN".into()];let r=MemoryReply{user:"hello",memories:&mem,axioms:&[],mood:&m,talk:&t,reading:"",context:&c,options:&opts};let rules=selmem::RuleNarrator;assert_eq!(rules.reply_with_context(&r),rules.reply_disposed("hello",&mem,&[],&m,&t,""));opts.episodes=false;let r=MemoryReply{user:"hello",memories:&mem,axioms:&[],mood:&m,talk:&t,reading:"",context:&c,options:&opts};assert!(!rules.reply_with_context(&r).contains("FORBIDDEN"));}
+fn lived() -> (SelectiveMemory, Vec<String>) {
+    let mut o = SelectiveMemory::new(EntityProfile::new("Claire")).detach_clock();
+    let mut ids = vec![];
+    for (src, line) in [
+        (
+            "one",
+            "At the team meeting I taught a neighbor dance steps.",
+        ),
+        ("two", "At the team meeting Jon shared his studio plans."),
+    ] {
+        let mut e = selmem::EncodeInput::new(line);
+        e.permanence = 1.0;
+        e.self_relevance = 0.9;
+        e.arousal = 0.7;
+        e.source = src;
+        e.observation_id = Some(src);
+        e.attribution = selmem::Attribution::External;
+        let d = o.live_with(e);
+        assert!(d.kept);
+        ids.push(d.trace_id.unwrap());
+    }
+    for a in o.store.archives.values_mut() {
+        a.verbatim = "SEALED_SENTINEL".into();
+    }
+    (o, ids)
+}
+#[test]
+fn only_selected_lived_text_is_exposed_and_archive_is_absent() {
+    let (o, ids) = lived();
+    let text = vec!["I felt delighted about that dance!".into()];
+    let c = MemoryContext::from_selected(
+        &o.store,
+        &ids[..1],
+        &text,
+        &[],
+        &o.mood,
+        &MemoryContextOptions::default(),
+        o.clock.now(),
+    );
+    assert_eq!(c.episodes[0].narrative, text[0]);
+    assert_eq!(c.episodes[0].attribution, selmem::Attribution::External);
+    let raw = c.to_json();
+    assert!(!raw.contains("SEALED_SENTINEL"));
+    assert!(!raw.contains(&ids[1]));
+    json::parse(&raw).unwrap();
+}
+#[test]
+fn cuts_and_word_budget_are_reapplied_to_a_frozen_packet() {
+    let (o, ids) = lived();
+    let c = MemoryContext::from_selected(
+        &o.store,
+        &ids[..1],
+        &["a word ".repeat(500)],
+        &[],
+        &o.mood,
+        &MemoryContextOptions::default(),
+        o.clock.now(),
+    );
+    let mut opts = MemoryContextOptions::default();
+    opts.words = 32;
+    opts.affect = false;
+    let cut = c.filtered(&opts);
+    assert_eq!(cut.content_words, 32);
+    assert!(cut.episodes[0].truncated);
+    assert!(cut.affect.is_none() && cut.episodes[0].affect.is_none());
+    opts.episodes = false;
+    assert!(c.filtered(&opts).episodes.is_empty());
+}
+#[test]
+fn graph_delivery_uses_existing_selected_edges_and_both_switches() {
+    use selmem::core::association::{Association, AssociationGraph};
+    let (mut o, ids) = lived();
+    o.store.associations.reconstruct = true;
+    o.store.associations.pairs.insert(
+        AssociationGraph::key(&ids[0], &ids[1]),
+        Association {
+            weight: 0.6,
+            co_recall_episodes: 4,
+            last_episode: 4,
+            updated_at: o.clock.now(),
+        },
+    );
+    let c = MemoryContext::from_selected(
+        &o.store,
+        &ids,
+        &["one".into(), "two".into()],
+        &[],
+        &o.mood,
+        &MemoryContextOptions::default(),
+        o.clock.now(),
+    );
+    assert_eq!(c.associations.len(), 1);
+    let mut opts = MemoryContextOptions::default();
+    opts.associations = false;
+    assert!(c.filtered(&opts).associations.is_empty());
+    opts.associations = true;
+    opts.episodes = false;
+    assert!(c.filtered(&opts).associations.is_empty());
+}
+#[test]
+fn existing_visible_motif_is_not_promoted_to_belief_or_self() {
+    use selmem::core::model::{Bearer, LossKind, StakeKind};
+    let (mut o, ids) = lived();
+    let a = selmem::IdentityAxiom {
+        id: "ax".into(),
+        statement: "A dance motif".into(),
+        support_trace_ids: vec![ids[0].clone()],
+        valence: 0.2,
+        strength: 0.3,
+        created_at: o.clock.now(),
+        superseded_by: None,
+        schema: None,
+        layer: selmem::AxiomLayer::Motif,
+        stake_kind: StakeKind::None,
+        bearer: Bearer::Other,
+        loss_kind: LossKind::None,
+        stake_mark: String::new(),
+    };
+    o.store.axioms.insert(a.id.clone(), a.clone());
+    let c = MemoryContext::from_selected(
+        &o.store,
+        &[],
+        &[],
+        &[a.statement],
+        &o.mood,
+        &MemoryContextOptions::default(),
+        o.clock.now(),
+    );
+    assert_eq!(c.dispositions[0].layer, selmem::AxiomLayer::Motif);
+    assert_eq!(c.dispositions[0].attribution, "external");
+}
+#[test]
+fn unsupported_rules_keep_their_old_path_until_a_component_is_cut() {
+    let c = MemoryContext::default();
+    let t = WorkingTalk::default();
+    let m = Mood::default();
+    let mut opts = MemoryContextOptions::default();
+    let mem = vec!["FORBIDDEN".into()];
+    let r = MemoryReply {
+        user: "hello",
+        memories: &mem,
+        axioms: &[],
+        mood: &m,
+        talk: &t,
+        reading: "",
+        context: &c,
+        options: &opts,
+    };
+    let rules = selmem::RuleNarrator;
+    assert_eq!(
+        rules.reply_with_context(&r),
+        rules.reply_disposed("hello", &mem, &[], &m, &t, "")
+    );
+    opts.episodes = false;
+    let r = MemoryReply {
+        user: "hello",
+        memories: &mem,
+        axioms: &[],
+        mood: &m,
+        talk: &t,
+        reading: "",
+        context: &c,
+        options: &opts,
+    };
+    assert!(!rules.reply_with_context(&r).contains("FORBIDDEN"));
+}

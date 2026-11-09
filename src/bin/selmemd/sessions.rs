@@ -59,7 +59,9 @@ impl Sessions {
     /// Drop expired memory and keys even when no visitor sends another request.
     pub fn purge_expired(&self) -> io::Result<()> {
         let now = Instant::now();
-        self.entries.lock().map_err(|_| io::Error::other("sessions locked"))?
+        self.entries
+            .lock()
+            .map_err(|_| io::Error::other("sessions locked"))?
             .retain(|_, s| now.duration_since(s.created) < TTL);
         Ok(())
     }
@@ -120,10 +122,25 @@ mod tests {
         let sessions = Sessions::new(EntityProfile::tender("Claire"));
         let (id, _) = sessions.resolve("", true).unwrap().unwrap();
         let created = Instant::now() - Duration::from_secs(23 * 60 * 60);
-        sessions.entries.lock().unwrap().get_mut(&id).unwrap().created = created;
+        sessions
+            .entries
+            .lock()
+            .unwrap()
+            .get_mut(&id)
+            .unwrap()
+            .created = created;
         assert!(sessions.resolve(&id, false).unwrap().is_some());
-        assert_eq!(sessions.entries.lock().unwrap().get(&id).unwrap().created, created);
-        sessions.entries.lock().unwrap().get_mut(&id).unwrap().created = Instant::now() - TTL;
+        assert_eq!(
+            sessions.entries.lock().unwrap().get(&id).unwrap().created,
+            created
+        );
+        sessions
+            .entries
+            .lock()
+            .unwrap()
+            .get_mut(&id)
+            .unwrap()
+            .created = Instant::now() - TTL;
         sessions.purge_expired().unwrap();
         assert!(sessions.entries.lock().unwrap().is_empty());
     }

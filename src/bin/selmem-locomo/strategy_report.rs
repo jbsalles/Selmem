@@ -9,14 +9,20 @@ pub fn raw_readout(selected: &Json, events: &[super::memory::Event]) -> Result<J
     let mut memories = Vec::new();
     for id in ids {
         let id = id.string()?;
-        let candidate = candidates.iter().find(|c|
-            c.get("trace_id").and_then(Json::string).ok() == Some(id))
+        let candidate = candidates
+            .iter()
+            .find(|c| c.get("trace_id").and_then(Json::string).ok() == Some(id))
             .ok_or("raw baseline: selected trace missing from retrieval audit")?;
         let source = candidate.get("source")?.string()?;
-        let matches: Vec<_> = events.iter().filter_map(|event| match event {
-            super::memory::Event::Turn { source: s, event, .. } if s == source => Some(event),
-            _ => None,
-        }).collect();
+        let matches: Vec<_> = events
+            .iter()
+            .filter_map(|event| match event {
+                super::memory::Event::Turn {
+                    source: s, event, ..
+                } if s == source => Some(event),
+                _ => None,
+            })
+            .collect();
         if matches.len() != 1 {
             return Err("raw baseline requires one original turn per selected source".into());
         }
@@ -25,7 +31,10 @@ pub fn raw_readout(selected: &Json, events: &[super::memory::Event]) -> Result<J
     raw.put("memories", super::json::Json::Array(memories));
     raw.put("axioms", Json::Array(Vec::new()));
     raw.put("reading_profile", super::json::text(""));
-    raw.put("context_mode", super::json::text("selected-original-dataset-turns"));
+    raw.put(
+        "context_mode",
+        super::json::text("selected-original-dataset-turns"),
+    );
     Ok(raw)
 }
 
@@ -33,7 +42,11 @@ pub fn write(out: &Path, manifest: &Json, rows: &[Json]) -> Result<(), String> {
     let payload = super::json::obj([
         ("manifest", manifest.clone()),
         ("rows", Json::Array(rows.to_vec())),
-    ]).encode().replace('<', "\\u003c").replace('>', "\\u003e").replace('&', "\\u0026");
+    ])
+    .encode()
+    .replace('<', "\\u003c")
+    .replace('>', "\\u003e")
+    .replace('&', "\\u0026");
     let page = TEMPLATE.replace("__DATA__", &payload);
     fs::write(out.join("strategy.html"), page).map_err(|e| e.to_string())
 }
@@ -72,27 +85,49 @@ render();
 </script></html>"#;
 #[cfg(test)]
 mod tests {
+    use super::super::json::{num, obj, text};
+    use super::super::memory::{readout, train, Event};
     use super::*;
-    use super::super::json::{obj, text, num};
-    use super::super::memory::{Event, train, readout};
     #[test]
     fn raw_baseline_keeps_selection_without_interpretations_or_extra_turns() {
         let selected = obj([
             ("selected_ids", Json::Array(vec![text("t")])),
-            ("retrieval", Json::Array(vec![obj([
-                ("trace_id", text("t")), ("source", text("source")),
-            ])])),
+            (
+                "retrieval",
+                Json::Array(vec![obj([
+                    ("trace_id", text("t")),
+                    ("source", text("source")),
+                ])]),
+            ),
             ("memories", Json::Array(vec![text("reconstructed")])),
             ("axioms", Json::Array(vec![text("belief")])),
             ("reading_profile", text("disposition")),
         ]);
         let events = vec![
-            Event::Turn { date: "test-date".into(), speaker: "Caroline".into(), id: "1".into(), source: "source".into(), event: "Caroline said: original".into() },
-            Event::Turn { date: "test-date".into(), speaker: "Caroline".into(), id: "2".into(), source: "other".into(), event: "UNSELECTED".into() },
+            Event::Turn {
+                date: "test-date".into(),
+                speaker: "Caroline".into(),
+                id: "1".into(),
+                source: "source".into(),
+                event: "Caroline said: original".into(),
+            },
+            Event::Turn {
+                date: "test-date".into(),
+                speaker: "Caroline".into(),
+                id: "2".into(),
+                source: "other".into(),
+                event: "UNSELECTED".into(),
+            },
         ];
         let raw = raw_readout(&selected, &events).unwrap();
-        assert_eq!(raw.get("selected_ids").unwrap(), selected.get("selected_ids").unwrap());
-        assert_eq!(raw.get("memories").unwrap().array().unwrap(), &[text("Caroline said: original")]);
+        assert_eq!(
+            raw.get("selected_ids").unwrap(),
+            selected.get("selected_ids").unwrap()
+        );
+        assert_eq!(
+            raw.get("memories").unwrap().array().unwrap(),
+            &[text("Caroline said: original")]
+        );
         assert!(raw.get("axioms").unwrap().array().unwrap().is_empty());
         assert_eq!(raw.get("reading_profile").unwrap().string().unwrap(), "");
         assert!(raw_readout(&selected, &[]).is_err());
@@ -102,15 +137,30 @@ mod tests {
         let root = std::env::temp_dir().join(format!("selmem-raw-book-{}", std::process::id()));
         fs::create_dir_all(&root).unwrap();
         let path = root.join("book.selmem");
-        let original = "Caroline said: The support group made me feel accepted and gave me courage.";
-        let events = vec![Event::Turn { date: "test-date".into(), speaker: "Caroline".into(), id: "e".into(), source: "locomo:sample:e".into(), event: original.into() }];
+        let original =
+            "Caroline said: The support group made me feel accepted and gave me courage.";
+        let events = vec![Event::Turn {
+            date: "test-date".into(),
+            speaker: "Caroline".into(),
+            id: "e".into(),
+            source: "locomo:sample:e".into(),
+            event: original.into(),
+        }];
         let protocol = obj([("event_valences", obj([("e", num(0.7))]))]);
         train(&events, &protocol, Some("e"), "selection", &path).unwrap();
         let before = fs::read(&path).unwrap();
-        let r = readout(&path, "What effect did the support group have on Caroline?", None).unwrap();
+        let r = readout(
+            &path,
+            "What effect did the support group have on Caroline?",
+            None,
+        )
+        .unwrap();
         assert!(!r.get("selected_ids").unwrap().array().unwrap().is_empty());
         let raw = raw_readout(&r, &events).unwrap();
-        assert_eq!(raw.get("memories").unwrap().array().unwrap(), &[text(original)]);
+        assert_eq!(
+            raw.get("memories").unwrap().array().unwrap(),
+            &[text(original)]
+        );
         assert_eq!(raw.get("clock").unwrap(), r.get("clock").unwrap());
         assert_eq!(fs::read(&path).unwrap(), before);
         fs::remove_dir_all(root).unwrap();
@@ -118,9 +168,15 @@ mod tests {
 
     #[test]
     fn payload_cannot_close_script() {
-        let out = std::env::temp_dir().join(format!("selmem-strategy-report-{}", std::process::id()));
+        let out =
+            std::env::temp_dir().join(format!("selmem-strategy-report-{}", std::process::id()));
         fs::create_dir_all(&out).unwrap();
-        write(&out, &super::super::json::text("</script><script>alert(1)</script>"), &[]).unwrap();
+        write(
+            &out,
+            &super::super::json::text("</script><script>alert(1)</script>"),
+            &[],
+        )
+        .unwrap();
         let page = fs::read_to_string(out.join("strategy.html")).unwrap();
         assert!(page.contains("\\u003c/script\\u003e"));
         assert!(!page.contains("<script>alert(1)"));

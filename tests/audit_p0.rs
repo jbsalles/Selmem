@@ -27,10 +27,16 @@ fn encode_keeps_observation_apart_from_interpretation() {
 #[test]
 fn semantic_core_names_actor_and_action_without_replacing_lexical_core() {
     let mut mem = SelectiveMemory::new(EntityProfile::tender("T"));
-    let dec = mem.live_with(EncodeInput::new("She left because she no longer trusted him"));
+    let dec = mem.live_with(EncodeInput::new(
+        "She left because she no longer trusted him",
+    ));
     let id = dec.trace_id.expect("kept");
     let t = mem.store.traces.get(&id).unwrap();
-    assert!(t.semantic.entities.iter().any(|e| e.eq_ignore_ascii_case("She")));
+    assert!(t
+        .semantic
+        .entities
+        .iter()
+        .any(|e| e.eq_ignore_ascii_case("She")));
     assert!(t.semantic.actions.iter().any(|a| a == "left"));
     assert!(!t.core.is_empty());
     assert_eq!(t.semantic.claim, t.core);
@@ -50,14 +56,20 @@ fn detached_clocks_do_not_share_a_jump() {
 fn different_cause_without_witness_is_unjudged() {
     let j = selmem::recall::judge_against_core(
         "He left because he hated me",
-        "He left because I misunderstood him", &selmem::NullScorer);
+        "He left because I misunderstood him",
+        &selmem::NullScorer,
+    );
     assert_eq!(j.kind, selmem::recall::DetachKind::Unjudged);
     assert!(j.causal_match < 0.5);
 }
 
 #[test]
 fn paraphrase_without_witness_does_not_invent_a_departure() {
-    let j = selmem::recall::judge_against_core("She walked away", "She abandoned me", &selmem::NullScorer);
+    let j = selmem::recall::judge_against_core(
+        "She walked away",
+        "She abandoned me",
+        &selmem::NullScorer,
+    );
     assert_ne!(j.kind, selmem::recall::DetachKind::Depart, "{:?}", j.kind);
     assert!(j.entity_match > 0.0);
 }
@@ -66,14 +78,19 @@ fn paraphrase_without_witness_does_not_invent_a_departure() {
 fn reinterpret_keeps_the_reality_claim() {
     let mut mem = SelectiveMemory::new(EntityProfile::tender("T"));
     let id = mem
-        .live_with(EncodeInput::new("She left because she no longer trusted him"))
+        .live_with(EncodeInput::new(
+            "She left because she no longer trusted him",
+        ))
         .trace_id
         .expect("kept");
     let anchor = mem.store.traces[&id].reality.claim.clone();
     assert!(mem.reinterpret(&id, "Her leaving came from a loss of trust"));
     let t = &mem.store.traces[&id];
     assert_eq!(t.reality.claim, anchor);
-    assert_eq!(t.interpretation.statement, "Her leaving came from a loss of trust");
+    assert_eq!(
+        t.interpretation.statement,
+        "Her leaving came from a loss of trust"
+    );
     assert!(t.operations.iter().any(|o| o.kind == "reinterpret"));
     assert!(t.drifts.iter().all(|d| d.kind != selmem::DriftKind::Ground));
 }
@@ -84,7 +101,13 @@ fn similar_hours_with_opposite_valence_do_not_merge() {
     profile.merge_similarity = 0.1;
     profile.encode_threshold = 0.1;
     let mut mem = SelectiveMemory::new(profile);
-    for (text, v) in [("You stayed by the window in the rain", 0.55), ("You stayed by the window in the rain and did not leave", -0.62)] {
+    for (text, v) in [
+        ("You stayed by the window in the rain", 0.55),
+        (
+            "You stayed by the window in the rain and did not leave",
+            -0.62,
+        ),
+    ] {
         let mut ev = EncodeInput::new(text);
         ev.valence = v;
         ev.arousal = 0.4;

@@ -115,7 +115,11 @@ fn parse_prompts(raw: &str) -> Prompts {
         }
     };
     for line in raw.lines() {
-        if let Some(s) = line.trim().strip_prefix('[').and_then(|s| s.trim().strip_suffix(']')) {
+        if let Some(s) = line
+            .trim()
+            .strip_prefix('[')
+            .and_then(|s| s.trim().strip_suffix(']'))
+        {
             flush(&sec, &buf, &mut map);
             sec = s.to_string();
             buf.clear();

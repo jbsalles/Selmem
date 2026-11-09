@@ -6,7 +6,11 @@ pub fn needs_split(event: &str) -> bool {
     if text.is_empty() {
         return false;
     }
-    let lines = text.lines().map(str::trim).filter(|l| !l.is_empty()).count();
+    let lines = text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .count();
     let words = text.split_whitespace().count();
     lines > 10 || words > 80
 }
@@ -23,15 +27,26 @@ pub fn split_event(event: &str, proposed: Option<&[String]>) -> Vec<String> {
 }
 
 fn frame_parts(source: &str, parts: Vec<String>) -> Vec<String> {
-    let Some((speaker, _)) = super::core::reported_speech(source) else { return parts; };
-    parts.into_iter().map(|part| {
-        if super::core::reported_speech(&part).is_some_and(|(s, _)| s == speaker) { part }
-        else { format!("{speaker} said: {part}") }
-    }).collect()
+    let Some((speaker, _)) = super::core::reported_speech(source) else {
+        return parts;
+    };
+    parts
+        .into_iter()
+        .map(|part| {
+            if super::core::reported_speech(&part).is_some_and(|(s, _)| s == speaker) {
+                part
+            } else {
+                format!("{speaker} said: {part}")
+            }
+        })
+        .collect()
 }
 
 /// Ask the narrator only when the hour is long enough to need a cut.
-pub fn propose(event: &str, narrator: &dyn crate::recall::narrator::Narrator) -> Option<Vec<String>> {
+pub fn propose(
+    event: &str,
+    narrator: &dyn crate::recall::narrator::Narrator,
+) -> Option<Vec<String>> {
     if needs_split(event) {
         narrator.segment(event)
     } else {
@@ -186,23 +201,36 @@ pub fn segment_facts(event: &str) -> Vec<String> {
         let mut sign = 0i8;
         for sentence in body.split_inclusive(['.', '!', '?', ';', '\n']) {
             let (v, _, _, _) = super::affect::guess(sentence);
-            let next = if v > 0.15 { 1 } else if v < -0.15 { -1 } else { 0 };
+            let next = if v > 0.15 {
+                1
+            } else if v < -0.15 {
+                -1
+            } else {
+                0
+            };
             if sign != 0 && next != 0 && sign != next && !current.is_empty() {
                 parts.push(format!("{speaker} said: {}", current.trim()));
                 current.clear();
             }
             current.push_str(sentence);
-            if next != 0 { sign = next; }
+            if next != 0 {
+                sign = next;
+            }
         }
-        if !current.trim().is_empty() { parts.push(format!("{speaker} said: {}", current.trim())); }
+        if !current.trim().is_empty() {
+            parts.push(format!("{speaker} said: {}", current.trim()));
+        }
         let mut bounded = Vec::new();
         for part in parts {
             let (_, body) = super::core::reported_speech(&part).unwrap();
             if part.split_whitespace().count() <= 80 {
                 bounded.push(part);
             } else {
-                bounded.extend(pack_sentences(body, 40, 60).into_iter()
-                    .map(|p| format!("{speaker} said: {p}")));
+                bounded.extend(
+                    pack_sentences(body, 40, 60)
+                        .into_iter()
+                        .map(|p| format!("{speaker} said: {p}")),
+                );
             }
         }
         return bounded;
@@ -315,8 +343,5 @@ fn pack_words(text: &str, max_words: usize) -> Vec<String> {
     if words.len() <= max_words {
         return vec![text.to_string()];
     }
-    words
-        .chunks(max_words)
-        .map(|c| c.join(" "))
-        .collect()
+    words.chunks(max_words).map(|c| c.join(" ")).collect()
 }

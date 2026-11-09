@@ -358,7 +358,9 @@ fn core_cannot_reverse_actors_or_invent_short_words() {
 #[test]
 fn first_person_entity_is_not_lost_because_it_is_one_letter() {
     use selmem::SemanticInterpreter;
-    let s = selmem::LexicalInterpreter.interpret_event("I kept my promise.").unwrap();
+    let s = selmem::LexicalInterpreter
+        .interpret_event("I kept my promise.")
+        .unwrap();
     assert_eq!(s.core.entities[0], "I");
     assert_eq!(s.bearer, Bearer::Self_);
 }
@@ -380,7 +382,10 @@ fn repeated_graph_links_cannot_amplify_context() {
     mem.store.edges.insert(a, [b.clone()].into_iter().collect());
     let first = selmem::recall::retrieve::context_cloud_pub(&mem.store, "Alice project");
     mem.store.edges.insert(c, [b].into_iter().collect());
-    assert_eq!(first, selmem::recall::retrieve::context_cloud_pub(&mem.store, "Alice project"));
+    assert_eq!(
+        first,
+        selmem::recall::retrieve::context_cloud_pub(&mem.store, "Alice project")
+    );
 }
 #[test]
 fn greetings_with_facts_are_not_discarded() {
@@ -395,7 +400,12 @@ fn episode_and_schema_bonus_cannot_revive_unanchored_memory() {
     t.embedding.clear();
     t.cues.clear();
     t.schema = Some("calendar".into());
-    let (recalled, dump) = mem.remember_with("What happened that day calendar?", selmem::RecallWrite::ReadOnly, selmem::RecallBias::Observed, &[]);
+    let (recalled, dump) = mem.remember_with(
+        "What happened that day calendar?",
+        selmem::RecallWrite::ReadOnly,
+        selmem::RecallBias::Observed,
+        &[],
+    );
     assert!(recalled.is_empty());
     let c = dump.candidates.iter().find(|c| c.trace_id == id).unwrap();
     assert_eq!(c.anchor, 0.0);

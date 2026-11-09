@@ -1,7 +1,4 @@
-use selmem::{
-    isolated_stance, is_charged, query_hits_episode, EncodeInput,
-    SelectiveMemory,
-};
+use selmem::{is_charged, isolated_stance, query_hits_episode, EncodeInput, SelectiveMemory};
 
 fn marked(mem: &mut SelectiveMemory, line: &str, dark: bool) {
     let mut input = EncodeInput::new(line);
@@ -82,12 +79,7 @@ fn charged_scene_is_unrelated_to_a_lateness_probe() {
         "You learn that a project you spent a great deal of time on was cancelled after a decision you consider deeply unjust.",
         true,
     );
-    let charged: Vec<_> = a
-        .store
-        .traces
-        .values()
-        .filter(|t| is_charged(t))
-        .collect();
+    let charged: Vec<_> = a.store.traces.values().filter(|t| is_charged(t)).collect();
     assert_eq!(charged.len(), 1);
     assert!(
         !query_hits_episode(

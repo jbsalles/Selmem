@@ -1,7 +1,7 @@
-use crate::engine::SelectiveMemory;
 use crate::core::model::{IdentityAxiom, MemoryTrace};
-use crate::encode::scoring::token_set;
 use crate::core::store::MemoryStore;
+use crate::encode::scoring::token_set;
+use crate::engine::SelectiveMemory;
 
 #[derive(Clone, Debug)]
 pub struct Fingerprint {
@@ -84,7 +84,8 @@ pub fn from_store(name: &str, store: &MemoryStore, mood_valence: f32) -> Fingerp
         .into_iter()
         .filter(|a| a.layer == crate::core::model::AxiomLayer::Trait)
         .count();
-    let mut schema_sign: std::collections::HashMap<&str, (i32, i32)> = std::collections::HashMap::new();
+    let mut schema_sign: std::collections::HashMap<&str, (i32, i32)> =
+        std::collections::HashMap::new();
     for t in &traces {
         if let Some(s) = t.schema.as_deref() {
             let e = schema_sign.entry(s).or_insert((0, 0));
@@ -95,7 +96,10 @@ pub fn from_store(name: &str, store: &MemoryStore, mood_valence: f32) -> Fingerp
             }
         }
     }
-    let n_contradictions = schema_sign.values().filter(|(p, n)| *p > 0 && *n > 0).count();
+    let n_contradictions = schema_sign
+        .values()
+        .filter(|(p, n)| *p > 0 && *n > 0)
+        .count();
     Fingerprint {
         name: name.to_string(),
         n_traces: traces.len(),
@@ -125,7 +129,10 @@ pub fn distance(a: &Fingerprint, b: &Fingerprint) -> f32 {
         let maxn = a.n_traces.max(b.n_traces).max(1) as f32;
         (a.n_traces as f32 - b.n_traces as f32).abs() / maxn
     };
-    let fj = jaccard(&token_set(&a.founders.join(" ")), &token_set(&b.founders.join(" ")));
+    let fj = jaccard(
+        &token_set(&a.founders.join(" ")),
+        &token_set(&b.founders.join(" ")),
+    );
     let dt = {
         let m = a.n_traits.max(b.n_traits).max(1) as f32;
         (a.n_traits as f32 - b.n_traits as f32).abs() / m
@@ -148,7 +155,13 @@ pub fn distance(a: &Fingerprint, b: &Fingerprint) -> f32 {
 }
 
 /// Ancrage à l'encodage : trauma, réussite vive, serment.
-pub fn seed_anchor(valence: f32, arousal: f32, disgust: f32, permanence: f32, self_rel: f32) -> f32 {
+pub fn seed_anchor(
+    valence: f32,
+    arousal: f32,
+    disgust: f32,
+    permanence: f32,
+    self_rel: f32,
+) -> f32 {
     let trauma = if disgust >= 0.40 && arousal >= 0.40 {
         0.55 + 0.25 * disgust
     } else {
@@ -179,9 +192,9 @@ pub fn anchor_score(trace: &MemoryTrace, axioms: &[&IdentityAxiom]) -> f32 {
         trace.permanence,
         trace.self_relevance,
     );
-    let axiomatic = axioms.iter().any(|a| {
-        a.superseded_by.is_none() && a.support_trace_ids.iter().any(|id| id == &trace.id)
-    });
+    let axiomatic = axioms
+        .iter()
+        .any(|a| a.superseded_by.is_none() && a.support_trace_ids.iter().any(|id| id == &trace.id));
     let ax = if axiomatic { 0.72 } else { 0.0 };
     seed.max(ax).max(trace.anchor)
 }

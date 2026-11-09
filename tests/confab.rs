@@ -1,7 +1,7 @@
 //! P5: filling a hole is not gilding a detail.
 
 use selmem::{
-    Attribution, Channel, DriftKind, EncodeInput, EntityProfile, IdentityAxiom, AxiomLayer,
+    Attribution, AxiomLayer, Channel, DriftKind, EncodeInput, EntityProfile, IdentityAxiom,
     SelectiveMemory,
 };
 
@@ -46,11 +46,8 @@ fn sharp_positive_hour_gilds_and_does_not_confabulate() {
         t.valence = 0.55;
         t.disgust = 0.05;
     }
-    let _ = selmem::dream::drift::sculpt(
-        mem.store.traces.get_mut(&id).unwrap(),
-        &mem.profile,
-        false,
-    );
+    let _ =
+        selmem::dream::drift::sculpt(mem.store.traces.get_mut(&id).unwrap(), &mem.profile, false);
     let t = &mem.store.traces[&id];
     assert!(
         !t.drifts.iter().any(|d| d.kind == DriftKind::Confabulate),
@@ -61,7 +58,10 @@ fn sharp_positive_hour_gilds_and_does_not_confabulate() {
             .iter()
             .any(|d| d.kind == DriftKind::Embellish || d.kind == DriftKind::Rewrite),
         "gild or retell may run; kinds={:?}",
-        t.drifts.iter().map(|d| format!("{:?}", d.kind)).collect::<Vec<_>>()
+        t.drifts
+            .iter()
+            .map(|d| format!("{:?}", d.kind))
+            .collect::<Vec<_>>()
     );
 }
 
@@ -71,9 +71,7 @@ fn collapsed_gist_is_filled_from_the_axiom_not_from_gild() {
     p.encode_threshold = 0.05;
     let mut mem = SelectiveMemory::new(p);
     let id = mem
-        .live_with(hole_hour(
-            "The project was cancelled in front of the team.",
-        ))
+        .live_with(hole_hour("The project was cancelled in front of the team."))
         .trace_id
         .expect("kept");
     mem.store.add_axiom(IdentityAxiom {
@@ -116,9 +114,15 @@ fn collapsed_gist_is_filled_from_the_axiom_not_from_gild() {
         "a hole is not an embellishment"
     );
     let g = t.gist.to_lowercase();
-    assert!(g.contains(&core0.to_lowercase()) || selmem::encode::scoring::lexical_similarity(&t.gist, &core0) >= 0.30);
     assert!(
-        g.contains("credit") || g.contains("public") || g.contains("softness") || g.contains("time"),
+        g.contains(&core0.to_lowercase())
+            || selmem::encode::scoring::lexical_similarity(&t.gist, &core0) >= 0.30
+    );
+    assert!(
+        g.contains("credit")
+            || g.contains("public")
+            || g.contains("softness")
+            || g.contains("time"),
         "fill must add material absent from the core: gist={} core={}",
         t.gist,
         core0
@@ -156,9 +160,7 @@ fn file_roundtrip_keeps_confab_token() {
     p.encode_threshold = 0.05;
     let mut mem = SelectiveMemory::open(&path, p.clone()).unwrap();
     let id = mem
-        .live_with(hole_hour(
-            "The project was cancelled in front of the team.",
-        ))
+        .live_with(hole_hour("The project was cancelled in front of the team."))
         .trace_id
         .expect("kept");
     mem.store.add_axiom(IdentityAxiom {

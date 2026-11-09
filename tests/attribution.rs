@@ -1,12 +1,10 @@
 //! P1 storage + P2 skip_rewrite policy.
 
-mod support;
 #[path = "support/rewrite.rs"]
 mod rewrite;
+mod support;
 
-use selmem::{
-    Attribution, AxiomLayer, EncodeInput, EntityProfile, IdentityAxiom, SelectiveMemory,
-};
+use selmem::{Attribution, AxiomLayer, EncodeInput, EntityProfile, IdentityAxiom, SelectiveMemory};
 
 fn pin(event: &str, attr: Attribution) -> EncodeInput<'_> {
     let mut ev = EncodeInput::new(event);
@@ -35,7 +33,13 @@ fn file_roundtrip_keeps_internal() {
     let _ = std::fs::create_dir_all(&dir);
     let path = dir.join("a.selmem");
     let mut mem = SelectiveMemory::open(&path, EntityProfile::tender("A")).unwrap();
-    assert!(mem.live_with(pin("The Lyon file is cancelled in front of the team.", Attribution::Internal)).kept);
+    assert!(
+        mem.live_with(pin(
+            "The Lyon file is cancelled in front of the team.",
+            Attribution::Internal
+        ))
+        .kept
+    );
     mem.save().unwrap();
     let loaded = SelectiveMemory::open(&path, EntityProfile::tender("x")).unwrap();
     let t = loaded.store.traces.values().next().unwrap();
@@ -49,7 +53,10 @@ fn sqlite_roundtrip_keeps_external() {
     let _ = std::fs::create_dir_all(&dir);
     let path = dir.join("a.db");
     let mut mem = SelectiveMemory::open(&path, EntityProfile::tender("A")).unwrap();
-    assert!(mem.live_with(pin("They cancelled the Lyon file.", Attribution::External)).kept);
+    assert!(
+        mem.live_with(pin("They cancelled the Lyon file.", Attribution::External))
+            .kept
+    );
     mem.save().unwrap();
     let loaded = SelectiveMemory::open(&path, EntityProfile::tender("x")).unwrap();
     let t = loaded.store.traces.values().next().unwrap();
@@ -183,7 +190,9 @@ fn internal_conflict_night_moves_gist_keeps_core() {
     p.encode_threshold = 0.05;
     let mut mem = SelectiveMemory::new(p)
         .with_narrator(Box::new(rewrite::RewriteNarrator))
-        .with_scorer(Box::new(support::FixedScorer(selmem::PropositionLabel::Entail)));
+        .with_scorer(Box::new(support::FixedScorer(
+            selmem::PropositionLabel::Entail,
+        )));
     // Isolate the rewrite pass: a newly minted matching axiom can resolve conflict.
     mem.cut.ladder = false;
     let id = mem
@@ -200,7 +209,9 @@ fn internal_conflict_night_moves_gist_keeps_core() {
         || t.drifts.iter().any(|d| {
             matches!(
                 d.kind,
-                selmem::DriftKind::Rewrite | selmem::DriftKind::Embellish | selmem::DriftKind::AmplifyDisgust
+                selmem::DriftKind::Rewrite
+                    | selmem::DriftKind::Embellish
+                    | selmem::DriftKind::AmplifyDisgust
             )
         });
     assert!(moved, "conflict Internal must move; gist={}", t.gist);

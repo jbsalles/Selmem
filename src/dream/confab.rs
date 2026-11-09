@@ -10,7 +10,11 @@ use crate::encode::scoring::lexical_similarity;
 const HOLE_FIDELITY: f32 = 0.42;
 
 pub fn is_hole(trace: &MemoryTrace) -> bool {
-    if trace.personal.role!=crate::SelfRole::Episode || trace.personal.protected_until>crate::now_secs() || trace.channel.verbatim() || trace.channel == Channel::Log {
+    if trace.personal.role != crate::SelfRole::Episode
+        || trace.personal.protected_until > crate::now_secs()
+        || trace.channel.verbatim()
+        || trace.channel == Channel::Log
+    {
         return false;
     }
     if trace.status == TraceStatus::Latent {
@@ -102,7 +106,11 @@ pub fn fill_if_hole(store: &mut MemoryStore, id: &str, profile: &EntityProfile) 
     false
 }
 
-fn filler(store: &MemoryStore, t: &MemoryTrace, profile: &EntityProfile) -> Option<(String, Vec<String>, Vec<String>)> {
+fn filler(
+    store: &MemoryStore,
+    t: &MemoryTrace,
+    profile: &EntityProfile,
+) -> Option<(String, Vec<String>, Vec<String>)> {
     let schema = t.schema.as_deref();
     let mut extra = String::new();
     let mut source_ids = Vec::new();

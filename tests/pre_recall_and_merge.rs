@@ -1,11 +1,11 @@
 //! Offline validation of the two new mechanisms:
 //! 1. pre-retrieval belief ablation (OrganCut::no_self_cues)
 //! 2. observation-support transfer on merge changing recall score
+use selmem::dream::merge;
 use selmem::{
     Attribution, ContextFacet, EncodeInput, EntityProfile, OrganCut, RecallBias, RecallWrite,
     SelectiveMemory, SelfMemory, SelfRole,
 };
-use selmem::dream::merge;
 
 fn organ() -> SelectiveMemory {
     let mut p = EntityProfile::new("Claire");
@@ -55,15 +55,27 @@ fn no_self_cues_changes_top_episode_on_context_cued_route() {
     let query = "Where did I work on the report?";
 
     m.cut = OrganCut::full();
-    let cued = m.open_mouth_in_context_cued(query, "choice-pattern", &facets).unwrap();
+    let cued = m
+        .open_mouth_in_context_cued(query, "choice-pattern", &facets)
+        .unwrap();
     let cued_top = cued.dump.selected.first().cloned().unwrap_or_default();
-    let cued_rank_lib = cued.dump.candidates.iter().position(|c| c.trace_id == library_id);
+    let cued_rank_lib = cued
+        .dump
+        .candidates
+        .iter()
+        .position(|c| c.trace_id == library_id);
     m.cancel_mouth(&cued);
 
     m.cut = OrganCut::no_self_cues();
-    let ablated = m.open_mouth_in_context_cued(query, "choice-pattern", &facets).unwrap();
+    let ablated = m
+        .open_mouth_in_context_cued(query, "choice-pattern", &facets)
+        .unwrap();
     let ablated_top = ablated.dump.selected.first().cloned().unwrap_or_default();
-    let ablated_rank_lib = ablated.dump.candidates.iter().position(|c| c.trace_id == library_id);
+    let ablated_rank_lib = ablated
+        .dump
+        .candidates
+        .iter()
+        .position(|c| c.trace_id == library_id);
     m.cancel_mouth(&ablated);
 
     // Cueing must improve the library episode's rank (or change the top).
@@ -72,7 +84,10 @@ fn no_self_cues_changes_top_episode_on_context_cued_route() {
         "belief cue must change ranking: cued_top={cued_top} ablated_top={ablated_top} \
          cued_lib_rank={cued_rank_lib:?} ablated_lib_rank={ablated_rank_lib:?}"
     );
-    assert_ne!(cued_top, office_id, "sanity: office should not dominate when cued");
+    assert_ne!(
+        cued_top, office_id,
+        "sanity: office should not dominate when cued"
+    );
     let _ = library_id;
 }
 
@@ -111,18 +126,22 @@ fn merge_transfers_support_and_raises_keeper_weight() {
         t.personal.protected_until = 0;
         t.channel = selmem::Channel::Selfhood;
         t.schema = Some("workshop".into());
-        t.embedding.clear();          // force lexical path
-        t.anchor = 0.3;               // avoid anchor conflict
+        t.embedding.clear(); // force lexical path
+        t.anchor = 0.3; // avoid anchor conflict
         t.valence = 0.1;
         t.disgust = 0.0;
-        t.stake_mark.clear();         // same_stake requires equal (or empty) marks
+        t.stake_mark.clear(); // same_stake requires equal (or empty) marks
     }
 
     // Give the dropped hour an extra observation whose claim matches the
     // keeper's primary so support_weight can rise after transfer.
     let primary = "Mira supplied six batteries to the workshop today.";
     m.store.observation_evidence.seed(
-        &other, "sensor", selmem::Channel::Selfhood, "obs-extra", primary,
+        &other,
+        "sensor",
+        selmem::Channel::Selfhood,
+        "obs-extra",
+        primary,
     );
     if let Some(g) = m.store.observation_evidence.groups.get_mut(&other) {
         g.primary_claim = primary.into();
@@ -133,12 +152,19 @@ fn merge_transfers_support_and_raises_keeper_weight() {
     let weight_before = m.store.observation_evidence.support_weight(&m.store, &keep);
 
     let merged = merge::run(
-        &mut m.store, &m.profile, &selmem::encode::embed::HashEmbedder, false,
+        &mut m.store,
+        &m.profile,
+        &selmem::encode::embed::HashEmbedder,
+        false,
     );
     assert!(merged >= 1, "expected a merge of the two workshop hours");
 
     assert!(m.store.observation_evidence.groups.get(&other).is_none());
-    let keeper = m.store.observation_evidence.groups.get(&keep)
+    let keeper = m
+        .store
+        .observation_evidence
+        .groups
+        .get(&keep)
         .expect("keeper holds transferred support");
     assert!(keeper.observations.contains_key("obs-extra"));
 
@@ -150,7 +176,10 @@ fn merge_transfers_support_and_raises_keeper_weight() {
 
     // Keeper remains recallable.
     let (_mems, dump) = m.remember_with(
-        "Mira batteries workshop", RecallWrite::ReadOnly, RecallBias::Observed, &[],
+        "Mira batteries workshop",
+        RecallWrite::ReadOnly,
+        RecallBias::Observed,
+        &[],
     );
     assert!(dump.candidates.iter().any(|c| c.trace_id == keep));
 }
@@ -194,7 +223,13 @@ fn instrumented_night_records_packet_change() {
         t.stake_mark.clear();
     }
     let primary = "Mira supplied six batteries to the workshop today.";
-    m.store.observation_evidence.seed(&other, "sensor", selmem::Channel::Selfhood, "obs-extra", primary);
+    m.store.observation_evidence.seed(
+        &other,
+        "sensor",
+        selmem::Channel::Selfhood,
+        "obs-extra",
+        primary,
+    );
     if let Some(g) = m.store.observation_evidence.groups.get_mut(&other) {
         g.primary_claim = primary.into();
         g.observations.insert("obs-extra".into(), primary.into());
@@ -203,11 +238,17 @@ fn instrumented_night_records_packet_change() {
 
     let query = "Mira batteries workshop";
     let score_of = |m: &mut SelectiveMemory, id: &str| -> f32 {
-        let (_mems, dump) = m.remember_with(query, RecallWrite::ReadOnly, RecallBias::Observed, &[]);
-        dump.candidates.iter().find(|c| c.trace_id == id).map(|c| c.score).unwrap_or(0.0)
+        let (_mems, dump) =
+            m.remember_with(query, RecallWrite::ReadOnly, RecallBias::Observed, &[]);
+        dump.candidates
+            .iter()
+            .find(|c| c.trace_id == id)
+            .map(|c| c.score)
+            .unwrap_or(0.0)
     };
     let selected_of = |m: &mut SelectiveMemory| -> Vec<String> {
-        let (_mems, dump) = m.remember_with(query, RecallWrite::ReadOnly, RecallBias::Observed, &[]);
+        let (_mems, dump) =
+            m.remember_with(query, RecallWrite::ReadOnly, RecallBias::Observed, &[]);
         dump.selected.clone()
     };
 
@@ -215,7 +256,12 @@ fn instrumented_night_records_packet_change() {
     let score_before = score_of(&mut m, &keep);
     let selected_before = selected_of(&mut m);
 
-    let merged = merge::run(&mut m.store, &m.profile, &selmem::encode::embed::HashEmbedder, false);
+    let merged = merge::run(
+        &mut m.store,
+        &m.profile,
+        &selmem::encode::embed::HashEmbedder,
+        false,
+    );
     assert!(merged >= 1);
 
     let weight_after = m.store.observation_evidence.support_weight(&m.store, &keep);
@@ -231,6 +277,8 @@ fn instrumented_night_records_packet_change() {
         "{{\"keep\":\"{keep}\",\"other\":\"{other}\",\"merged\":{merged},\"weight_before\":{weight_before},\"weight_after\":{weight_after},\"score_before\":{score_before},\"score_after\":{score_after},\"selected_before\":{selected_before:?},\"selected_after\":{selected_after:?}}}"
     );
     let path = std::path::Path::new("experiments/instrumented-night-audit.json");
-    if let Some(parent) = path.parent() { let _ = std::fs::create_dir_all(parent); }
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
     std::fs::write(path, audit).ok();
 }
