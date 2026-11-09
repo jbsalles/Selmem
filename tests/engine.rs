@@ -1,11 +1,13 @@
 //! Physiology. Narrative cases live in tests/cases/*.json (runner: tests/scenes.rs).
 
-mod support;
 #[path = "support/echo.rs"]
 mod echo;
+mod support;
 
-use selmem::{AxiomLayer, Channel, Embedder, EntityProfile, IdentityAxiom, SelectiveMemory, TraceStatus};
 use selmem::EncodeInput;
+use selmem::{
+    AxiomLayer, Channel, Embedder, EntityProfile, IdentityAxiom, SelectiveMemory, TraceStatus,
+};
 
 #[test]
 fn persist_roundtrip_keeps_lived_memory_and_archive() {
@@ -29,10 +31,7 @@ fn persist_roundtrip_keeps_lived_memory_and_archive() {
     assert_eq!(loaded.store.traces.len(), 1);
     let tid = d.trace_id.unwrap();
     assert!(loaded.store.traces[&tid].gist.contains("rain"));
-    assert_eq!(
-        loaded.audit(&tid).unwrap(),
-        "You stayed in the rain."
-    );
+    assert_eq!(loaded.audit(&tid).unwrap(), "You stayed in the rain.");
     let recalled = loaded.remember("rain");
     assert!(!recalled.is_empty());
     let _ = std::fs::remove_dir_all(&dir);
@@ -55,7 +54,10 @@ fn http_api_live_remember_sleep() {
 
     let sleep = selmem::api::dispatch(&mut mem, "POST", "/sleep", "", "{}");
     assert_eq!(sleep.status, 200);
-    assert_eq!(mem.clock.jump - jump_before, u64::from(mem.clock.scale) * 3600);
+    assert_eq!(
+        mem.clock.jump - jump_before,
+        u64::from(mem.clock.scale) * 3600
+    );
 
     let rec = selmem::api::dispatch(&mut mem, "POST", "/remember", "", r#"{"query":"the rain"}"#);
     assert_eq!(rec.status, 200);
@@ -79,9 +81,8 @@ fn http_api_live_remember_sleep() {
 #[test]
 fn working_talk_holds_the_thread_and_stays_off_the_book() {
     let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire"));
-    let mut ev = EncodeInput::new(
-        "The project was cancelled for no reason; they stole the credit.",
-    );
+    let mut ev =
+        EncodeInput::new("The project was cancelled for no reason; they stole the credit.");
     ev.valence = -0.8;
     ev.arousal = 0.7;
     ev.disgust = 0.5;
@@ -179,7 +180,8 @@ fn sqlite_roundtrip() {
     ev.self_relevance = 0.9;
     ev.schema = Some("loyalty".into());
     assert!(mem.live_with(ev).kept);
-    mem.store.traces.values_mut().next().unwrap().semantic.claim = "A later belief about loyalty".into();
+    mem.store.traces.values_mut().next().unwrap().semantic.claim =
+        "A later belief about loyalty".into();
     mem.save().unwrap();
     let loaded = SelectiveMemory::open(&path, EntityProfile::tender("x")).unwrap();
     assert_eq!(loaded.profile.name, "Claire");
@@ -251,10 +253,7 @@ fn axiom_is_superseded_when_belief_changes() {
     mem.sleep();
     let living = mem.who_am_i();
     assert!(living.iter().any(|a| a.id != "ax_old"));
-    assert_eq!(
-        mem.store.axioms["ax_old"].superseded_by.is_some(),
-        true
-    );
+    assert_eq!(mem.store.axioms["ax_old"].superseded_by.is_some(), true);
     assert!(mem.lineage("loyalty").len() >= 2);
 }
 
@@ -288,7 +287,10 @@ fn weak_keeps_cool_faster_than_charged_ones() {
     dull.self_relevance = 0.55;
     dull.arousal = 0.2;
     dull.permanence = 0.0;
-    let weak_id = mem.live_with(dull).trace_id.expect("lower τ still keeps a weak hour");
+    let weak_id = mem
+        .live_with(dull)
+        .trace_id
+        .expect("lower τ still keeps a weak hour");
     let mut hot = EncodeInput::new("You stayed in the rain. I will not forget you.");
     hot.valence = 0.7;
     hot.arousal = 0.6;
@@ -382,7 +384,10 @@ fn recall_can_reinterpret_meaning() {
     let _ = mem.remember("this rain");
     let t = mem.store.traces.values().next().unwrap();
     assert!(
-        t.drifts.iter().any(|d| d.kind == selmem::DriftKind::Reinterpret) || t.valence < 0.4,
+        t.drifts
+            .iter()
+            .any(|d| d.kind == selmem::DriftKind::Reinterpret)
+            || t.valence < 0.4,
         "valence {} drifts {:?}",
         t.valence,
         t.drifts
@@ -394,9 +399,9 @@ fn detached_recall_corrects_after_several_misses() {
     let mut profile = EntityProfile::tender("Claire");
     profile.ground_strikes = 3;
     profile.narrator_firmness = 1.0;
-    let mut mem = SelectiveMemory::new(profile).with_scorer(Box::new(
-        support::FixedScorer(selmem::PropositionLabel::Contradict),
-    ));
+    let mut mem = SelectiveMemory::new(profile).with_scorer(Box::new(support::FixedScorer(
+        selmem::PropositionLabel::Contradict,
+    )));
     let mut ev = EncodeInput::new("You stayed. Rain on the window.");
     ev.valence = 0.7;
     ev.arousal = 0.5;
@@ -444,7 +449,10 @@ fn fading_trace_may_distort_without_grounding() {
     ev.valence = 0.2;
     ev.self_relevance = 0.9;
     ev.permanence = 0.85;
-    let id = mem.live_with(ev).trace_id.expect("kept so we can fade it after");
+    let id = mem
+        .live_with(ev)
+        .trace_id
+        .expect("kept so we can fade it after");
     {
         let t = mem.store.traces.get_mut(&id).unwrap();
         t.status = selmem::TraceStatus::Cold;
@@ -511,12 +519,12 @@ fn stronger_memory_grip_grounds_sooner_than_a_weak_one() {
     soft_p.narrator_firmness = 0.25;
     soft_p.ground_strikes = 2;
 
-    let mut hard = SelectiveMemory::new(hard_p).with_scorer(Box::new(
-        support::FixedScorer(selmem::PropositionLabel::Contradict),
-    ));
-    let mut soft = SelectiveMemory::new(soft_p).with_scorer(Box::new(
-        support::FixedScorer(selmem::PropositionLabel::Contradict),
-    ));
+    let mut hard = SelectiveMemory::new(hard_p).with_scorer(Box::new(support::FixedScorer(
+        selmem::PropositionLabel::Contradict,
+    )));
+    let mut soft = SelectiveMemory::new(soft_p).with_scorer(Box::new(support::FixedScorer(
+        selmem::PropositionLabel::Contradict,
+    )));
     let hid = plant_important_drift(&mut hard);
     let sid = plant_important_drift(&mut soft);
     // The grounding policy uses memory grip, independently of narrator firmness.
@@ -536,7 +544,10 @@ fn stronger_memory_grip_grounds_sooner_than_a_weak_one() {
         .iter()
         .any(|d| d.kind == selmem::DriftKind::Ground);
     assert!(hg, "firm narrator should have pulled toward the core");
-    assert!(!sg, "softer narrator should still be allowed the warped gist");
+    assert!(
+        !sg,
+        "softer narrator should still be allowed the warped gist"
+    );
     assert!(
         soft.store.traces[&sid].gist.contains("442"),
         "soft side must still hold the warped gist, not an empty book"
@@ -548,9 +559,9 @@ fn grounding_never_exposes_the_archive() {
     let mut profile = EntityProfile::austere("Silas");
     profile.narrator_firmness = 1.0;
     profile.ground_strikes = 1;
-    let mut mem = SelectiveMemory::new(profile).with_scorer(Box::new(
-        support::FixedScorer(selmem::PropositionLabel::Contradict),
-    ));
+    let mut mem = SelectiveMemory::new(profile).with_scorer(Box::new(support::FixedScorer(
+        selmem::PropositionLabel::Contradict,
+    )));
     let mut ev = EncodeInput::new("You stayed. Rain on the window.");
     ev.valence = 0.7;
     ev.arousal = 0.5;
@@ -625,9 +636,7 @@ fn latent_forgets_the_scene_keeps_the_reaction() {
         t.access = 0.1;
     }
     assert!(
-        mem.audit(&id)
-            .unwrap()
-            .contains("laughed")
+        mem.audit(&id).unwrap().contains("laughed")
             || mem.store.traces[&id].gist.contains("laughed"),
         "the scene must still exist on the trace/seal or the 'forgotten scene' check is empty"
     );
@@ -687,7 +696,8 @@ fn world_fact_does_not_cool_or_mythologize() {
     assert!(t.access >= 0.85, "world access pinned, got {}", t.access);
     let rec = mem.remember("rendez-vous mardi");
     assert!(
-        rec.iter().any(|r| r.narrative.contains("mardi") || r.narrative.contains("salle")),
+        rec.iter()
+            .any(|r| r.narrative.contains("mardi") || r.narrative.contains("salle")),
         "world fact must remain recallable: {:?}",
         rec.iter().map(|r| &r.narrative).collect::<Vec<_>>()
     );
@@ -848,7 +858,10 @@ fn reconsolidation_does_not_engrave_an_unrelated_sentence() {
         );
     }
     let t = &mem.store.traces[&id];
-    assert_eq!(t.gist, before, "poisoned reconstruct must not become the book");
+    assert_eq!(
+        t.gist, before,
+        "poisoned reconstruct must not become the book"
+    );
     assert!(!t.core.contains("Marc"));
     assert!(
         mem.audit(&id).unwrap().contains("rain"),
@@ -985,7 +998,9 @@ fn long_paste_is_sliced_then_each_slice_is_compressed() {
     let parts = selmem::segment_facts(&blob);
     assert!(parts.len() >= 3, "got {} parts", parts.len());
     assert!(parts.iter().all(|p| p.lines().count() <= 10));
-    assert!(parts.iter().all(|p| p.lines().count() >= 4 || parts.len() == 1));
+    assert!(parts
+        .iter()
+        .all(|p| p.lines().count() >= 4 || parts.len() == 1));
 
     let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire"));
     let mut ev = EncodeInput::new(&blob);
@@ -1006,7 +1021,9 @@ fn long_paste_is_sliced_then_each_slice_is_compressed() {
         "first slice must keep its own head, not only the document head: {gists:?}"
     );
     assert!(
-        gists.iter().any(|g| g.contains("ticket 15") || g.contains("Fact 15")),
+        gists
+            .iter()
+            .any(|g| g.contains("ticket 15") || g.contains("Fact 15")),
         "a later slice must be compressed on its own lines: {gists:?}"
     );
 }
@@ -1070,7 +1087,8 @@ fn log_channel_survives_sleep_verbatim() {
 
 #[test]
 fn live_speak_pins_the_core_when_gist_drifted() {
-    let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire")).with_narrator(Box::new(echo::EchoNarrator));
+    let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire"))
+        .with_narrator(Box::new(echo::EchoNarrator));
     let mut ev = EncodeInput::new("The project was cancelled in front of the team.");
     ev.self_relevance = 0.9;
     ev.permanence = 0.9;
@@ -1095,7 +1113,8 @@ fn live_speak_pins_the_core_when_gist_drifted() {
 
 #[test]
 fn isolated_probe_puts_scene_before_axiom() {
-    let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire")).with_narrator(Box::new(echo::EchoNarrator));
+    let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire"))
+        .with_narrator(Box::new(echo::EchoNarrator));
     let mut ev = EncodeInput::new(
         "You walk into a meeting and learn the project was killed and given to someone else.",
     );
@@ -1157,7 +1176,9 @@ fn release_keeps_sealed_archive_for_audit() {
         "On 19 January lunch was billed to cost centre 4412."
     );
     selmem::persist::prune_orphaned_archives(&mut mem.store);
-    assert!(mem.store.archives.contains_key(&aid), "tomb must survive prune");
+    assert!(
+        mem.store.archives.contains_key(&aid),
+        "tomb must survive prune"
+    );
     assert!(mem.remember("cost centre 4412").is_empty());
 }
-

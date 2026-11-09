@@ -1,12 +1,12 @@
 //! LoCoMo-derived paired pilot. Rust-only orchestration; no Python or crate dependencies.
-mod json;
+use selmem::util::json;
 mod memory;
-mod report;
 mod reasoning;
+mod report;
 mod strategy_report;
-mod sha256;
-mod preflight;
+use selmem::util::sha256;
 mod context;
+mod preflight;
 mod sampling;
 use json::{num, obj, text, Json};
 use std::{
@@ -57,16 +57,28 @@ fn options() -> Result<Options, String> {
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--dry-run" => o.dry = true,
-            "--wow" => {}, // Compatibility alias: strategy is now the only experiment.
+            "--wow" => {} // Compatibility alias: strategy is now the only experiment.
             "--exploratory" => o.exploratory = true,
             "--temperature" => {
-                let t: f64 = args.next().ok_or("missing value for --temperature")?.parse().map_err(|_| "invalid temperature")?;
-                if !t.is_finite() || !(0.0..=2.0).contains(&t) { return Err("temperature must be between 0 and 2".into()); }
+                let t: f64 = args
+                    .next()
+                    .ok_or("missing value for --temperature")?
+                    .parse()
+                    .map_err(|_| "invalid temperature")?;
+                if !t.is_finite() || !(0.0..=2.0).contains(&t) {
+                    return Err("temperature must be between 0 and 2".into());
+                }
                 o.temperature = Some(t);
             }
-            "--panel" => { o.panel = args.next().ok_or("missing value for --panel")?; }
+            "--panel" => {
+                o.panel = args.next().ok_or("missing value for --panel")?;
+            }
             "--reuse-memories" => {
-                o.reuse_memories = Some(args.next().ok_or("missing value for --reuse-memories")?.into());
+                o.reuse_memories = Some(
+                    args.next()
+                        .ok_or("missing value for --reuse-memories")?
+                        .into(),
+                );
             }
             "--help" | "-h" => {
                 println!("Sampling: --temperature 0 for a stability check; use --panel all --repeats 5 for controls. Paid strategy comparisons require --panel all and >=3 repeats unless --exploratory is explicitly set. Text distances are diagnostics, not behavioral evidence.");
@@ -113,18 +125,42 @@ fn configured_mouth(
     Ok(mouth)
 }
 const STRATEGY_CONDITIONS: &[&str] = &[
-    "full_a", "full_b", "transplant_a_from_b", "transplant_b_from_a",
-    "nosleep_a", "nosleep_b", "full_null_a", "full_null_b", "raw_a", "raw_b",
+    "full_a",
+    "full_b",
+    "transplant_a_from_b",
+    "transplant_b_from_a",
+    "nosleep_a",
+    "nosleep_b",
+    "full_null_a",
+    "full_null_b",
+    "raw_a",
+    "raw_b",
 ];
 
 fn in_panel(name: &str, panel: &str) -> bool {
-    if !STRATEGY_CONDITIONS.contains(&name) { return false; }
-    let core = ["full_a", "full_b", "transplant_a_from_b", "transplant_b_from_a"].contains(&name);
-    match panel { "core" => core, "controls" => !core, "all" => true, _ => false }
+    if !STRATEGY_CONDITIONS.contains(&name) {
+        return false;
+    }
+    let core = [
+        "full_a",
+        "full_b",
+        "transplant_a_from_b",
+        "transplant_b_from_a",
+    ]
+    .contains(&name);
+    match panel {
+        "core" => core,
+        "controls" => !core,
+        "all" => true,
+        _ => false,
+    }
 }
 
 fn panel_condition_count(panel: &str) -> usize {
-    STRATEGY_CONDITIONS.iter().filter(|name| in_panel(name, panel)).count()
+    STRATEGY_CONDITIONS
+        .iter()
+        .filter(|name| in_panel(name, panel))
+        .count()
 }
 #[cfg(test)]
 fn context(r: &Json, budget: usize) -> Result<String, String> {
@@ -171,7 +207,12 @@ fn dataset(path: &Path, p: &Json) -> Result<Json, String> {
         .ok_or_else(|| "sample_id not found".into())
 }
 fn chat_request(
-    url: &str, model: &str, p: &Json, ctx: &str, question: &str, reasoning_effort: &str,
+    url: &str,
+    model: &str,
+    p: &Json,
+    ctx: &str,
+    question: &str,
+    reasoning_effort: &str,
 ) -> Result<Json, String> {
     Ok(obj([
         ("model", text(model)),
@@ -244,8 +285,11 @@ type ProviderReply = (String, Json, String, Json);
 
 // A provider failure is a missing observation, never a fabricated model answer.
 fn keep_provider_reply(
-    result: Result<ProviderReply, String>, out: &Path, manifest: &mut Json,
-    failures: &mut Vec<Json>, mut call: Json,
+    result: Result<ProviderReply, String>,
+    out: &Path,
+    manifest: &mut Json,
+    failures: &mut Vec<Json>,
+    mut call: Json,
 ) -> Result<Option<ProviderReply>, String> {
     let attempted = manifest.get("attempted_calls")?.number()? + 1.0;
     manifest.put("attempted_calls", num(attempted));
@@ -271,19 +315,23 @@ fn write_reports(out: &Path, manifest: &Json, rows: &[Json]) -> Result<(), Strin
     report::write(out, manifest, rows)?;
     {
         strategy_report::write(out, manifest, rows)?;
-        memory::save(&out.join("sampling.json"), &sampling::summarize(manifest, rows))?;
+        memory::save(
+            &out.join("sampling.json"),
+            &sampling::summarize(manifest, rows),
+        )?;
     }
     Ok(())
 }
 fn run() -> Result<(), String> {
     let o = options()?;
     if let Some(path) = &o.config {
-        selmem::Config::load_path(path)
-            .map_err(|_| "cannot read the requested --config file")?;
+        selmem::Config::load_path(path).map_err(|_| "cannot read the requested --config file")?;
     }
     let protocol = PROTOCOL;
     let mut p = json::parse(protocol)?;
-    if let Some(t) = o.temperature { p.put("temperature", num(t)); }
+    if let Some(t) = o.temperature {
+        p.put("temperature", num(t));
+    }
     let reasoning_effort = reasoning::validate(&selmem::Config::get().reasoning())?;
     if let Some(source) = &o.reuse_memories {
         reasoning::validate_source(source, &p, &sha256::hex(protocol.as_bytes()))?;
@@ -457,10 +505,14 @@ fn run() -> Result<(), String> {
             "transplant_b_from_a".into(),
             (states["full_b"].0.clone(), Some(states["full_a"].0.clone())),
         );
-        let hashes = states.iter().filter(|(_, (_, donor))| donor.is_none())
-            .map(|(name, (path, _))| fs::read(path)
-                .map(|bytes| (name.clone(), text(sha256::hex(&bytes))))
-                .map_err(|e| e.to_string()))
+        let hashes = states
+            .iter()
+            .filter(|(_, (_, donor))| donor.is_none())
+            .map(|(name, (path, _))| {
+                fs::read(path)
+                    .map(|bytes| (name.clone(), text(sha256::hex(&bytes))))
+                    .map_err(|e| e.to_string())
+            })
             .collect::<Result<BTreeMap<_, _>, _>>()?;
         manifest.put("memory_snapshot_sha256", Json::Object(hashes));
         let mut interpretation_audit = Vec::new();
@@ -471,32 +523,52 @@ fn run() -> Result<(), String> {
             let mut entries = Vec::new();
             for trace in mem.store.traces.values() {
                 if let Some(i) = selmem::recall::interpretation::stored(trace) {
-                    let operation = trace.operations.iter().rev().find(|op|
-                        op.kind == "situational-interpretation" && op.after == i.render(trace))
+                    let operation = trace
+                        .operations
+                        .iter()
+                        .rev()
+                        .find(|op| {
+                            op.kind == "situational-interpretation" && op.after == i.render(trace)
+                        })
                         .ok_or("validated interpretation has no audit operation")?;
                     entries.push(obj([
-                        ("trace_id", text(&trace.id)), ("subject", text(&i.subject)),
-                        ("scope", text(i.scope())), ("evidence", text(&i.evidence)),
-                        ("observation_id", text(trace.observation_id.as_deref().unwrap_or(&trace.id))),
-                        ("source", text(&trace.source)), ("confidence", num(i.confidence as f64)),
+                        ("trace_id", text(&trace.id)),
+                        ("subject", text(&i.subject)),
+                        ("scope", text(i.scope())),
+                        ("evidence", text(&i.evidence)),
+                        (
+                            "observation_id",
+                            text(trace.observation_id.as_deref().unwrap_or(&trace.id)),
+                        ),
+                        ("source", text(&trace.source)),
+                        ("confidence", num(i.confidence as f64)),
                         ("statement", text(i.render(trace))),
-                        ("operation", text(&operation.kind)), ("at", num(operation.at as f64)),
-                        ("before", text(&operation.before)), ("after", text(&operation.after)),
+                        ("operation", text(&operation.kind)),
+                        ("at", num(operation.at as f64)),
+                        ("before", text(&operation.before)),
+                        ("after", text(&operation.after)),
                     ]));
                 }
             }
             entries.sort_by_key(Json::encode);
             interpretation_audit.push(obj([
-                ("condition", text(name)), ("interpretations", Json::Array(entries)),
+                ("condition", text(name)),
+                ("interpretations", Json::Array(entries)),
             ]));
         }
-        memory::save(&o.output.join("interpretations.json"), &Json::Array(interpretation_audit))?;
+        memory::save(
+            &o.output.join("interpretations.json"),
+            &Json::Array(interpretation_audit),
+        )?;
         let budget = p.get("context_chars")?.number()? as usize;
         let mut prepared = BTreeMap::new();
         for (name, (snapshot, donor)) in &states {
             for probe in probes {
-                let retrieval_query = probe.object()?.get("retrieval_text")
-                    .unwrap_or(probe.get("text")?).string()?;
+                let retrieval_query = probe
+                    .object()?
+                    .get("retrieval_text")
+                    .unwrap_or(probe.get("text")?)
+                    .string()?;
                 let mut r = memory::readout(snapshot, retrieval_query, donor.as_deref())?;
                 r.put("organ_revision", text(ORGAN_REVISION));
                 let packed = context::build(&r, budget)?;
@@ -512,7 +584,10 @@ fn run() -> Result<(), String> {
             for (raw, source) in [("raw_a", "full_a"), ("raw_b", "full_b")] {
                 for probe in probes {
                     let id = probe.get("id")?.string()?.to_string();
-                    let mut r = strategy_report::raw_readout(&prepared[&(source.into(), id.clone())].0, &events)?;
+                    let mut r = strategy_report::raw_readout(
+                        &prepared[&(source.into(), id.clone())].0,
+                        &events,
+                    )?;
                     r.put("organ_revision", text(ORGAN_REVISION));
                     let packed = context::build(&r, budget)?;
                     r.put("context_audit", packed.audit);
@@ -569,19 +644,29 @@ fn run() -> Result<(), String> {
                     let has_evidence = audit.get("memories_included")?.number()? > 0.0
                         || audit.get("interpretations_included")?.number()? > 0.0
                         || audit.get("disposition_included")? == &Json::Bool(true);
-                    signals.push(preflight::ContextSignal { condition: name.clone(), context: ctx.clone(), has_evidence });
+                    signals.push(preflight::ContextSignal {
+                        condition: name.clone(),
+                        context: ctx.clone(),
+                        has_evidence,
+                    });
                 }
                 let check = preflight::inspect(id, transfer, &signals);
                 audit.push(obj([
-                    ("probe", text(id)), ("transfer", Json::Bool(transfer)),
+                    ("probe", text(id)),
+                    ("transfer", Json::Bool(transfer)),
                     ("nonempty_conditions", num(check.nonempty as f64)),
                     ("unique_contexts", num(check.unique_contexts as f64)),
-                    ("sleep_changes_context", Json::Bool(check.sleep_changes_context)),
+                    (
+                        "sleep_changes_context",
+                        Json::Bool(check.sleep_changes_context),
+                    ),
                 ]));
                 checks.push(check);
             }
             let warnings = preflight::warnings(&checks);
-            for warning in &warnings { eprintln!("Preflight: {warning}"); }
+            for warning in &warnings {
+                eprintln!("Preflight: {warning}");
+            }
             let audit = obj([
                 ("probes", Json::Array(audit)),
                 ("warnings", Json::Array(warnings.iter().map(text).collect())),
@@ -603,7 +688,10 @@ fn run() -> Result<(), String> {
             }
         }
         if tasks.len() != expected {
-            return Err(format!("panel planning mismatch: {} tasks vs {expected} expected", tasks.len()));
+            return Err(format!(
+                "panel planning mismatch: {} tasks vs {expected} expected",
+                tasks.len()
+            ));
         }
         // Fixed order randomization; it does not claim deterministic model sampling.
         let mut rng = 1729u64;
@@ -637,18 +725,38 @@ fn run() -> Result<(), String> {
                 );
                 let call = obj([
                     ("id", text(format!("R{:03}", index + 1))),
-                    ("condition", text(name)), ("probe", text(id)),
+                    ("condition", text(name)),
+                    ("probe", text(id)),
                     ("repetition", num(*repeat as f64)),
                     ("question", probe.get("text")?.clone()),
-                    ("context", text(ctx)), ("readout", readout.clone()),
-                    ("request_sha256", text(sha256::hex(chat_request(&b.url, &b.model, &p, ctx, probe.get("text")?.string()?, &reasoning_effort)?.encode().as_bytes()))),
+                    ("context", text(ctx)),
+                    ("readout", readout.clone()),
+                    (
+                        "request_sha256",
+                        text(sha256::hex(
+                            chat_request(
+                                &b.url,
+                                &b.model,
+                                &p,
+                                ctx,
+                                probe.get("text")?.string()?,
+                                &reasoning_effort,
+                            )?
+                            .encode()
+                            .as_bytes(),
+                        )),
+                    ),
                     ("reasoning_effort", text(&reasoning_effort)),
                 ]);
                 match keep_provider_reply(result, &o.output, &mut manifest, &mut failures, call)? {
                     Some(reply) => reply,
                     None => {
                         write_reports(&o.output, &manifest, &rows)?;
-                        eprintln!("{}/{} {name} {id}: provider error recorded; continuing", index + 1, tasks.len());
+                        eprintln!(
+                            "{}/{} {name} {id}: provider error recorded; continuing",
+                            index + 1,
+                            tasks.len()
+                        );
                         continue;
                     }
                 }
@@ -670,8 +778,33 @@ fn run() -> Result<(), String> {
                 ("response", text(answer)),
                 ("context", text(ctx)),
                 ("readout", readout.clone()),
-                ("reasoning_effort", if o.dry { Json::Null } else { text(&reasoning_effort) }),
-                ("request_sha256", if let Some(b) = &bind { text(sha256::hex(chat_request(&b.url, &b.model, &p, ctx, probe.get("text")?.string()?, &reasoning_effort)?.encode().as_bytes())) } else { Json::Null }),
+                (
+                    "reasoning_effort",
+                    if o.dry {
+                        Json::Null
+                    } else {
+                        text(&reasoning_effort)
+                    },
+                ),
+                (
+                    "request_sha256",
+                    if let Some(b) = &bind {
+                        text(sha256::hex(
+                            chat_request(
+                                &b.url,
+                                &b.model,
+                                &p,
+                                ctx,
+                                probe.get("text")?.string()?,
+                                &reasoning_effort,
+                            )?
+                            .encode()
+                            .as_bytes(),
+                        ))
+                    } else {
+                        Json::Null
+                    },
+                ),
                 ("usage", usage),
                 ("returned_model", text(model)),
                 ("finish_reason", finish),
@@ -757,8 +890,19 @@ mod tests {
     fn request_transmits_the_configured_effort() {
         let p = json::parse(PROTOCOL).unwrap();
         for effort in ["none", "low"] {
-            let body = chat_request("https://api.x.ai/v1/chat/completions", "grok-4.3", &p, "memories", "question", effort).unwrap();
-            assert_eq!(body.get("reasoning_effort").unwrap().string().unwrap(), effort);
+            let body = chat_request(
+                "https://api.x.ai/v1/chat/completions",
+                "grok-4.3",
+                &p,
+                "memories",
+                "question",
+                effort,
+            )
+            .unwrap();
+            assert_eq!(
+                body.get("reasoning_effort").unwrap().string().unwrap(),
+                effort
+            );
             assert_eq!(body.get("messages").unwrap().array().unwrap().len(), 2);
         }
     }
@@ -766,42 +910,102 @@ mod tests {
     fn strategy_protocol_and_panels() {
         let p = json::parse(PROTOCOL).unwrap();
         assert_eq!(p.get("probes").unwrap().array().unwrap().len(), 6);
-        let names = ["full_a", "full_b", "transplant_a_from_b", "transplant_b_from_a", "nosleep_a", "nosleep_b", "selection_a", "selection_b", "full_null_a", "full_null_b", "raw_a", "raw_b"];
+        let names = [
+            "full_a",
+            "full_b",
+            "transplant_a_from_b",
+            "transplant_b_from_a",
+            "nosleep_a",
+            "nosleep_b",
+            "selection_a",
+            "selection_b",
+            "full_null_a",
+            "full_null_b",
+            "raw_a",
+            "raw_b",
+        ];
         assert_eq!(names.iter().filter(|n| in_panel(n, "core")).count(), 4);
         assert_eq!(names.iter().filter(|n| in_panel(n, "controls")).count(), 6);
         assert_eq!(names.iter().filter(|n| in_panel(n, "all")).count(), 10);
         for name in ["selection_a", "selection_b", "unknown"] {
-            for panel in ["core", "controls", "all"] { assert!(!in_panel(name, panel)); }
+            for panel in ["core", "controls", "all"] {
+                assert!(!in_panel(name, panel));
+            }
         }
         assert_eq!(panel_condition_count("all") * 6 * 5, 300);
         assert_eq!(panel_condition_count("core") * 6 * 5, 120);
         assert_eq!(panel_condition_count("controls") * 6 * 5, 180);
-        let transfer = p.get("probes").unwrap().array().unwrap().iter().filter(|q| q.get("kind").unwrap().string().unwrap() == "transfer");
-        for q in transfer { let t = q.get("text").unwrap().string().unwrap(); assert!(!t.contains("hike")); assert!(!t.contains("support group")); }
+        let transfer = p
+            .get("probes")
+            .unwrap()
+            .array()
+            .unwrap()
+            .iter()
+            .filter(|q| q.get("kind").unwrap().string().unwrap() == "transfer");
+        for q in transfer {
+            let t = q.get("text").unwrap().string().unwrap();
+            assert!(!t.contains("hike"));
+            assert!(!t.contains("support group"));
+        }
     }
     #[test]
     fn provider_error_does_not_discard_successes_or_block_later_calls() {
-        let root = std::env::temp_dir().join(format!("selmem-provider-errors-{}", std::process::id()));
+        let root =
+            std::env::temp_dir().join(format!("selmem-provider-errors-{}", std::process::id()));
         fs::create_dir_all(&root).unwrap();
-        let mut manifest = obj([("completed_calls", num(0.0)), ("attempted_calls", num(0.0)), ("failed_calls", num(0.0))]);
+        let mut manifest = obj([
+            ("completed_calls", num(0.0)),
+            ("attempted_calls", num(0.0)),
+            ("failed_calls", num(0.0)),
+        ]);
         let mut failures = Vec::new();
         let mut answers = Vec::new();
         let valid = r#"{"choices":[{"message":{"content":"valid answer"},"finish_reason":"stop"}],"usage":{"total_tokens":9}}"#;
-        for (index, raw) in [valid, "<html>gateway response</html>", valid].into_iter().enumerate() {
+        for (index, raw) in [valid, "<html>gateway response</html>", valid]
+            .into_iter()
+            .enumerate()
+        {
             let result = decode_reply(raw, "model");
-            if let Some(reply) = keep_provider_reply(result, &root, &mut manifest, &mut failures, obj([("id", text(format!("R{}", index + 1)))])).unwrap() {
+            if let Some(reply) = keep_provider_reply(
+                result,
+                &root,
+                &mut manifest,
+                &mut failures,
+                obj([("id", text(format!("R{}", index + 1)))]),
+            )
+            .unwrap()
+            {
                 answers.push(reply);
             }
         }
         assert_eq!(answers.len(), 2);
-        assert_eq!(manifest.get("completed_calls").unwrap().number().unwrap(), 2.0);
-        assert_eq!(manifest.get("attempted_calls").unwrap().number().unwrap(), 3.0);
+        assert_eq!(
+            manifest.get("completed_calls").unwrap().number().unwrap(),
+            2.0
+        );
+        assert_eq!(
+            manifest.get("attempted_calls").unwrap().number().unwrap(),
+            3.0
+        );
         assert_eq!(manifest.get("failed_calls").unwrap().number().unwrap(), 1.0);
         let saved = json::parse(&fs::read_to_string(root.join("failures.json")).unwrap()).unwrap();
         assert_eq!(saved.array().unwrap().len(), 1);
-        assert_eq!(saved.array().unwrap()[0].get("id").unwrap().string().unwrap(), "R2");
+        assert_eq!(
+            saved.array().unwrap()[0]
+                .get("id")
+                .unwrap()
+                .string()
+                .unwrap(),
+            "R2"
+        );
         assert!(!saved.encode().contains("gateway response"));
-        assert_eq!(fs::read_to_string(root.join("failures.jsonl")).unwrap().lines().count(), 1);
+        assert_eq!(
+            fs::read_to_string(root.join("failures.jsonl"))
+                .unwrap()
+                .lines()
+                .count(),
+            1
+        );
         fs::remove_dir_all(root).unwrap();
     }
     #[test]

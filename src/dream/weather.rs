@@ -28,8 +28,17 @@ pub fn run(store: &mut MemoryStore, profile: &EntityProfile) -> WeatherReport {
     for id in &ids {
         {
             let trace = store.traces.get_mut(id).unwrap();
-            if trace.personal.protected_until>crate::now_secs(){continue;}
-            if trace.personal.role!=crate::SelfRole::Episode {refresh_access(trace,profile);if trace.access<profile.cold_access{trace.status=TraceStatus::Cold;}trace.confidence=trace.personal.certainty;continue;}
+            if trace.personal.protected_until > crate::now_secs() {
+                continue;
+            }
+            if trace.personal.role != crate::SelfRole::Episode {
+                refresh_access(trace, profile);
+                if trace.access < profile.cold_access {
+                    trace.status = TraceStatus::Cold;
+                }
+                trace.confidence = trace.personal.certainty;
+                continue;
+            }
             if trace.channel.verbatim() {
                 // Operational facts do not cool, mythologize, or go latent.
                 trace.status = TraceStatus::Active;

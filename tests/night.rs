@@ -1,16 +1,16 @@
 //! Budget, spoken rehearsal, merge/axiom lineage.
 
-mod support;
 #[path = "support/echo.rs"]
 mod echo;
 #[path = "support/rewrite.rs"]
 mod rewrite;
+mod support;
 
-use selmem::{
-    Attribution, evaluate_budget, EntityProfile, NightKind, RecallBias, SelectiveMemory,
-    TraceStatus, SHALLOW_PASSES, NIGHT_PASSES,
-};
 use selmem::EncodeInput;
+use selmem::{
+    evaluate_budget, Attribution, EntityProfile, NightKind, RecallBias, SelectiveMemory,
+    TraceStatus, NIGHT_PASSES, SHALLOW_PASSES,
+};
 
 fn dull<'a>(text: &'a str, schema: &str) -> EncodeInput<'a> {
     let mut ev = EncodeInput::new(text);
@@ -49,8 +49,14 @@ fn calm_hours_wait_for_the_count() {
     p.deep_min_hours = 3;
     p.deep_min_charge = 1.2;
     let mut mem = SelectiveMemory::new(p);
-    assert!(mem.live_with(dull("A quiet coffee by the window.", "daily")).kept);
-    assert!(mem.live_with(dull("Another quiet coffee, same window.", "daily")).kept);
+    assert!(
+        mem.live_with(dull("A quiet coffee by the window.", "daily"))
+            .kept
+    );
+    assert!(
+        mem.live_with(dull("Another quiet coffee, same window.", "daily"))
+            .kept
+    );
     let b = evaluate_budget(&mem.store, &mem.profile);
     assert_eq!(b.new_hours, 2);
     assert!(b.charge < 1.2);
@@ -71,12 +77,13 @@ fn a_charged_hour_pays_for_a_deep_night() {
     p.deep_min_hours = 3;
     p.deep_min_charge = 1.2;
     let mut mem = SelectiveMemory::new(p);
-    assert!(mem
-        .live_with(charged(
+    assert!(
+        mem.live_with(charged(
             "The project was cancelled and they stole the credit.",
             "injustice",
         ))
-        .kept);
+        .kept
+    );
     let b = evaluate_budget(&mem.store, &mem.profile);
     assert_eq!(b.new_hours, 1);
     assert!(b.charge >= 1.2);
@@ -88,7 +95,10 @@ fn a_charged_hour_pays_for_a_deep_night() {
 #[test]
 fn second_night_without_new_hours_is_shallow() {
     let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire"));
-    assert!(mem.live_with(dull("You stayed in the rain by the window.", "loyalty")).kept);
+    assert!(
+        mem.live_with(dull("You stayed in the rain by the window.", "loyalty"))
+            .kept
+    );
     let first = mem.sleep();
     assert_eq!(first.kind, NightKind::Deep);
     let second = mem.sleep();
@@ -172,7 +182,9 @@ fn merge_keeps_lineage_on_the_keeper_and_the_axiom() {
         );
     }
     assert!(
-        mem.who_am_i().iter().all(|ax| !ax.support_trace_ids.is_empty()),
+        mem.who_am_i()
+            .iter()
+            .all(|ax| !ax.support_trace_ids.is_empty()),
         "ladder may not mint an orphan axiom"
     );
 }
@@ -219,7 +231,10 @@ fn live_speak_raises_axiom_strength_only_with_the_cut() {
 fn isolated_note_path_is_speak_only() {
     let mut mem = SelectiveMemory::new(EntityProfile::tender("Claire"));
     mem.cut.util_to_strength = true;
-    assert!(mem.live_with(charged("The project was cancelled.", "injustice")).kept);
+    assert!(
+        mem.live_with(charged("The project was cancelled.", "injustice"))
+            .kept
+    );
     mem.sleep_deep();
     let before = mem.store.max_axiom_strength();
     let _ = mem.speak_isolated("Was it unjust?");
@@ -315,7 +330,10 @@ fn spoken_utility_can_raise_a_motif() {
         .expect("hour");
     mem.note_spoken(&id);
     let after = mem.store.max_axiom_strength();
-    assert!(after > before, "util must raise a motif: {before} → {after}");
+    assert!(
+        after > before,
+        "util must raise a motif: {before} → {after}"
+    );
     assert!(after <= selmem::AxiomLayer::Motif.strength_cap() + 0.001);
 }
 
@@ -344,12 +362,20 @@ fn second_night_keeps_a_strengthened_schema() {
         .expect("hour");
     mem.note_spoken(&id);
     let after_use = mem.store.max_axiom_strength();
-    assert!(mem
-        .live_with(charged("You stayed a third night in the rain by the window.", "loyalty"))
-        .kept);
-    assert!(mem
-        .live_with(charged("You stayed still in the rain and did not leave.", "loyalty"))
-        .kept);
+    assert!(
+        mem.live_with(charged(
+            "You stayed a third night in the rain by the window.",
+            "loyalty"
+        ))
+        .kept
+    );
+    assert!(
+        mem.live_with(charged(
+            "You stayed still in the rain and did not leave.",
+            "loyalty"
+        ))
+        .kept
+    );
     for trace in mem.store.traces.values_mut() {
         trace.stake_mark = "same-stake".into();
     }
@@ -359,7 +385,11 @@ fn second_night_keeps_a_strengthened_schema() {
         after_night + 0.001 >= after_use,
         "same schema must not remint under the spoken strength: use={after_use} night={after_night}"
     );
-    assert_eq!(mem.store.living_axioms().len(), 1, "one living axiom per compatible semantic context");
+    assert_eq!(
+        mem.store.living_axioms().len(),
+        1,
+        "one living axiom per compatible semantic context"
+    );
 }
 
 #[test]
@@ -374,15 +404,20 @@ fn axioms_only_mouth_does_not_name_the_scene() {
         assert!(mem.live_with(charged(text, "loyalty")).kept);
     }
     mem.sleep_deep();
-    let (reply, _) =
-        mem.speak_isolated_axioms("What remains after someone stayed or waited?", RecallBias::Observed, &[]);
+    let (reply, _) = mem.speak_isolated_axioms(
+        "What remains after someone stayed or waited?",
+        RecallBias::Observed,
+        &[],
+    );
     let low = reply.to_lowercase();
     assert!(
         !low.contains("you stayed") && !low.contains("in the rain"),
         "axioms-only must not leak the gist: {reply}"
     );
     assert!(
-        mem.who_am_i().iter().any(|ax| reply.contains(&ax.statement)),
+        mem.who_am_i()
+            .iter()
+            .any(|ax| reply.contains(&ax.statement)),
         "mouth should carry a context-relevant living axiom, got {reply}"
     );
 }
@@ -401,10 +436,7 @@ fn merge_keeps_axiom_backed_gist_and_valence() {
         ))
         .trace_id
         .expect("keep");
-    let mut other = dull(
-        "The project was cancelled in front of the staff.",
-        "office",
-    );
+    let mut other = dull("The project was cancelled in front of the staff.", "office");
     // Vow-level permanence on both hours would freeze merge (anchor ≥ 0.8).
     other.permanence = 0.35;
     other.valence = -0.50;
@@ -488,7 +520,10 @@ fn advancing_hours_lets_weather_see_age() {
     profile.decay_lambda = 0.20;
     let mut mem = SelectiveMemory::new(profile).detach_clock();
     mem.clock.set_scale(1);
-    let mut ev = dull("The standup was at nine and the file went to the archive.", "daily");
+    let mut ev = dull(
+        "The standup was at nine and the file went to the archive.",
+        "daily",
+    );
     ev.permanence = 0.20;
     ev.self_relevance = 0.40;
     ev.valence = 0.10;
@@ -510,7 +545,9 @@ fn internal_conflict_is_rewritten_on_a_deep_night() {
     p.encode_threshold = 0.05;
     let mut mem = SelectiveMemory::new(p)
         .with_narrator(Box::new(rewrite::RewriteNarrator))
-        .with_scorer(Box::new(support::FixedScorer(selmem::PropositionLabel::Entail)));
+        .with_scorer(Box::new(support::FixedScorer(
+            selmem::PropositionLabel::Entail,
+        )));
     // Keep consolidation from resolving the conflict before rewrite is tested.
     mem.cut.ladder = false;
     let mut ev = charged(

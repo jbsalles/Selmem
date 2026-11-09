@@ -44,17 +44,33 @@ impl Default for LlmCallLog {
 
 pub trait Narrator: Send + Sync {
     /// Latest completed selection, for single-flight diagnostics only.
-    fn response_selection_audit(&self) -> Option<String> { None }
-    fn supports_memory_context(&self) -> bool { false }
+    fn response_selection_audit(&self) -> Option<String> {
+        None
+    }
+    fn supports_memory_context(&self) -> bool {
+        false
+    }
     fn reply_with_context(&self, r: &crate::MemoryReply<'_>) -> String {
         if r.options.format == crate::MemoryContextFormat::Structured
-            && (!(r.options.episodes && r.options.dispositions && r.options.associations && r.options.affect) || !r.context.self_model.is_empty()) {
+            && (!(r.options.episodes
+                && r.options.dispositions
+                && r.options.associations
+                && r.options.affect)
+                || !r.context.self_model.is_empty())
+        {
             let c = r.filtered_context();
             let memories: Vec<String> = c.episodes.iter().map(|e| e.narrative.clone()).collect();
             let axioms: Vec<String> = c.dispositions.iter().map(|a| a.statement.clone())
                 .chain(c.contextual_statements.iter().map(|s| s.statement.clone()))
                 .chain(c.self_model.iter().map(|s|format!("Tentative {} in {} (certainty {:.2}; foundations missing {}; counterexamples {}): {}",s.role,s.context,s.certainty,s.foundations_missing,s.counterexamples,s.statement))).collect();
-            return self.reply_disposed(r.user, &memories, &axioms, &c.affect.unwrap_or_default(), r.talk, "");
+            return self.reply_disposed(
+                r.user,
+                &memories,
+                &axioms,
+                &c.affect.unwrap_or_default(),
+                r.talk,
+                "",
+            );
         }
         self.reply_disposed(r.user, r.memories, r.axioms, r.mood, r.talk, r.reading)
     }
@@ -80,8 +96,8 @@ pub trait Narrator: Send + Sync {
     fn distill_axiom(&self, traces: &[&MemoryTrace]) -> Option<String>;
     /// Generalization plus a prospective expectation. The baseline predicts
     /// recurrence of an observed action, without inventing an explanation.
-    fn distill_self(&self,traces:&[&MemoryTrace],context:&str)->Option<(String,String)> {
-        crate::core::self_model::repeated_action_summary(traces,context)
+    fn distill_self(&self, traces: &[&MemoryTrace], context: &str) -> Option<(String, String)> {
+        crate::core::self_model::repeated_action_summary(traces, context)
     }
     /// Live event only — never an archive. Default: none (caller uses lexicon + identity).
     fn interpret(&self, event: &str, mood: &Mood, axioms: &[String]) -> Option<Interpretation> {
@@ -253,7 +269,11 @@ fn compress_belief(traces: &[&MemoryTrace]) -> String {
         "under"
     };
     if pairs.is_empty() {
-        format!("The same stake returned {} times {sense} {}.", traces.len(), schema)
+        format!(
+            "The same stake returned {} times {sense} {}.",
+            traces.len(),
+            schema
+        )
     } else {
         format!(
             "The same stake returned {} times {sense} {}: {}.",
@@ -268,19 +288,32 @@ fn relation_pairs(traces: &[&MemoryTrace]) -> Vec<String> {
     // The act is whatever the hour already marked. No stake list.
     let mut out = Vec::new();
     for t in traces {
-        let words: Vec<String> = t.core.split_whitespace().map(|w| {
-            w.trim_matches(|c: char| !c.is_alphanumeric()).to_string()
-        }).filter(|w| !w.is_empty()).collect();
+        let words: Vec<String> = t
+            .core
+            .split_whitespace()
+            .map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()).to_string())
+            .filter(|w| !w.is_empty())
+            .collect();
         let lows: Vec<String> = words.iter().map(|w| w.to_lowercase()).collect();
         for act in &t.semantic.actions {
-            let Some(i) = lows.iter().position(|w| w == act) else { continue };
+            let Some(i) = lows.iter().position(|w| w == act) else {
+                continue;
+            };
             let after = ((i + 1)..words.len()).find_map(|j| {
                 let w = &words[j];
-                if w.len() > 3 && !is_glue(w) { Some(w.to_lowercase()) } else { None }
+                if w.len() > 3 && !is_glue(w) {
+                    Some(w.to_lowercase())
+                } else {
+                    None
+                }
             });
             let before = (0..i).rev().find_map(|j| {
                 let w = &words[j];
-                if w.len() > 3 && !is_glue(w) { Some(w.to_lowercase()) } else { None }
+                if w.len() > 3 && !is_glue(w) {
+                    Some(w.to_lowercase())
+                } else {
+                    None
+                }
             });
             let pair = match (after, before) {
                 (Some(o), _) => format!("{act} {o}"),
@@ -299,9 +332,25 @@ fn relation_pairs(traces: &[&MemoryTrace]) -> Vec<String> {
 }
 
 fn is_glue(w: &str) -> bool {
-    matches!(w.to_lowercase().as_str(),
-        "that" | "this" | "with" | "from" | "after" | "before" | "into" | "your" | "their"
-        | "been" | "were" | "was" | "have" | "has" | "had" | "them" | "they" | "what")
+    matches!(
+        w.to_lowercase().as_str(),
+        "that"
+            | "this"
+            | "with"
+            | "from"
+            | "after"
+            | "before"
+            | "into"
+            | "your"
+            | "their"
+            | "been"
+            | "were"
+            | "was"
+            | "have"
+            | "has"
+            | "had"
+            | "them"
+            | "they"
+            | "what"
+    )
 }
-
-

@@ -4,13 +4,19 @@ use crate::core::model::{ArchiveRecord, Channel, IdentityAxiom, MemoryTrace, Sch
 
 /// Runtime-only intervention; reapply after reopening a snapshot.
 #[derive(Clone, Copy, Debug)]
-pub struct ContextualScopePolicy { pub enabled: bool }
-impl Default for ContextualScopePolicy { fn default()->Self {Self{enabled:false}} }
+pub struct ContextualScopePolicy {
+    pub enabled: bool,
+}
+impl Default for ContextualScopePolicy {
+    fn default() -> Self {
+        Self { enabled: false }
+    }
+}
 
 #[derive(Default)]
 pub struct MemoryStore {
     pub normative: crate::normative::NormativeMemory,
-    pub contextual_scope:ContextualScopePolicy,
+    pub contextual_scope: ContextualScopePolicy,
     /// Last consolidation diagnostics, audit-only and deliberately not a second memory.
     pub self_consolidation_audit: Vec<super::self_model::SelfConsolidationAudit>,
     pub self_policy: super::self_model::SelfPolicy,
@@ -35,7 +41,10 @@ pub struct MemoryStore {
 
 impl MemoryStore {
     pub fn new() -> Self {
-        Self { embedding_space: Some("hash96-v1".into()), ..Self::default() }
+        Self {
+            embedding_space: Some("hash96-v1".into()),
+            ..Self::default()
+        }
     }
 
     /// Backend changes rebuild vectors; equal dimensions do not establish a common space.
@@ -72,8 +81,14 @@ impl MemoryStore {
         if a == b {
             return;
         }
-        self.edges.entry(a.to_string()).or_default().insert(b.to_string());
-        self.edges.entry(b.to_string()).or_default().insert(a.to_string());
+        self.edges
+            .entry(a.to_string())
+            .or_default()
+            .insert(b.to_string());
+        self.edges
+            .entry(b.to_string())
+            .or_default()
+            .insert(a.to_string());
     }
 
     pub fn active_ids(&self) -> Vec<String> {
@@ -81,8 +96,16 @@ impl MemoryStore {
         ids.sort_by(|a, b| {
             let ta = &self.traces[a];
             let tb = &self.traces[b];
-            let ca = if ta.core.is_empty() { &ta.gist } else { &ta.core };
-            let cb = if tb.core.is_empty() { &tb.gist } else { &tb.core };
+            let ca = if ta.core.is_empty() {
+                &ta.gist
+            } else {
+                &ta.core
+            };
+            let cb = if tb.core.is_empty() {
+                &tb.gist
+            } else {
+                &tb.core
+            };
             ca.cmp(cb).then(a.cmp(b))
         });
         ids

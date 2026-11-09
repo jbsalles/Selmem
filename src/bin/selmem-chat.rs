@@ -17,9 +17,19 @@ fn main() {
         EntityProfile::tender(name)
     };
     let mut mem = SelectiveMemory::open(&path, profile).expect("memory");
-    mem.set_memory_context_options(selmem::MemoryContextOptions::from_config(cfg)
-        .unwrap_or_else(|e| { eprintln!("{e}"); std::process::exit(1); })).expect("validated delivery options");
-    let mouth = match cfg.mouth(flag(&args, "--llm"), flag(&args, "--model"), flag(&args, "--plug"), "llama3") {
+    mem.set_memory_context_options(
+        selmem::MemoryContextOptions::from_config(cfg).unwrap_or_else(|e| {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }),
+    )
+    .expect("validated delivery options");
+    let mouth = match cfg.mouth(
+        flag(&args, "--llm"),
+        flag(&args, "--model"),
+        flag(&args, "--plug"),
+        "llama3",
+    ) {
         Ok(v) => v,
         Err(e) => {
             eprintln!("{e}");
@@ -27,9 +37,14 @@ fn main() {
         }
     };
     if let Some(mouth) = mouth {
-        if let Some(n) = HttpNarrator::parse(&mouth.url, mouth.model, mouth.api_key.or(key.clone())) {
-            let n = n.with_choice_options(selmem::ChoiceOptions::from_config(cfg)
-                .unwrap_or_else(|e| { eprintln!("{e}"); std::process::exit(1); }));
+        if let Some(n) = HttpNarrator::parse(&mouth.url, mouth.model, mouth.api_key.or(key.clone()))
+        {
+            let n = n.with_choice_options(selmem::ChoiceOptions::from_config(cfg).unwrap_or_else(
+                |e| {
+                    eprintln!("{e}");
+                    std::process::exit(1);
+                },
+            ));
             mem = mem.with_narrator(Box::new(n));
             eprintln!("LLM voice attached");
         }
@@ -41,7 +56,10 @@ fn main() {
         }
     }
 
-    eprintln!("{} écoute. /sleep /who /mood /talk /forget /quit", mem.profile.name);
+    eprintln!(
+        "{} écoute. /sleep /who /mood /talk /forget /quit",
+        mem.profile.name
+    );
     let stdin = io::stdin();
     let mut stdout = io::stdout();
     for line in stdin.lock().lines() {
@@ -63,7 +81,10 @@ fn main() {
                     mem.talk.record(&t.user, &t.reply);
                 }
                 mem.talk.topic = topic;
-                if let Err(e) = mem.save() { eprintln!("memory persistence failed: {e}"); std::process::exit(1); }
+                if let Err(e) = mem.save() {
+                    eprintln!("memory persistence failed: {e}");
+                    std::process::exit(1);
+                }
                 println!("(kept sitting {})", kept);
                 println!(
                     "(nuit) sculpted={} merged={} extinguished={} axioms={}",
@@ -104,7 +125,10 @@ fn main() {
             }
             _ => {
                 let reply = mem.speak(line);
-                if let Err(e) = mem.save() { eprintln!("memory persistence failed: {e}"); std::process::exit(1); }
+                if let Err(e) = mem.save() {
+                    eprintln!("memory persistence failed: {e}");
+                    std::process::exit(1);
+                }
                 println!("{reply}");
             }
         }

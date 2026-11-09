@@ -16,10 +16,7 @@ pub fn is_charged(trace: &MemoryTrace) -> bool {
     if trace.schema.as_deref() == Some("daily") {
         return false;
     }
-    trace.disgust >= 0.25
-        || trace.valence <= -0.40
-        || trace.valence >= 0.55
-        || trace.anchor >= 0.70
+    trace.disgust >= 0.25 || trace.valence <= -0.40 || trace.valence >= 0.55 || trace.anchor >= 0.70
 }
 
 pub fn charged_mood(store: &MemoryStore) -> Mood {
@@ -53,10 +50,7 @@ pub fn isolated_stance(store: &MemoryStore) -> Vec<String> {
         if !is_charged(t) {
             continue;
         }
-        let schema = t
-            .schema
-            .clone()
-            .unwrap_or_else(|| "self".to_string());
+        let schema = t.schema.clone().unwrap_or_else(|| "self".to_string());
         let weight = t.disgust + t.valence.abs() + t.anchor;
         if let Some(row) = best.iter_mut().find(|r| r.0 == schema) {
             if weight > row.1 {
@@ -84,10 +78,7 @@ fn phrase(schema: &str, valence: f32, disgust: f32) -> Option<String> {
         } else {
             "How other people treat what you gave still matters."
         }
-    } else if s.contains("reconnaissance")
-        || s.contains("recogn")
-        || s.contains("praise")
-    {
+    } else if s.contains("reconnaissance") || s.contains("recogn") || s.contains("praise") {
         "What you already gave has been kept in view."
     } else if valence <= -0.4 || disgust >= 0.25 {
         "A sour self-relevant charge is still on."
@@ -112,9 +103,9 @@ pub fn query_hits_episode(trace: &MemoryTrace, query: &str) -> bool {
 
 fn tokens(s: &str) -> Vec<String> {
     const STOP: &[&str] = &[
-        "a", "an", "the", "to", "of", "and", "or", "in", "on", "for", "you", "your",
-        "that", "this", "with", "without", "what", "how", "do", "does", "make",
-        "makes", "is", "are", "be", "it", "i", "i'd", "i’m", "we", "they",
+        "a", "an", "the", "to", "of", "and", "or", "in", "on", "for", "you", "your", "that",
+        "this", "with", "without", "what", "how", "do", "does", "make", "makes", "is", "are", "be",
+        "it", "i", "i'd", "i’m", "we", "they",
     ];
     s.to_lowercase()
         .split(|c: char| !c.is_alphanumeric())

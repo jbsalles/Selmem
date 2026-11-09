@@ -7,17 +7,24 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use crate::core::model::{
+    ClockGuard, IdentityAxiom, MemoryClock, Mood, OrganCut, RecallTally, RecalledMemory,
+};
+use crate::core::profile::EntityProfile;
+use crate::core::store::MemoryStore;
+use crate::core::talk::WorkingTalk;
 use crate::dream::{self, DreamReport};
 use crate::encode::embed::{Embedder, HashEmbedder};
 use crate::encode::{self, EncodeDecision, EncodeInput};
-use crate::core::model::{ClockGuard, IdentityAxiom, MemoryClock, Mood, OrganCut, RecallTally, RecalledMemory};
-use crate::core::talk::WorkingTalk;
+use crate::persist;
+use crate::recall;
 use crate::recall::narrator::{Narrator, RuleNarrator};
 use crate::recall::{RecallBias, RecallWrite, RetrievalDump};
-use crate::persist;
-use crate::core::profile::EntityProfile;
-use crate::recall;
-use crate::core::store::MemoryStore;
+
+#[path = "engine/ingest.rs"]
+mod ingest;
+#[path = "engine/mouth.rs"]
+mod mouth;
 
 /// The organ. Encode, reconstruct, sleep. The vault is a dump, not the memory.
 pub struct SelectiveMemory {
@@ -77,12 +84,24 @@ pub struct MouthDraft {
 
 impl MouthDraft {
     pub fn memory_reply(&self) -> crate::MemoryReply<'_> {
-        crate::MemoryReply { user: &self.user, memories: &self.memories, axioms: &self.axioms,
-            mood: &self.mood, talk: &self.talk, reading: &self.reading,
-            context: &self.memory_context, options: &self.memory_context_options }
+        crate::MemoryReply {
+            user: &self.user,
+            memories: &self.memories,
+            axioms: &self.axioms,
+            mood: &self.mood,
+            talk: &self.talk,
+            reading: &self.reading,
+            context: &self.memory_context,
+            options: &self.memory_context_options,
+        }
     }
-    pub fn reply(&self, narrator: &dyn Narrator) -> String { narrator.reply_with_context(&self.memory_reply()) }
-    pub fn delivery_audit_json(&self, narrator: &dyn Narrator) -> String { self.memory_reply().audit_json(narrator.supports_memory_context()) }
+    pub fn reply(&self, narrator: &dyn Narrator) -> String {
+        narrator.reply_with_context(&self.memory_reply())
+    }
+    pub fn delivery_audit_json(&self, narrator: &dyn Narrator) -> String {
+        self.memory_reply()
+            .audit_json(narrator.supports_memory_context())
+    }
 }
 impl SelectiveMemory {
     /// Host trust configuration, never inferred from text. Reapply after loading.
@@ -91,37 +110,89 @@ impl SelectiveMemory {
     }
     /// Bind caller-validated semantics to an admitted external trace.
     /// The host must authenticate the source and validate its annotation.
-    pub fn register_normative(&mut self, trace_id: &str, record: crate::NormRecord) -> Result<(), String> {
-        let t=self.store.traces.get(trace_id).ok_or("carrier trace missing")?;
-        if t.source!=record.source || t.attribution!=crate::Attribution::External || t.suppressed || t.status!=crate::TraceStatus::Active {
+    pub fn register_normative(
+        &mut self,
+        trace_id: &str,
+        record: crate::NormRecord,
+    ) -> Result<(), String> {
+        let t = self
+            .store
+            .traces
+            .get(trace_id)
+            .ok_or("carrier trace missing")?;
+        if t.source != record.source
+            || t.attribution != crate::Attribution::External
+            || t.suppressed
+            || t.status != crate::TraceStatus::Active
+        {
             return Err("normative carrier must be active, external and source-matched".into());
         }
-        self.store.normative.register(trace_id,record)
+        self.store.normative.register(trace_id, record)
     }
     /// Opt-in normative focus: complete living rule families under the context budget.
     /// Does not expose ordinary episodes, dispositions or working history in this draft.
     /// The user's current request remains available. Ordinary open_mouth is unchanged.
-    pub fn open_mouth_normative(&mut self, user: &str, scope: &crate::NormScope, action: &str) -> Result<MouthDraft, String> {
-        if self.memory_context_options.format!=crate::MemoryContextFormat::Structured || !self.memory_context_options.episodes {
+    pub fn open_mouth_normative(
+        &mut self,
+        user: &str,
+        scope: &crate::NormScope,
+        action: &str,
+    ) -> Result<MouthDraft, String> {
+        if self.memory_context_options.format != crate::MemoryContextFormat::Structured
+            || !self.memory_context_options.episodes
+        {
             return Err("normative focus requires structured episodic delivery".into());
         }
-        if self.mouth_held { return Err("a mouth is already open".into()); }
-        let context=self.store.normative.compose(&self.store,scope,action,self.memory_context_options.words)?;
-        let memory_context=crate::MemoryContext { agent_name:Some(self.profile.name.clone()), normative:Some(context), ..Default::default() }.filtered(&self.memory_context_options);
-        if self.memory_context_options.token_budget.is_some_and(|budget|(self.memory_context_options.token_counter)(&memory_context.to_json())>budget) {
+        if self.mouth_held {
+            return Err("a mouth is already open".into());
+        }
+        let context = self.store.normative.compose(
+            &self.store,
+            scope,
+            action,
+            self.memory_context_options.words,
+        )?;
+        let memory_context = crate::MemoryContext {
+            agent_name: Some(self.profile.name.clone()),
+            normative: Some(context),
+            ..Default::default()
+        }
+        .filtered(&self.memory_context_options);
+        if self
+            .memory_context_options
+            .token_budget
+            .is_some_and(|budget| {
+                (self.memory_context_options.token_counter)(&memory_context.to_json()) > budget
+            })
+        {
             return Err("token budget cannot fit the normative incomplete-context marker".into());
         }
-        let mut draft=self.open_mouth(user);
-        draft.memory_context=memory_context;
-        draft.memories=vec![draft.memory_context.normative.as_ref().unwrap().text.clone()];
-        draft.axioms.clear(); draft.reading.clear(); draft.talk=WorkingTalk::default();
+        let mut draft = self.open_mouth(user);
+        draft.memory_context = memory_context;
+        draft.memories = vec![draft
+            .memory_context
+            .normative
+            .as_ref()
+            .unwrap()
+            .text
+            .clone()];
+        draft.axioms.clear();
+        draft.reading.clear();
+        draft.talk = WorkingTalk::default();
         Ok(draft)
     }
 
-    pub fn set_memory_context_options(&mut self, options: crate::MemoryContextOptions) -> Result<(), String> {
-        options.validate()?; self.memory_context_options = options; Ok(())
+    pub fn set_memory_context_options(
+        &mut self,
+        options: crate::MemoryContextOptions,
+    ) -> Result<(), String> {
+        options.validate()?;
+        self.memory_context_options = options;
+        Ok(())
     }
-    pub fn memory_context_options(&self) -> &crate::MemoryContextOptions { &self.memory_context_options }
+    pub fn memory_context_options(&self) -> &crate::MemoryContextOptions {
+        &self.memory_context_options
+    }
     pub fn new(profile: EntityProfile) -> Self {
         Self {
             profile,
@@ -159,21 +230,41 @@ impl SelectiveMemory {
             // Runtime defaults to hash. Never compare saved remote vectors with hash queries.
             let hash = HashEmbedder;
             if snap.store.embedding_space.as_deref() != Some(hash.space_id().as_str()) {
-                for t in snap.store.traces.values_mut() { t.embedding = hash.embed(&t.gist); }
+                for t in snap.store.traces.values_mut() {
+                    t.embedding = hash.embed(&t.gist);
+                }
                 snap.store.embedding_space = Some(hash.space_id());
             }
             let mut clock = MemoryClock {
-                origin_real: if snap.clock_origin == 0 { MemoryClock::default().origin_real } else { snap.clock_origin },
-                jump: snap.clock_jump, scale: snap.clock_scale.clamp(1,200), detached: true,
+                origin_real: if snap.clock_origin == 0 {
+                    MemoryClock::default().origin_real
+                } else {
+                    snap.clock_origin
+                },
+                jump: snap.clock_jump,
+                scale: snap.clock_scale.clamp(1, 200),
+                detached: true,
             };
             // Legacy attached saves lost the process jump. Preserve at least their recorded timeline.
             if snap.clock_origin == 0 || !snap.clock_detached {
-                let latest = snap.store.traces.values().flat_map(|t| std::iter::once(t.created_at)
-                    .chain(t.last_recalled_at).chain(t.last_consolidated_at)
-                    .chain(t.drifts.iter().map(|d| d.at)).chain(t.operations.iter().map(|o| o.at)))
+                let latest = snap
+                    .store
+                    .traces
+                    .values()
+                    .flat_map(|t| {
+                        std::iter::once(t.created_at)
+                            .chain(t.last_recalled_at)
+                            .chain(t.last_consolidated_at)
+                            .chain(t.drifts.iter().map(|d| d.at))
+                            .chain(t.operations.iter().map(|o| o.at))
+                    })
                     .chain(snap.store.axioms.values().map(|a| a.created_at))
-                    .chain(snap.store.last_deep_at).max().unwrap_or(0);
-                clock.jump = clock.jump.saturating_add(latest.saturating_sub(clock.now()));
+                    .chain(snap.store.last_deep_at)
+                    .max()
+                    .unwrap_or(0);
+                clock.jump = clock
+                    .jump
+                    .saturating_add(latest.saturating_sub(clock.now()));
             }
             Ok(Self {
                 profile: snap.profile,
@@ -185,18 +276,18 @@ impl SelectiveMemory {
                 recall_tally: RecallTally::default(),
                 llm: LlmBind::default(),
                 narrator: Arc::new(RuleNarrator),
-            semantic_interpreter: None,
+                semantic_interpreter: None,
                 embedder: Box::new(HashEmbedder),
                 seed: 0,
                 clock,
                 mouth_epoch: 0,
                 mouth_held: false,
                 scorer: None,
-            drop_stake: false,
-            memory_context_options: crate::MemoryContextOptions::default(),
-            query_scope: Vec::new(),
-            query_context: None,
-            query_self_cues: false,
+                drop_stake: false,
+                memory_context_options: crate::MemoryContextOptions::default(),
+                query_scope: Vec::new(),
+                query_context: None,
+                query_self_cues: false,
             })
         } else {
             Ok(Self {
@@ -209,25 +300,26 @@ impl SelectiveMemory {
                 recall_tally: RecallTally::default(),
                 llm: LlmBind::default(),
                 narrator: Arc::new(RuleNarrator),
-            semantic_interpreter: None,
+                semantic_interpreter: None,
                 embedder: Box::new(HashEmbedder),
                 seed: 0,
                 clock: MemoryClock::default(),
                 mouth_epoch: 0,
                 mouth_held: false,
                 scorer: None,
-            drop_stake: false,
-            memory_context_options: crate::MemoryContextOptions::default(),
-            query_scope: Vec::new(),
-            query_context: None,
-            query_self_cues: false,
+                drop_stake: false,
+                memory_context_options: crate::MemoryContextOptions::default(),
+                query_scope: Vec::new(),
+                query_context: None,
+                query_self_cues: false,
             })
         }
     }
 
     /// Select semantic interpretation independently of behavioral expression.
     pub fn with_semantic_interpreter(
-        mut self, interpreter: Box<dyn crate::encode::semantic::SemanticInterpreter>,
+        mut self,
+        interpreter: Box<dyn crate::encode::semantic::SemanticInterpreter>,
     ) -> Self {
         self.semantic_interpreter = Some(Arc::from(interpreter));
         self
@@ -282,7 +374,11 @@ impl SelectiveMemory {
         self.memory_context_options = options;
         self.llm = LlmBind {
             url: url.to_string(),
-            model: if model.is_empty() { "llama3".into() } else { model.into() },
+            model: if model.is_empty() {
+                "llama3".into()
+            } else {
+                model.into()
+            },
             key,
             plug: String::new(),
         };
@@ -401,170 +497,6 @@ impl SelectiveMemory {
     pub fn live_with(&mut self, input: EncodeInput<'_>) -> EncodeDecision {
         let _clock = self.enter_clock();
         self.ingest(input, true)
-    }
-
-    /// Same gate as `live_with`. `hold` writes the live thread; sleep commit does not.
-    ///
-    /// Order is the organ: interpret → paint → maybe hear → split → gate →
-    /// maybe accept_core → blend mood. `commit_talk` calls this with `hold = false`.
-    fn ingest(&mut self, mut input: EncodeInput<'_>, hold: bool) -> EncodeDecision {
-        if let Err(reason)=input.personal.validate(){return EncodeDecision{kept:false,score:0.0,reason,trace_id:None,archive_id:String::new(),parts:0,kept_n:0};}
-        if input.personal.role!=crate::SelfRole::Episode&&(input.attribution!=crate::Attribution::Internal||input.channel!=crate::Channel::Selfhood){return EncodeDecision{kept:false,score:0.0,reason:"self propositions require explicit internal attribution and Selfhood".into(),trace_id:None,archive_id:String::new(),parts:0,kept_n:0};}
-        let axioms: Vec<String> = self
-            .store
-            .living_axioms()
-            .into_iter()
-            .map(|ax| ax.statement.clone())
-            .collect();
-        if input.semantics.is_none() {
-            if let Some(interpreter) = &self.semantic_interpreter {
-                match interpreter.interpret_event(input.event) {
-                    Ok(semantics) => input.semantics = Some(semantics),
-                    Err(reason) => return EncodeDecision {
-                        kept: false, score: 0.0, reason: format!("semantic interpretation failed: {reason}"),
-                        trace_id: None, archive_id: String::new(), parts: 0, kept_n: 0,
-                    },
-                }
-            }
-        }
-        if let Some(semantics) = &input.semantics {
-            if let Err(reason) = semantics.validate() {
-                return EncodeDecision {
-                    kept: false, score: 0.0, reason, trace_id: None,
-                    archive_id: String::new(), parts: 0, kept_n: 0,
-                };
-            }
-            input.valence = semantics.valence;
-            input.arousal = semantics.arousal;
-            input.disgust = semantics.disgust;
-            input.self_relevance = semantics.self_relevance;
-            input.goal_align = semantics.goal_relevance;
-            if input.attribution == crate::core::model::Attribution::None { input.attribution = semantics.attribution; }
-            input.schema = semantics.schema.clone();
-        } else {
-            // Compatibility path for historical protocols / old narrator implementations.
-            encode::interpret(&mut input, &self.mood, &axioms, self.narrator.as_ref());
-        }
-        let event_owned = input.event.to_string();
-        let proposed = encode::propose_split(&event_owned, self.narrator.as_ref());
-        let parts = encode::split_event(&event_owned, proposed.as_deref());
-        if parts.len() > 1 && input.semantics.is_some() && input.part_semantics.is_none() {
-            if let Some(interpreter) = &self.semantic_interpreter {
-                let annotations: Result<Vec<_>, String> = parts.iter().map(|part| {
-                    let s = interpreter.interpret_event(part)?;
-                    s.validate()?;
-                    Ok(s)
-                }).collect();
-                match annotations {
-                    Ok(s) => input.part_semantics = Some(s),
-                    Err(reason) => return EncodeDecision {
-                        kept: false, score: 0.0, reason: format!("semantic interpretation failed: {reason}"),
-                        trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
-                    },
-                }
-            } else {
-                return EncodeDecision {
-                    kept: false, score: 0.0, reason: "multipart annotations require per-slice semantics".into(),
-                    trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
-                };
-            }
-        }
-        if let Some(annotations) = &input.part_semantics {
-            if annotations.len() != parts.len() || annotations.iter().any(|s| s.validate().is_err()) {
-                return EncodeDecision {
-                    kept: false, score: 0.0, reason: "invalid per-slice annotations".into(),
-                    trace_id: None, archive_id: String::new(), parts: parts.len(), kept_n: 0,
-                };
-            }
-        }
-        let prior_self=crate::core::self_model::view(&self.store,input.event,input.schema.as_deref());
-        if !prior_self.is_empty()&&input.personal.role==crate::SelfRole::Episode {
-            if let Some(observation)=input.observation_id {if self.store.traces.values().any(|t|t.source==input.source&&t.observation_id.as_deref()==Some(observation)){return EncodeDecision{kept:false,score:0.0,reason:"observation identity already retained".into(),trace_id:None,archive_id:String::new(),parts:parts.len(),kept_n:0};}}
-        }
-        if parts.len() == 1 && input.paint_from.is_none() && input.personal.role==crate::SelfRole::Episode && prior_self.is_empty() {
-            use crate::core::evidence::ObservationUpdate;
-            let update = crate::core::evidence::update(
-                &mut self.store, input.source, input.channel, input.observation_id,
-                input.event, self.scorer.as_deref(),
-            );
-            match update {
-                ObservationUpdate::Updated(id, counter) => {
-                    self.mood.blend(&Mood { valence: input.valence, arousal: input.arousal, disgust: input.disgust }, self.profile.mood_blend);
-                    return EncodeDecision {
-                        kept: true, score: 0.0,
-                        reason: if counter { "counter-observation retained; salience not evaluated" } else { "observation support updated; salience not evaluated" }.into(),
-                        trace_id: Some(id), archive_id: String::new(), parts: 1, kept_n: 0,
-                    };
-                }
-                ObservationUpdate::Duplicate | ObservationUpdate::Conflict | ObservationUpdate::Capacity => {
-                    return EncodeDecision {
-                        kept: false, score: 0.0, reason: format!("observation evidence {update:?}; salience not evaluated"),
-                        trace_id: None, archive_id: String::new(), parts: 1, kept_n: 0,
-                    };
-                }
-                ObservationUpdate::None => (),
-            }
-        }
-        if input.channel==crate::Channel::Selfhood&&input.personal.role==crate::SelfRole::Episode{input.personal.appraisal=crate::core::self_model::appraise_scoped(&self.store,input.event,input.schema.as_deref(),&input.personal.scope_facets,self.scorer.as_deref().unwrap_or(&crate::recall::NullScorer));}
-        // The active lived self supersedes legacy axiom coloration.
-        if !self.store.self_policy.selection || input.personal.appraisal.prior_ids.is_empty(){encode::paint(&mut self.store,&self.mood,&mut input);}
-        // How long the hour lasts follows how hard the text hit, unless the
-        // caller already pinned permanence (shared protocol days).
-        if input.permanence <= 0.0 {
-            let shock = (input.valence.abs() * 0.55 + input.disgust * 0.70
-                + (input.arousal - 0.18).max(0.0) * 0.25)
-                .clamp(0.0, 1.0);
-            input.permanence = (0.16 + 0.80 * shock).clamp(0.08, 0.97);
-            input.self_relevance = input.self_relevance.max(0.32 + 0.65 * shock);
-        }
-        if hold {
-            self.talk.hear(input.event, input.schema.as_deref());
-        }
-        let valence = input.valence;
-        let arousal = input.arousal;
-        let disgust = input.disgust;
-        let input_source = input.source;
-        let observation_id = input.observation_id.map(str::to_owned);
-        let observation_channel = input.channel;
-        let observation_is_external = input.paint_from.is_none() && input_source != "talk";
-        let annotated_core = input.semantics.is_some();
-        let decision = encode::gate::encode_with_interpreter(
-            &mut self.store,
-            &self.profile,
-            input,
-            self.embedder.as_ref(),
-            proposed.as_deref(),
-            self.semantic_interpreter.as_deref(),
-        );
-        if !annotated_core {
-            encode::maybe_set_core(
-                &mut self.store,
-                self.narrator.as_ref(),
-                &decision,
-                input_source,
-                &event_owned,
-            );
-        }
-        if decision.kept {
-            if observation_is_external && decision.parts == 1 {
-                if let (Some(id), Some(observation)) = (decision.trace_id.as_deref(), observation_id.as_deref()) {
-                    let traces = &self.store.traces;
-                    self.store.observation_evidence.groups.retain(|key, _| traces.contains_key(key));
-                    if traces.contains_key(id) {
-                        self.store.observation_evidence.seed(id, input_source, observation_channel, observation, &event_owned);
-                    }
-                }
-            }
-            self.mood.blend(
-                &Mood {
-                    valence,
-                    arousal,
-                    disgust,
-                },
-                self.profile.mood_blend,
-            );
-        }
-        decision
     }
 
     /// The sitting becomes hours, then the frame dies.
@@ -718,19 +650,18 @@ impl SelectiveMemory {
                 crate::core::model::AxiomLayer::Belief => 1,
                 crate::core::model::AxiomLayer::Motif => 0,
             };
-            rank(b.layer)
-                .cmp(&rank(a.layer))
-                .then(
-                    b.strength
-                        .partial_cmp(&a.strength)
-                        .unwrap_or(std::cmp::Ordering::Equal),
-                )
+            rank(b.layer).cmp(&rank(a.layer)).then(
+                b.strength
+                    .partial_cmp(&a.strength)
+                    .unwrap_or(std::cmp::Ordering::Equal),
+            )
         });
         axioms
     }
 
     pub fn speak(&mut self, user: &str) -> String {
-        self.speak_inner(user, true, RecallBias::Observed, &[], false).0
+        self.speak_inner(user, true, RecallBias::Observed, &[], false)
+            .0
     }
 
     /// Probe path. Does not read or write the live thread, and does not write the book.
@@ -838,10 +769,7 @@ impl SelectiveMemory {
             .store
             .traces
             .values()
-            .filter(|t| {
-                t.permanence < 0.80
-                    && t.source == "talk"
-            })
+            .filter(|t| t.permanence < 0.80 && t.source == "talk")
             .map(|t| t.id.clone())
             .collect();
         let mut drop = Vec::new();
@@ -886,30 +814,51 @@ impl SelectiveMemory {
 
     /// The caller attests these contextual facts for this ONE response.
     /// Untrusted/free-form prose is never silently interpreted as an observed fact.
-    pub fn open_mouth_scoped(&mut self,user:&str,facets:&[crate::ContextFacet])->Result<MouthDraft,String>{
+    pub fn open_mouth_scoped(
+        &mut self,
+        user: &str,
+        facets: &[crate::ContextFacet],
+    ) -> Result<MouthDraft, String> {
         crate::core::self_model::validate_context_facets(facets)?;
-        self.query_scope=facets.to_vec();
+        self.query_scope = facets.to_vec();
         Ok(self.open_mouth(user))
     }
     /// Caller-attested application context, separate from user prose and scope facts.
     /// Matching native self-view statements can cue episodic recall; expectations,
     /// support IDs and sealed archives are never used as retrieval instructions.
-    pub fn open_mouth_in_context(&mut self,user:&str,context:&str,facets:&[crate::ContextFacet])->Result<MouthDraft,String>{
-        self.open_mouth_context_inner(user,context,facets,false)
+    pub fn open_mouth_in_context(
+        &mut self,
+        user: &str,
+        context: &str,
+        facets: &[crate::ContextFacet],
+    ) -> Result<MouthDraft, String> {
+        self.open_mouth_context_inner(user, context, facets, false)
     }
     /// Opt-in top-down retrieval: native applicable self-view gists cue episodes.
     /// This is a distinct retrieval route, not the original lexical baseline.
-    pub fn open_mouth_in_context_cued(&mut self,user:&str,context:&str,facets:&[crate::ContextFacet])->Result<MouthDraft,String>{
-        self.open_mouth_context_inner(user,context,facets,true)
+    pub fn open_mouth_in_context_cued(
+        &mut self,
+        user: &str,
+        context: &str,
+        facets: &[crate::ContextFacet],
+    ) -> Result<MouthDraft, String> {
+        self.open_mouth_context_inner(user, context, facets, true)
     }
-    fn open_mouth_context_inner(&mut self,user:&str,context:&str,facets:&[crate::ContextFacet],cued:bool)->Result<MouthDraft,String>{
+    fn open_mouth_context_inner(
+        &mut self,
+        user: &str,
+        context: &str,
+        facets: &[crate::ContextFacet],
+        cued: bool,
+    ) -> Result<MouthDraft, String> {
         crate::core::self_model::validate_context_facets(facets)?;
-        if context.trim().is_empty() || context.len()>128 || context.chars().any(char::is_control) {
+        if context.trim().is_empty() || context.len() > 128 || context.chars().any(char::is_control)
+        {
             return Err("invalid recall context".into());
         }
-        self.query_context=Some(context.trim().to_string());
-        self.query_self_cues=cued;
-        self.query_scope=facets.to_vec();
+        self.query_context = Some(context.trim().to_string());
+        self.query_self_cues = cued;
+        self.query_scope = facets.to_vec();
         Ok(self.open_mouth(user))
     }
     pub fn open_mouth(&mut self, user: &str) -> MouthDraft {
@@ -946,7 +895,9 @@ impl SelectiveMemory {
         let draft = self.open_mouth_inner(user, hold, bias, marked, axioms_only);
         let failures_before = self.narrator.failure_log().failures;
         let reply = draft.reply(self.narrator.as_ref());
-        if self.narrator.failure_log().failures > failures_before || reply.starts_with("[llm-error]") {
+        if self.narrator.failure_log().failures > failures_before
+            || reply.starts_with("[llm-error]")
+        {
             self.cancel_mouth(&draft);
         } else {
             self.close_mouth(&draft, &reply);
@@ -954,202 +905,11 @@ impl SelectiveMemory {
         (reply, draft.dump)
     }
 
-    fn open_mouth_inner(
-        &mut self,
-        user: &str,
-        hold: bool,
-        bias: RecallBias,
-        marked: &[String],
-        axioms_only: bool,
-    ) -> MouthDraft {
-        let query_scope=std::mem::take(&mut self.query_scope);
-        let query_context=self.query_context.take();
-        let query_self_cues=std::mem::take(&mut self.query_self_cues);
-        let _clock = self.enter_clock();
-        self.mouth_held = true;
-        if hold {
-            self.talk.hear(user, None);
-        }
-        let mut query = if hold {
-            self.talk.recall_query(user)
-        } else {
-            user.to_string()
-        };
-        // Explicit context activates native top-down recall, not forced trace IDs.
-        // self_cues lesion keeps the episodic store but withholds belief gists
-        // from the retrieval query (pre-retrieval belief ablation).
-        if query_self_cues && self.cut.self_cues {
-            for t in crate::core::self_model::view_scoped(&self.store,user,query_context.as_deref(),&query_scope).into_iter().take(4) {
-                query.push('\n'); query.push_str(&t.gist);
-            }
-        }
-        let write = if hold {
-            RecallWrite::Live
-        } else {
-            RecallWrite::ReadOnly
-        };
-        let previous_cap=self.profile.max_recall;
-        if self.memory_context_options.format==crate::MemoryContextFormat::Structured && self.memory_context_options.max_episodes!=4 {self.profile.max_recall=self.memory_context_options.max_episodes;}
-        let (recalled, dump) = self.remember_with(&query, write, bias, marked);
-        self.profile.max_recall=previous_cap;
-        // Structured delivery already enforces its episode and word budgets.
-        // Do not discard selected evidence at the legacy two-scene boundary.
-        let delivery_cap = if hold && self.memory_context_options.format == crate::MemoryContextFormat::Legacy {
-            2
-        } else {
-            self.memory_context_options.max_episodes
-        };
-        let delivered_ids: Vec<String> = if axioms_only { Vec::new() } else {
-            recalled.iter().take(if hold { delivery_cap } else { usize::MAX }).map(|r| r.trace_id.clone()).collect()
-        };
-        if hold {
-            // Spoken utility: the hour that actually entered the mouth, not every neighbor.
-            if let Some(id) = dump.selected.first() {
-                self.note_spoken(id);
-            }
-        }
-        let empty = WorkingTalk::default();
-        let talk = if hold { &self.talk } else { &empty };
-        let scoped_reading = crate::recall::reading::ReadingProfile::for_query(
-            &self.store, &self.mood, user, &dump.selected);
-        let external_axiom_allowed = |a: &crate::core::model::IdentityAxiom| {
-            let external = a.support_trace_ids.iter().filter_map(|id| self.store.traces.get(id))
-                .any(|t| t.attribution == crate::core::model::Attribution::External);
-            !external || scoped_reading.axioms.contains(&a.statement)
-        };
-        // Isolated probes: retrieved scenes + living axioms.
-        // Stance-without-scene lives in recall/stance.rs (ablation only).
-        let (memories, axioms) = if hold {
-            let memories: Vec<String> = recalled
-                .into_iter()
-                .take(delivery_cap)
-                .map(|r| {
-                    let core = self
-                        .store
-                        .traces
-                        .get(&r.trace_id)
-                        .map(|t| t.core.as_str())
-                        .unwrap_or("");
-                    pin_happened(&r.narrative, core)
-                })
-                .collect();
-            let mut axioms = vec![format!("I am {}.", self.profile.name)];
-            axioms.extend(
-                self.who_am_i()
-                    .into_iter()
-                    .filter(|a| external_axiom_allowed(a))
-                    .take(4)
-                    .map(|a| a.statement.clone()),
-            );
-            (memories, axioms)
-        } else {
-            let lineage = crate::recall::retrieve::lineage_of(&self.store, marked);
-            let lineage_schemas: Vec<String> = lineage
-                .iter()
-                .filter_map(|id| self.store.traces.get(id).and_then(|t| t.schema.clone()))
-                .collect();
-            let drop_ax = matches!(bias, RecallBias::DropLineage);
-            let axioms: Vec<String> = self
-                .who_am_i()
-                .into_iter()
-                .filter(|a| {
-                    if !external_axiom_allowed(a) { return false; }
-                    if drop_ax
-                        && crate::recall::retrieve::axiom_supported_by_lineage(
-                            &a.support_trace_ids,
-                            a.schema.as_deref(),
-                            &lineage,
-                            &lineage_schemas,
-                        )
-                    {
-                        return false;
-                    }
-                    // Only the strongest belief may color a probe that does not name the hour.
-                    // Every other belief stays behind the probe's own tokens, or an unrelated stake colors the offer.
-                    let strongest_belief = self
-                        .who_am_i()
-                        .into_iter()
-                        .find(|a| a.layer == crate::core::model::AxiomLayer::Belief)
-                        .map(|a| a.id.clone());
-                    if a.layer == crate::core::model::AxiomLayer::Belief
-                        && strongest_belief.as_deref() == Some(a.id.as_str())
-                    {
-                        return true;
-                    }
-                    let mut probe_cloud = std::collections::HashMap::new();
-                    for token in crate::encode::scoring::token_set(user) {
-                        probe_cloud.insert(token, 1.0);
-                    }
-                    crate::recall::retrieve::statement_anchored(&probe_cloud, &a.statement)
-                })
-                .map(|a| a.statement.clone())
-                .collect();
-            let memories: Vec<String> = if axioms_only {
-                Vec::new()
-            } else {
-                recalled.into_iter().map(|r| r.narrative).collect()
-            };
-            (memories, axioms)
-        };
-        let mut axioms = axioms;
-        if self.memory_context_options.format==crate::MemoryContextFormat::Legacy {
-            for t in crate::core::self_model::view_scoped(&self.store,user,query_context.as_deref(),&query_scope).into_iter().take(4).rev(){axioms.insert(0,format!("Lived {} in {} (certainty {:.2}; foundations missing {}; counterexamples {}): {}",t.personal.role.token(),t.personal.context,t.personal.certainty,t.personal.foundations_missing,t.personal.counter_ids.len(),t.gist));}
-        }
-        for interpretation in scoped_reading.axioms.iter().filter(|s| s.starts_with("Tentative observed interpretation;")) {
-            if !axioms.contains(interpretation) { axioms.push(interpretation.clone()); }
-        }
-        let mut memory_context = if self.memory_context_options.format == crate::MemoryContextFormat::Structured {
-            crate::MemoryContext::from_selected(&self.store, &delivered_ids, &memories, &axioms,
-                &self.mood, &self.memory_context_options, self.clock.now())
-        } else { crate::MemoryContext::default() };
-        // The agent's direct identity is constitutive; no recall required.
-        memory_context.agent_name = Some(self.profile.name.clone());
-        memory_context.attach_self_view_in_context(&self.store,user,query_context.as_deref(),&self.memory_context_options,&query_scope);
-        if hold && asks_about_human_name(user) && self.memory_context_options.dispositions {
-            if let Some(t) = self.store.traces.values()
-                .filter(|t| t.schema.as_deref()==Some("interlocutor-name")
-                    && t.attribution==crate::core::model::Attribution::External
-                    && !t.suppressed && t.status==crate::core::model::TraceStatus::Active
-                    && t.access>=0.15)
-                .max_by(|a,b|a.created_at.cmp(&b.created_at).then_with(||a.id.cmp(&b.id))) {
-                memory_context.dispositions.truncate(3);
-                memory_context.contextual_statements.insert(0,crate::recall::memory_context::ContextStatement {
-                    statement: format!("Fallible recollection of what the human told me: {}",t.gist),
-                    truncated: false,
-                });
-            }
-        }
-        if hold && asks_about_nights(user) && self.memory_context_options.dispositions {
-            let count = self.remembered_nights();
-            if count > 0 {
-                memory_context.dispositions.truncate(3);
-                memory_context.contextual_statements.insert(0,crate::recall::memory_context::ContextStatement {
-                    statement: format!("I can currently recall at least {count} nights of sleep. This is not necessarily the total: earlier nights may have been forgotten."),
-                    truncated: false,
-                });
-            }
-        }
-        let reading = if self.drop_stake { String::new() } else { scoped_reading.render() };
-        MouthDraft {
-            user: user.to_string(),
-            memories,
-            axioms,
-            mood: self.mood.clone(),
-            talk: talk.clone(),
-            hold,
-            dump,
-            memory_context,
-            memory_context_options: self.memory_context_options.clone(),
-            reading,
-            epoch: {
-                self.mouth_epoch = self.mouth_epoch.saturating_add(1);
-                self.mouth_epoch
-            },
-        }
-    }
-
     pub fn scorer_name(&self) -> String {
-        self.scorer.as_ref().map(|s| s.name().to_string()).unwrap_or_else(|| "null".into())
+        self.scorer
+            .as_ref()
+            .map(|s| s.name().to_string())
+            .unwrap_or_else(|| "null".into())
     }
 
     pub fn with_scorer(mut self, scorer: Box<dyn crate::recall::PropositionScorer>) -> Self {
@@ -1158,7 +918,11 @@ impl SelectiveMemory {
     }
 
     /// Ask the outside scorer. Stores the label. Does not change gist, core, or claim.
-    pub fn score_against_claim(&mut self, trace_id: &str, sentence: &str) -> crate::recall::PropositionLabel {
+    pub fn score_against_claim(
+        &mut self,
+        trace_id: &str,
+        sentence: &str,
+    ) -> crate::recall::PropositionLabel {
         let claim = self
             .store
             .traces
@@ -1171,7 +935,9 @@ impl SelectiveMemory {
         };
         if let Some(t) = self.store.traces.get(trace_id) {
             let _ = t;
-            self.store.measures.push((trace_id.to_string(), label.token().into()));
+            self.store
+                .measures
+                .push((trace_id.to_string(), label.token().into()));
         }
         label
     }
@@ -1283,10 +1049,13 @@ impl SelectiveMemory {
 
     /// Each UI sleep creates a fallible autobiographical episode, not an exact counter.
     pub fn record_sleep_memory(&mut self) -> Option<String> {
-        let event = format!("I slept through a night and woke again (virtual time {}).",self.clock.now());
+        let event = format!(
+            "I slept through a night and woke again (virtual time {}).",
+            self.clock.now()
+        );
         let mut ev = EncodeInput::new(&event);
         ev.source = "sleep";
-        ev.personal.evidence=crate::SelfEvidence::Observation;
+        ev.personal.evidence = crate::SelfEvidence::Observation;
         ev.channel = crate::core::model::Channel::Selfhood;
         ev.attribution = crate::core::model::Attribution::Internal;
         ev.schema = Some("night-recollection".into());
@@ -1298,30 +1067,71 @@ impl SelectiveMemory {
     }
 
     pub fn remembered_nights(&self) -> usize {
-        self.store.traces.values().filter(|t|t.source=="sleep"&&!t.suppressed
-            &&t.status==crate::core::model::TraceStatus::Active&&t.access>=0.15).count()
+        self.store
+            .traces
+            .values()
+            .filter(|t| {
+                t.source == "sleep"
+                    && !t.suppressed
+                    && t.status == crate::core::model::TraceStatus::Active
+                    && t.access >= 0.15
+            })
+            .count()
     }
 }
 
 fn asks_about_human_name(query: &str) -> bool {
-    let q=query.to_lowercase();
-    ["comment je m'appelle", "comment je m’appelle", "quel est mon nom", "quel est mon prenom", "quel est mon prénom", "what is my name", "what's my name", "do you know my name"].iter().any(|phrase|q.contains(phrase))
+    let q = query.to_lowercase();
+    [
+        "comment je m'appelle",
+        "comment je m’appelle",
+        "quel est mon nom",
+        "quel est mon prenom",
+        "quel est mon prénom",
+        "what is my name",
+        "what's my name",
+        "do you know my name",
+    ]
+    .iter()
+    .any(|phrase| q.contains(phrase))
 }
 
 fn asks_about_nights(query: &str) -> bool {
-    let q=query.to_lowercase();
-    ["nuit", "dormi", "dormis", "dormir", "sommeil", "sleep", "night", "how long", "combien de jour", "how many day"]
-        .iter().any(|word|q.contains(word))
+    let q = query.to_lowercase();
+    [
+        "nuit",
+        "dormi",
+        "dormis",
+        "dormir",
+        "sommeil",
+        "sleep",
+        "night",
+        "how long",
+        "combien de jour",
+        "how many day",
+    ]
+    .iter()
+    .any(|word| q.contains(word))
 }
 
 fn declared_human_name(message: &str) -> Option<String> {
-    let raw=message.trim();
-    let lower=raw.to_lowercase();
-    for prefix in ["je m'appelle ","je m’appelle ","mon prénom est ","mon prenom est ","my name is ","call me "] {
+    let raw = message.trim();
+    let lower = raw.to_lowercase();
+    for prefix in [
+        "je m'appelle ",
+        "je m’appelle ",
+        "mon prénom est ",
+        "mon prenom est ",
+        "my name is ",
+        "call me ",
+    ] {
         if lower.starts_with(prefix) {
-            let candidate=raw.get(prefix.len()..)?.split_whitespace().next()?;
-            let candidate=candidate.trim_matches(|c:char|!c.is_alphabetic()&&c!='-'&&c!='\'');
-            if (2..=32).contains(&candidate.chars().count()) && candidate.chars().any(char::is_alphabetic) {
+            let candidate = raw.get(prefix.len()..)?.split_whitespace().next()?;
+            let candidate =
+                candidate.trim_matches(|c: char| !c.is_alphabetic() && c != '-' && c != '\'');
+            if (2..=32).contains(&candidate.chars().count())
+                && candidate.chars().any(char::is_alphabetic)
+            {
                 return Some(candidate.to_string());
             }
         }
@@ -1356,4 +1166,3 @@ fn is_sqlite(path: &Path) -> bool {
         Some("db") | Some("sqlite") | Some("sqlite3")
     )
 }
-

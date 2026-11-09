@@ -132,434 +132,12 @@ pub fn recall_cut(
     .memories
 }
 
-pub fn recall_with(
-    store: &mut MemoryStore,
-    profile: &EntityProfile,
-    narrator: &dyn Narrator,
-    embedder: &dyn Embedder,
-    query: &str,
-    mood: &Mood,
-    cut: OrganCut,
-    write: RecallWrite,
-    bias: RecallBias,
-    marked: &[String],
-    scorer: &dyn crate::recall::PropositionScorer,
-) -> RecallOutcome {
-    let query_embedding = if store.embedding_space.as_deref() == Some(embedder.space_id().as_str()) {
-        embedder.embed(query)
-    } else { Vec::new() };
-    let live = write == RecallWrite::Live;
-    let transfer_query = transfer_terms(query);
-    let cloud = context_cloud(store, query, &query_embedding);
-    let ids: Vec<String> = store.active_ids();
-    let mut ranked: Vec<ScoredTrace> = ids
-        .into_iter()
-        .filter_map(|trace_id| {
-            let trace = store.traces.get(&trace_id)?;
-            if trace.personal.role!=crate::SelfRole::Episode{return None;}
-            if trace.suppressed && !matches!(bias, RecallBias::ForceMarked) {
-                return None;
-            }
-            let talk = trace.source == "talk";
-            let access = crate::encode::scoring::access_value(trace, profile);
-            if talk && access < 0.10 {
-                return None;
-            }
-            let mut score = recall_score_emb(trace, query, Some(&query_embedding), mood, profile);
-            // Operational facts have no identity/affect/recency dependency.
-            // Require lexical relevance; never give unrelated World records a floor.
-            if trace.channel.verbatim() && !talk {
-                let sim = crate::encode::scoring::lexical_similarity(query, &trace.gist).max(
-                    crate::encode::scoring::lexical_similarity(query, &trace.core),
-                );
-                if sim <= 0.0 {
-                    return None;
-                }
-                score = 0.75 * sim + 0.25;
-            }
-            let relevance = topic_relevance(query, &trace.core);
-            let base_score = score;
-            let transfer = if crate::recall::interpretation::subject_matches(store, trace, query) {
-                crate::recall::interpretation::for_query(trace, query)
-            } else { None };
-            let mut anchor = if trace.attribution == crate::core::model::Attribution::External
-                && relevance <= 0.0
-            {
-                0.0
-            } else if trace.channel.verbatim() && !talk {
-                1.0
-            } else {
-                cloud_anchor(&cloud, trace)
-            };
-            if anchor <= 0.0 {
-                score = 0.0;
-            } else {
-                score *= anchor;
-            }
-            // Reconstructive support signal: modest score boost from distinct
-            // observation counts. Lesionable via OrganCut::support_signal.
-            // Never rewrites core. Zero when signal is off or weight is zero.
-            if cut.support_signal && anchor > 0.0 {
-                let w = store.observation_evidence.support_weight(store, &trace_id);
-                if w > 0.0 {
-                    score *= 1.0 + 0.22 * w;
-                }
-            }
-            // An explicit cue can evoke a deliberately retained own episode
-            // even after a long unused interval. Recency still ranks diffuse
-            // associations; it must not erase a precise, accessible match.
-            let (cue_hits, _) = topic_overlap(query, &trace.core);
-            if anchor > 0.0 && trace.permanence >= 0.8 && trace.anchor >= 0.8
-                && trace.attribution != crate::core::model::Attribution::External
-                && cue_hits >= 2 && relevance >= 0.5
-            {
-                // Access already includes fidelity. Multiplying it again
-                // would penalize detail loss twice, although the core is frozen.
-                score = score.max(0.5 * relevance * access);
-            }
-            if let Some(i) = &transfer {
-                // Evidence confidence and retained accessibility determine the
-                // score. Keep the normal .08/.12 gates; no eligibility floor.
-                score = score.max(0.65 * i.confidence * trace.fidelity * access);
-            }
-            // Bonuses require topic evidence independent of the context cloud.
-            // A singleton motif cannot manufacture eligibility.
-            if anchor > 0.0 && relevance > 0.0 {
-                let strength = store
-                    .axioms
-                    .values()
-                    .filter(|a| {
-                        a.superseded_by.is_none()
-                            && a.layer != crate::core::model::AxiomLayer::Motif
-                            && a.support_trace_ids.contains(&trace_id)
-                    })
-                    .filter(|a| {
-                        let observations: std::collections::HashSet<_> = a
-                            .support_trace_ids
-                            .iter()
-                            .filter_map(|id| store.traces.get(id))
-                            .map(|t| t.observation_id.as_deref().unwrap_or(&t.id))
-                            .collect();
-                        observations.len() >= 2
-                    })
-                    .map(|a| a.strength.clamp(0.0, 1.0))
-                    .fold(0.0_f32, f32::max);
-                score += 0.12 * strength * relevance * anchor;
-                if episode_ask(query) {
-                    if trace.channel.verbatim() {
-                        score *= 0.32;
-                    } else {
-                        score += 0.20 * relevance;
-                    }
-                }
-            }
-            if bias == RecallBias::Transfer {
-                // Analogy needs topical content, not the identity of the old speaker.
-                // Hash collisions, timestamps and affect alone cannot license a source.
-                let content = crate::encode::scoring::event_content;
-                let relevant = topic_relevance(&transfer_query, &transfer_terms(content(&trace.core)))
-                    .max(topic_relevance(&transfer_query, &transfer_terms(content(&trace.gist))));
-                anchor = relevant;
-                score = if relevant > 0.0 {
-                    (0.75 * relevant + 0.25 * base_score.clamp(0.0, 1.0)) * access
-                } else { 0.0 };
-            }
-            // Schema names are metadata, not query evidence.
-            if bias != RecallBias::Transfer
-                && trace.attribution == crate::core::model::Attribution::External
-                && (!crate::recall::interpretation::subject_matches(store, trace, query)
-                    || !crate::recall::interpretation::factual_relation_matches(query, &trace.core)) {
-                score = 0.0;
-            }
-            Some(ScoredTrace {
-                trace_id,
-                score,
-                status: trace.status,
-                base_score,
-                anchor: transfer.as_ref().map_or(anchor, |i| anchor.max(i.confidence)),
-            })
-        })
-        .collect();
-    ranked.sort_by(|a, b| {
-        b.score
-            .partial_cmp(&a.score)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| {
-                let ta = &store.traces[&a.trace_id];
-                let tb = &store.traces[&b.trace_id];
-                ta.core
-                    .cmp(&tb.core)
-                    .then(ta.gist.cmp(&tb.gist))
-                    .then_with(|| ta.valence.total_cmp(&tb.valence))
-                    .then(ta.created_at.cmp(&tb.created_at))
-                    .then(a.trace_id.cmp(&b.trace_id))
-            })
-    });
-
-    let eligible: Vec<String> = ranked
-        .iter()
-        .filter(|c| eligible(c))
-        .map(|c| c.trace_id.clone())
-        .collect();
-
-    let chosen_ids = if bias == RecallBias::Transfer {
-        select_transfer(&ranked, store, profile.max_recall)
-    } else if bias != RecallBias::ForceMarked {
-        let allowed = apply_bias(&eligible, store, bias, marked, eligible.len());
-        select_diverse_for_query(&ranked, &allowed, store, profile.max_recall, query)
-    } else {
-        apply_bias(&eligible, store, bias, marked, profile.max_recall)
-    };
-
-    // Freeze all cue content and weights before the first trace can write back.
-    let before: Vec<_> = chosen_ids
-        .iter()
-        .map(|id| store.traces[id].clone())
-        .collect();
-    let now = now_secs();
-    let mut cues = std::collections::BTreeMap::new();
-    if store.associations.reconstruct && cut.reconstruct && narrator.supports_associations() {
-        for target in &before {
-            if target.attribution == crate::core::model::Attribution::External
-                || target.channel.verbatim()
-                || target.core.is_empty()
-            {
-                continue;
-            }
-            let mut selected: Vec<_> = before
-                .iter()
-                .filter(|other| {
-                    other.id != target.id
-                        && !other.suppressed
-                        && other.status != TraceStatus::Latent
-                        && other.observation_id.as_deref().unwrap_or(&other.id)
-                            != target.observation_id.as_deref().unwrap_or(&target.id)
-                })
-                .filter_map(|other| {
-                    let weight = store.associations.weight(&target.id, &other.id, now);
-                    if weight < 0.05 {
-                        return None;
-                    }
-                    Some(AssociativeCue {
-                        trace_id: other.id.clone(),
-                        gist: other.gist.clone(),
-                        attribution: other.attribution,
-                        weight,
-                    })
-                })
-                .collect();
-            selected.sort_by(|a, b| {
-                b.weight
-                    .total_cmp(&a.weight)
-                    .then(a.trace_id.cmp(&b.trace_id))
-            });
-            selected.truncate(2);
-            cues.insert(target.id.clone(), selected);
-        }
-    }
-    let failures_before = narrator.failure_log().failures;
-    let mut associations_used = Vec::new();
-    let mut recalled = Vec::new();
-    let mut pulled_n = 0u32;
-    let mut recon_n = 0u32;
-    for trace_id in &chosen_ids {
-        let (channel, gist, schema) = {
-            let trace = store.traces.get(trace_id).unwrap();
-            (trace.channel, trace.gist.clone(), trace.schema.clone())
-        };
-
-        let associates = cues.get(trace_id).map(Vec::as_slice).unwrap_or(&[]);
-        let mut association_accepted = false;
-        let (narrative, disclaimer, fidelity, pulled, reconsolidated) = if channel.verbatim() {
-            (
-                gist,
-                "verbatim record, not distorted".to_string(),
-                store.traces[trace_id].fidelity,
-                false,
-                false,
-            )
-        } else {
-            speak_self(
-                store,
-                profile,
-                narrator,
-                query,
-                mood,
-                cut,
-                write,
-                trace_id,
-                scorer,
-                associates,
-                &mut association_accepted,
-            )
-        };
-
-        if live && association_accepted && !pulled {
-            let original = before.iter().find(|t| t.id == *trace_id).unwrap();
-            if original.gist != narrative {
-                if let Some(trace) = store.traces.get_mut(trace_id) {
-                    trace.record_operation(crate::core::model::MemoryOperation {
-                        kind: "associative-reconstruction".into(),
-                        at: now,
-                        source_trace_ids: associates.iter().map(|c| c.trace_id.clone()).collect(),
-                        source_axiom_ids: Vec::new(),
-                        source_center: None,
-                        before: original.gist.clone(),
-                        after: narrative.clone(),
-                        confidence: original.confidence,
-                        origin: crate::core::model::EvidenceOrigin::Reconstruction,
-                    });
-                }
-            }
-        }
-        if !associates.is_empty() {
-            associations_used.push(AssociationUse {
-                target: trace_id.clone(),
-                cues: associates.to_vec(),
-                accepted: association_accepted,
-            });
-        }
-        if live {
-            let operational = store
-                .traces
-                .get(trace_id)
-                .map(|t| t.channel.verbatim() && t.source != "talk")
-                .unwrap_or(false);
-            if let Some(trace) = store.traces.get_mut(trace_id) {
-                if operational {
-                    trace.access = 1.0;
-                } else {
-                    refresh_access(trace, profile);
-                }
-                trace.last_recalled_at = Some(now_secs());
-            }
-        }
-        if pulled {
-            pulled_n += 1;
-        }
-        if reconsolidated {
-            recon_n += 1;
-        }
-        recalled.push(RecalledMemory {
-            trace_id: trace_id.clone(),
-            narrative,
-            fidelity,
-            schema,
-            channel,
-            disclaimer,
-            pulled_toward_core: pulled,
-            reconsolidated,
-        });
-    }
-    let associations_reinforced = if live
-        && cut.reconstruct
-        && matches!(bias, RecallBias::Observed | RecallBias::Transfer)
-        && narrator.failure_log().failures == failures_before
-    {
-        let active: Vec<_> = before
-            .iter()
-            .filter_map(|trace| {
-                if trace.suppressed
-                    || trace.status == TraceStatus::Latent
-                    || trace.channel.verbatim()
-                {
-                    return None;
-                }
-                let recalled = recalled.iter().find(|r| r.trace_id == trace.id)?;
-                if recalled.pulled_toward_core || recalled.narrative.trim().is_empty() {
-                    return None;
-                }
-                let judgment = crate::recall::judge::judge_against_core(
-                    &recalled.narrative,
-                    &trace.core,
-                    scorer,
-                );
-                // An unchanged gist also counts as an observed activation, without
-                // interpreting an unknown proposition as corroborated evidence.
-                if recalled.narrative != trace.gist
-                    && (judgment.kind.is_miss()
-                        || judgment.kind == crate::recall::judge::DetachKind::Unjudged)
-                {
-                    return None;
-                }
-                let relevance = topic_relevance(query, &trace.core);
-                if relevance <= 0.0 {
-                    return None;
-                }
-                let activation = relevance.clamp(0.0, 1.0)
-                    * crate::encode::scoring::access_value(trace, profile).clamp(0.0, 1.0);
-                Some((
-                    trace.id.clone(),
-                    trace
-                        .observation_id
-                        .clone()
-                        .unwrap_or_else(|| trace.id.clone()),
-                    activation,
-                ))
-            })
-            .collect();
-        store.associations.reinforce(&active, now)
-    } else {
-        Vec::new()
-    };
-    // Attach provenance-derived counts only after reconstruction/grounding and
-    // co-recall learning. They never enter gist write-back or the frozen core.
-    for memory in &mut recalled {
-        if let Some(trace) = store.traces.get_mut(&memory.trace_id) {
-            if write == RecallWrite::Live && before.iter().any(|old| old.id == trace.id && old.gist != trace.gist) {
-                trace.embedding = embedder.embed(&trace.gist);
-            }
-            // Subjective revision is available to the policy, never written into factual gist.
-            if trace.operations.iter().any(|op| op.kind == "reinterpret") {
-                memory.narrative.push_str("\n[Tentative interpretation; not an observed fact] ");
-                memory.narrative.push_str(&trace.interpretation.statement);
-            }
-        }
-        if let Some(metadata) = store.observation_evidence.render(store, &memory.trace_id) {
-            memory.narrative.push_str("\n");
-            memory.narrative.push_str(&metadata);
-            if cut.support_signal {
-                let w = store.observation_evidence.support_weight(store, &memory.trace_id);
-                if w > 0.0 {
-                    memory.narrative.push_str(&format!(
-                        "\nSupport strength (reconstructive signal only, not additional episodes): {:.2}",
-                        w
-                    ));
-                }
-            }
-        }
-        // Optional schema cue is independent of observation support.
-        // Does not alter selection; only colors the narrative for the mouth.
-        if cut.schema_prototype {
-            if let Some(trace) = store.traces.get(&memory.trace_id) {
-                if trace.attribution == crate::core::model::Attribution::Internal {
-                    if let Some(schema) = &trace.schema {
-                        if let Some(center) = store.centers.get(schema) {
-                            let proto = center.core.chars().take(120).collect::<String>();
-                            if !proto.is_empty() {
-                                memory.narrative.push_str(&format!(
-                                    "\nSchema prototype (context only): {proto}"
-                                ));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    RecallOutcome {
-        memories: recalled,
-        dump: RetrievalDump {
-            associations_used,
-            associations_reinforced,
-            candidates: ranked,
-            selected: chosen_ids,
-            pulled: pulled_n,
-            reconsolidated: recon_n,
-            scorer: scorer.name().to_string(),
-        },
-    }
-}
+mod pipeline;
+mod ranking;
+mod selection;
+pub use pipeline::recall_with;
+use ranking::rank_candidates;
+use selection::choose_trace_ids;
 
 fn eligible(c: &ScoredTrace) -> bool {
     if matches!(c.status, TraceStatus::Latent) {
@@ -573,32 +151,96 @@ fn eligible(c: &ScoredTrace) -> bool {
 
 /// Task-writing instructions and conversational encouragement are not source topics.
 fn transfer_terms(text: &str) -> String {
-    crate::encode::scoring::token_set(text).into_iter().filter(|word| {
-        topic_relevance(word, word) > 0.0 && !matches!(word.as_str(),
-            "design" | "original" | "propose" | "describe" | "explain" | "include"
-            | "maximum" | "must" | "within" | "require" | "requires" | "using"
-            | "use" | "used" | "without" | "every" | "each" | "all" | "only"
-            | "help" | "helps" | "make" | "makes" | "made" | "great" | "good"
-            | "thanks" | "thank" | "yeah" | "really" | "much" | "lot" | "going"
-            | "get" | "got" | "way" | "well" | "sure" | "something" | "anything"
-            | "success" | "successful" | "work" | "working" | "works" | "want"
-            | "wants" | "need" | "needs" | "needed" | "new" | "two" | "three"
-            | "six" | "twelve" | "twenty" | "one" | "its")
-            && !word.chars().all(|c| c.is_numeric())
-    }).collect::<Vec<_>>().join(" ")
+    crate::encode::scoring::token_set(text)
+        .into_iter()
+        .filter(|word| {
+            topic_relevance(word, word) > 0.0
+                && !matches!(
+                    word.as_str(),
+                    "design"
+                        | "original"
+                        | "propose"
+                        | "describe"
+                        | "explain"
+                        | "include"
+                        | "maximum"
+                        | "must"
+                        | "within"
+                        | "require"
+                        | "requires"
+                        | "using"
+                        | "use"
+                        | "used"
+                        | "without"
+                        | "every"
+                        | "each"
+                        | "all"
+                        | "only"
+                        | "help"
+                        | "helps"
+                        | "make"
+                        | "makes"
+                        | "made"
+                        | "great"
+                        | "good"
+                        | "thanks"
+                        | "thank"
+                        | "yeah"
+                        | "really"
+                        | "much"
+                        | "lot"
+                        | "going"
+                        | "get"
+                        | "got"
+                        | "way"
+                        | "well"
+                        | "sure"
+                        | "something"
+                        | "anything"
+                        | "success"
+                        | "successful"
+                        | "work"
+                        | "working"
+                        | "works"
+                        | "want"
+                        | "wants"
+                        | "need"
+                        | "needs"
+                        | "needed"
+                        | "new"
+                        | "two"
+                        | "three"
+                        | "six"
+                        | "twelve"
+                        | "twenty"
+                        | "one"
+                        | "its"
+                )
+                && !word.chars().all(|c| c.is_numeric())
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Marginal relevance penalizes redundant content only among eligible traces.
 fn select_transfer(ranked: &[ScoredTrace], store: &MemoryStore, cap: usize) -> Vec<String> {
     let mut chosen: Vec<String> = Vec::new();
     while chosen.len() < cap {
-        let best = ranked.iter().filter(|c| c.is_eligible() && !chosen.contains(&c.trace_id))
+        let best = ranked
+            .iter()
+            .filter(|c| c.is_eligible() && !chosen.contains(&c.trace_id))
             .map(|c| {
                 let content = crate::encode::scoring::event_content;
                 let text = content(&store.traces[&c.trace_id].core);
-                let redundancy = chosen.iter().map(|id| {
-                    crate::encode::scoring::lexical_similarity(text, content(&store.traces[id].core))
-                }).fold(0.0_f32, f32::max);
+                let redundancy = chosen
+                    .iter()
+                    .map(|id| {
+                        crate::encode::scoring::lexical_similarity(
+                            text,
+                            content(&store.traces[id].core),
+                        )
+                    })
+                    .fold(0.0_f32, f32::max);
                 (c, c.score * (1.0 - 0.5 * redundancy))
             })
             .max_by(|(a, x), (b, y)| x.total_cmp(y).then_with(|| b.trace_id.cmp(&a.trace_id)));
@@ -622,60 +264,91 @@ fn select_diverse(
 }
 
 fn select_diverse_for_query(
-    ranked: &[ScoredTrace], allowed: &[String], store: &MemoryStore, cap: usize, query: &str,
+    ranked: &[ScoredTrace],
+    allowed: &[String],
+    store: &MemoryStore,
+    cap: usize,
+    query: &str,
 ) -> Vec<String> {
     use super::dependency::{conflicts, record, same_provenance};
     let allowed: std::collections::HashSet<&str> = allowed.iter().map(String::as_str).collect();
-    let records: std::collections::HashMap<_, _> = ranked.iter().filter_map(|c| {
-        record(&store.traces[&c.trace_id]).map(|r| (c.trace_id.as_str(), r))
-    }).collect();
+    let records: std::collections::HashMap<_, _> = ranked
+        .iter()
+        .filter_map(|c| record(&store.traces[&c.trace_id]).map(|r| (c.trace_id.as_str(), r)))
+        .collect();
     let mut chosen: Vec<String> = Vec::new();
     while chosen.len() < cap {
         let mut best: Option<(&ScoredTrace, f32, Option<String>)> = None;
         for candidate in ranked {
-            if !allowed.contains(candidate.trace_id.as_str()) || chosen.contains(&candidate.trace_id) {
+            if !allowed.contains(candidate.trace_id.as_str())
+                || chosen.contains(&candidate.trace_id)
+            {
                 continue;
             }
             let trace = &store.traces[&candidate.trace_id];
             let mut parent_id = None;
             if let Some(record) = records.get(candidate.trace_id.as_str()) {
-                if conflicts(record, query) { continue; }
+                if conflicts(record, query) {
+                    continue;
+                }
                 if let Some(parent_version) = &record.parent {
-                    let parents: Vec<_> = records.iter().filter(|(id, other)| {
-                        other.version == *parent_version && other.issuer == record.issuer
-                            && other.scope == record.scope && other.parent.is_none()
-                            && same_provenance(trace, &store.traces[**id])
-                            && store.traces[**id].created_at <= trace.created_at
-                    }).map(|(id, _)| *id).collect();
+                    let parents: Vec<_> = records
+                        .iter()
+                        .filter(|(id, other)| {
+                            other.version == *parent_version
+                                && other.issuer == record.issuer
+                                && other.scope == record.scope
+                                && other.parent.is_none()
+                                && same_provenance(trace, &store.traces[**id])
+                                && store.traces[**id].created_at <= trace.created_at
+                        })
+                        .map(|(id, _)| *id)
+                        .collect();
                     // Missing, ambiguous, or ablated parents cannot be supplied
                     // by bypassing the eligibility gate. Nested chains abstain.
-                    if parents.len() != 1 || !allowed.contains(parents[0]) { continue; }
+                    if parents.len() != 1 || !allowed.contains(parents[0]) {
+                        continue;
+                    }
                     if !chosen.iter().any(|id| id == parents[0]) {
-                        if chosen.len() + 2 > cap { continue; }
+                        if chosen.len() + 2 > cap {
+                            continue;
+                        }
                         parent_id = Some(parents[0].to_string());
                     }
                 }
             }
-            let redundancy = chosen.iter().map(|id| {
-                let previous = &store.traces[id];
-                if trace.source != previous.source || trace.attribution != previous.attribution
-                    || trace.channel != previous.channel {
-                    return 0.0;
-                }
-                let similarity = crate::encode::scoring::lexical_similarity;
-                // Both representations must overlap; a short shared core alone
-                // must not erase a distinction retained in the lived narrative.
-                similarity(&trace.gist, &previous.gist)
-                    .min(similarity(&trace.core, &previous.core))
-            }).fold(0.0_f32, f32::max);
+            let redundancy = chosen
+                .iter()
+                .map(|id| {
+                    let previous = &store.traces[id];
+                    if trace.source != previous.source
+                        || trace.attribution != previous.attribution
+                        || trace.channel != previous.channel
+                    {
+                        return 0.0;
+                    }
+                    let similarity = crate::encode::scoring::lexical_similarity;
+                    // Both representations must overlap; a short shared core alone
+                    // must not erase a distinction retained in the lived narrative.
+                    similarity(&trace.gist, &previous.gist)
+                        .min(similarity(&trace.core, &previous.core))
+                })
+                .fold(0.0_f32, f32::max);
             let adjusted = candidate.score * (1.0 - redundancy);
             // Keep the existing deterministic ranking as the tie breaker.
-            if best.as_ref().map_or(true, |(_, score, _)| adjusted > *score) {
+            if best
+                .as_ref()
+                .map_or(true, |(_, score, _)| adjusted > *score)
+            {
                 best = Some((candidate, adjusted, parent_id));
             }
         }
-        let Some((candidate, _, parent)) = best else { break };
-        if let Some(parent) = parent { chosen.push(parent); }
+        let Some((candidate, _, parent)) = best else {
+            break;
+        };
+        if let Some(parent) = parent {
+            chosen.push(parent);
+        }
         chosen.push(candidate.trace_id.clone());
     }
     chosen
@@ -697,13 +370,21 @@ mod diversity_tests {
             ("Workshop volunteers repair broken tools.", 0.9),
             ("Workshop volunteers repair broken tools.", 0.89),
             ("Workshop opens on Sunday for beginners.", 0.7),
-        ].into_iter().enumerate() {
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let mut trace = template.clone();
             trace.id = format!("fixture-{index}");
             trace.gist = text.into();
             trace.core = text.into();
-            ranked.push(ScoredTrace { trace_id: trace.id.clone(), score,
-                status: trace.status, base_score: score, anchor: 1.0 });
+            ranked.push(ScoredTrace {
+                trace_id: trace.id.clone(),
+                score,
+                status: trace.status,
+                base_score: score,
+                anchor: 1.0,
+            });
             store.traces.insert(trace.id.clone(), trace);
         }
         let allowed = ranked.iter().map(|c| c.trace_id.clone()).collect();
@@ -713,8 +394,14 @@ mod diversity_tests {
     #[test]
     fn repeated_content_yields_to_complementary_evidence_without_deletion() {
         let (store, ranked, allowed) = fixture();
-        assert_eq!(select_diverse(&ranked, &allowed, &store, 2), vec!["fixture-0", "fixture-2"]);
-        assert_eq!(select_diverse(&ranked, &allowed, &store, 3), vec!["fixture-0", "fixture-2", "fixture-1"]);
+        assert_eq!(
+            select_diverse(&ranked, &allowed, &store, 2),
+            vec!["fixture-0", "fixture-2"]
+        );
+        assert_eq!(
+            select_diverse(&ranked, &allowed, &store, 3),
+            vec!["fixture-0", "fixture-2", "fixture-1"]
+        );
         assert!(select_diverse(&ranked, &allowed, &store, 0).is_empty());
     }
 
@@ -722,14 +409,26 @@ mod diversity_tests {
     fn independent_sources_are_not_treated_as_one_repetition() {
         let (mut store, ranked, allowed) = fixture();
         store.traces.get_mut("fixture-1").unwrap().source = "another witness".into();
-        assert_eq!(select_diverse(&ranked, &allowed, &store, 2), vec!["fixture-0", "fixture-1"]);
+        assert_eq!(
+            select_diverse(&ranked, &allowed, &store, 2),
+            vec!["fixture-0", "fixture-1"]
+        );
     }
 
     #[test]
     fn ablation_filters_cannot_be_undone_by_diversity() {
         let (store, ranked, allowed) = fixture();
-        let allowed = apply_bias(&allowed, &store, RecallBias::DropMarked, &["fixture-2".into()], 3);
-        assert_eq!(select_diverse(&ranked, &allowed, &store, 3), vec!["fixture-0", "fixture-1"]);
+        let allowed = apply_bias(
+            &allowed,
+            &store,
+            RecallBias::DropMarked,
+            &["fixture-2".into()],
+            3,
+        );
+        assert_eq!(
+            select_diverse(&ranked, &allowed, &store, 3),
+            vec!["fixture-0", "fixture-1"]
+        );
     }
 }
 
@@ -1070,7 +769,11 @@ fn cloud_anchor(
 /// This lexical check deliberately does not trust hash collisions.
 pub fn topic_relevance(query: &str, core: &str) -> f32 {
     let (hits, total) = topic_overlap(query, core);
-    if total == 0 { 0.0 } else { hits as f32 / total as f32 }
+    if total == 0 {
+        0.0
+    } else {
+        hits as f32 / total as f32
+    }
 }
 
 fn topic_overlap(query: &str, core: &str) -> (usize, usize) {

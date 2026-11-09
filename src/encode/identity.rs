@@ -99,7 +99,8 @@ fn paint_latent(store: &mut MemoryStore, input: &mut EncodeInput<'_>) {
         if !schema_or_key(&event, schema, &t.core) && !schema_or_key(&event, schema, &t.gist) {
             continue;
         }
-        let strong = schema_or_key(&event, schema, &t.core) || schema_or_key(&event, schema, &t.gist);
+        let strong =
+            schema_or_key(&event, schema, &t.core) || schema_or_key(&event, schema, &t.gist);
         n += 1.0;
         pull_v += t.valence;
         pull_d += t.disgust;
@@ -129,9 +130,9 @@ fn schema_or_key(event: &str, schema: &str, statement: &str) -> bool {
         return true;
     }
     let keys = [
-        "fidél", "loyal", "stayed", "abandon", "parti", "left", "trahi", "betray",
-        "humili", "confian", "trust", "pluie", "rain", "aimer", "love", "peur", "fear",
-        "honte", "shame",
+        "fidél", "loyal", "stayed", "abandon", "parti", "left", "trahi", "betray", "humili",
+        "confian", "trust", "pluie", "rain", "aimer", "love", "peur", "fear", "honte", "shame",
     ];
-    keys.iter().any(|k| event.contains(k) && (statement.contains(k) || schema.contains(k)))
+    keys.iter()
+        .any(|k| event.contains(k) && (statement.contains(k) || schema.contains(k)))
 }

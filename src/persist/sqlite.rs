@@ -5,13 +5,13 @@ use std::path::Path;
 use std::ptr;
 
 use crate::core::model::{Attribution, Channel, DriftKind, Mood, SchemaCenter, TraceStatus};
-use crate::persist::snapshot::{
-    assemble_archive, assemble_axiom, assemble_drift, assemble_mood, assemble_trace,
-    channel_token, drift_token, layer_token, parse_layer_token, profile_from_params,
-    profile_params_line, status_token, Snapshot,
-};
 use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
+use crate::persist::snapshot::{
+    assemble_archive, assemble_axiom, assemble_drift, assemble_mood, assemble_trace, channel_token,
+    drift_token, layer_token, parse_layer_token, profile_from_params, profile_params_line,
+    status_token, Snapshot,
+};
 
 #[repr(C)]
 struct Sqlite3 {
@@ -25,7 +25,9 @@ extern "C" {
     fn sqlite3_exec(
         db: *mut Sqlite3,
         sql: *const c_char,
-        cb: Option<unsafe extern "C" fn(*mut c_void, c_int, *mut *mut c_char, *mut *mut c_char) -> c_int>,
+        cb: Option<
+            unsafe extern "C" fn(*mut c_void, c_int, *mut *mut c_char, *mut *mut c_char) -> c_int,
+        >,
         arg: *mut c_void,
         errmsg: *mut *mut c_char,
     ) -> c_int;
@@ -75,7 +77,10 @@ impl Db {
             if !raw.is_null() {
                 unsafe { sqlite3_close(raw) };
             }
-            return Err(io::Error::new(io::ErrorKind::Other, format!("sqlite open {rc}")));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("sqlite open {rc}"),
+            ));
         }
         unsafe { sqlite3_busy_timeout(raw, 5000) };
         Ok(Self { raw })
@@ -86,7 +91,10 @@ impl Db {
         let mut raw = ptr::null_mut();
         let rc = unsafe { sqlite3_prepare_v2(self.raw, c.as_ptr(), -1, &mut raw, ptr::null_mut()) };
         if rc != 0 || raw.is_null() {
-            return Err(io::Error::new(io::ErrorKind::Other, format!("sqlite prepare {rc}")));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("sqlite prepare {rc}"),
+            ));
         }
         Ok(Stmt { raw })
     }
@@ -99,7 +107,9 @@ impl Db {
             let msg = if err.is_null() {
                 format!("sqlite {rc}")
             } else {
-                let s = unsafe { CStr::from_ptr(err) }.to_string_lossy().into_owned();
+                let s = unsafe { CStr::from_ptr(err) }
+                    .to_string_lossy()
+                    .into_owned();
                 unsafe { sqlite3_free(err as *mut c_void) };
                 s
             };
@@ -126,7 +136,10 @@ impl Stmt {
         let c = CString::new(s).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
         let rc = unsafe { sqlite3_bind_text(self.raw, i, c.as_ptr(), -1, SQLITE_TRANSIENT) };
         if rc != 0 {
-            Err(io::Error::new(io::ErrorKind::Other, format!("bind_text {rc}")))
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("bind_text {rc}"),
+            ))
         } else {
             Ok(())
         }
@@ -140,7 +153,10 @@ impl Stmt {
     fn bind_i64(&self, i: c_int, v: i64) -> io::Result<()> {
         let rc = unsafe { sqlite3_bind_int64(self.raw, i, v) };
         if rc != 0 {
-            Err(io::Error::new(io::ErrorKind::Other, format!("bind_i64 {rc}")))
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("bind_i64 {rc}"),
+            ))
         } else {
             Ok(())
         }
@@ -148,7 +164,10 @@ impl Stmt {
     fn bind_f64(&self, i: c_int, v: f64) -> io::Result<()> {
         let rc = unsafe { sqlite3_bind_double(self.raw, i, v) };
         if rc != 0 {
-            Err(io::Error::new(io::ErrorKind::Other, format!("bind_f64 {rc}")))
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("bind_f64 {rc}"),
+            ))
         } else {
             Ok(())
         }
@@ -156,7 +175,10 @@ impl Stmt {
     fn bind_null(&self, i: c_int) -> io::Result<()> {
         let rc = unsafe { sqlite3_bind_null(self.raw, i) };
         if rc != 0 {
-            Err(io::Error::new(io::ErrorKind::Other, format!("bind_null {rc}")))
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("bind_null {rc}"),
+            ))
         } else {
             Ok(())
         }
@@ -164,7 +186,10 @@ impl Stmt {
     fn step_done(&self) -> io::Result<()> {
         let rc = unsafe { sqlite3_step(self.raw) };
         if rc != SQLITE_DONE {
-            return Err(io::Error::new(io::ErrorKind::Other, format!("sqlite step {rc}")));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("sqlite step {rc}"),
+            ));
         }
         unsafe { sqlite3_reset(self.raw) };
         Ok(())
@@ -179,65 +204,83 @@ impl Drop for Stmt {
     }
 }
 
-
-
-
 /// Only missing columns are altered; every other migration error is propagated.
 fn migrate(db: &Db) -> io::Result<()> {
-    let version = query(db, "PRAGMA user_version")?[0][0].parse::<u32>().map_err(|e| io::Error::new(io::ErrorKind::InvalidData,e))?;
-    if version > 1 { return Err(io::Error::new(io::ErrorKind::InvalidData,"unsupported SQLite schema version")); }
+    let version = query(db, "PRAGMA user_version")?[0][0]
+        .parse::<u32>()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if version > 1 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "unsupported SQLite schema version",
+        ));
+    }
     db.exec("BEGIN IMMEDIATE")?;
     let transaction = Transaction(db);
     db.exec("CREATE TABLE IF NOT EXISTS centers(schema TEXT PRIMARY KEY, core TEXT, valence REAL, weight REAL, hub_id TEXT, axiom_id TEXT); CREATE TABLE IF NOT EXISTS operations(trace_id TEXT, kind TEXT, at INTEGER, confidence REAL, origin TEXT, center TEXT, before TEXT, after TEXT, source_traces TEXT, source_axioms TEXT);")?;
-    for (table,column,kind) in [
-        ("traces","personal","TEXT"),
-        ("traces","core","TEXT"),
-        ("traces","anchor","REAL"),
-        ("traces","detach_strikes","INTEGER"),
-        ("traces","attribution","TEXT"),
-        ("traces","self_congruence","REAL"),
-        ("traces","confidence","REAL"),
-        ("traces","suppressed","INTEGER"),
-        ("axioms","layer","TEXT"),
-        ("archives","released_from","TEXT"),
-        ("archives","released_at","INTEGER"),
-        ("archives","core","TEXT"),
-        ("traces","observation_id","TEXT"),
-        ("traces","semantic_claim","TEXT"),
-        ("traces","semantic_entities","TEXT"),
-        ("traces","semantic_actions","TEXT"),
-        ("traces","semantic_polarity","REAL"),
-        ("traces","semantic_confidence","REAL"),
-        ("traces","reality_claim","TEXT"),
-        ("traces","source","TEXT"),
-        ("traces","reality_verifiable","INTEGER"),
-        ("traces","stake_kind","TEXT"),
-        ("traces","bearer","TEXT"),
-        ("traces","loss_kind","TEXT"),
-        ("traces","stake_mark","TEXT"),
-        ("traces","absence","TEXT"),
-        ("axioms","stake_kind","TEXT"),
-        ("axioms","bearer","TEXT"),
-        ("axioms","loss_kind","TEXT"),
-        ("axioms","stake_mark","TEXT"),
-        ("traces","interpretation_statement","TEXT"),
-        ("traces","interpretation_valence","REAL"),
-        ("traces","interpretation_confidence","REAL"),
+    for (table, column, kind) in [
+        ("traces", "personal", "TEXT"),
+        ("traces", "core", "TEXT"),
+        ("traces", "anchor", "REAL"),
+        ("traces", "detach_strikes", "INTEGER"),
+        ("traces", "attribution", "TEXT"),
+        ("traces", "self_congruence", "REAL"),
+        ("traces", "confidence", "REAL"),
+        ("traces", "suppressed", "INTEGER"),
+        ("axioms", "layer", "TEXT"),
+        ("archives", "released_from", "TEXT"),
+        ("archives", "released_at", "INTEGER"),
+        ("archives", "core", "TEXT"),
+        ("traces", "observation_id", "TEXT"),
+        ("traces", "semantic_claim", "TEXT"),
+        ("traces", "semantic_entities", "TEXT"),
+        ("traces", "semantic_actions", "TEXT"),
+        ("traces", "semantic_polarity", "REAL"),
+        ("traces", "semantic_confidence", "REAL"),
+        ("traces", "reality_claim", "TEXT"),
+        ("traces", "source", "TEXT"),
+        ("traces", "reality_verifiable", "INTEGER"),
+        ("traces", "stake_kind", "TEXT"),
+        ("traces", "bearer", "TEXT"),
+        ("traces", "loss_kind", "TEXT"),
+        ("traces", "stake_mark", "TEXT"),
+        ("traces", "absence", "TEXT"),
+        ("axioms", "stake_kind", "TEXT"),
+        ("axioms", "bearer", "TEXT"),
+        ("axioms", "loss_kind", "TEXT"),
+        ("axioms", "stake_mark", "TEXT"),
+        ("traces", "interpretation_statement", "TEXT"),
+        ("traces", "interpretation_valence", "REAL"),
+        ("traces", "interpretation_confidence", "REAL"),
     ] {
         let columns = query(db, &format!("PRAGMA table_info({table})"))?;
-        if columns.is_empty() { return Err(io::Error::new(io::ErrorKind::InvalidData,format!("missing table {table}"))); }
-        if !columns.iter().any(|row| row.get(1).map(String::as_str) == Some(column)) {
+        if columns.is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("missing table {table}"),
+            ));
+        }
+        if !columns
+            .iter()
+            .any(|row| row.get(1).map(String::as_str) == Some(column))
+        {
             db.exec(&format!("ALTER TABLE {table} ADD COLUMN {column} {kind}"))?;
         }
     }
-    if version == 0 { db.exec("PRAGMA user_version=1")?; }
+    if version == 0 {
+        db.exec("PRAGMA user_version=1")?;
+    }
     db.exec("COMMIT")?;
     drop(transaction);
     Ok(())
 }
 /// Roll back on any early return, including failed COMMIT. Harmless after success.
 struct Transaction<'a>(&'a Db);
-impl Drop for Transaction<'_> { fn drop(&mut self) { let _ = self.0.exec("ROLLBACK"); } }
+impl Drop for Transaction<'_> {
+    fn drop(&mut self) {
+        let _ = self.0.exec("ROLLBACK");
+    }
+}
 
 pub fn save(
     path: &Path,
@@ -256,8 +299,15 @@ pub fn save(
         }
     }
     let db = Db::open(path)?;
-    let version = query(&db,"PRAGMA user_version")?[0][0].parse::<u32>().map_err(|e|io::Error::new(io::ErrorKind::InvalidData,e))?;
-    if version > 1 { return Err(io::Error::new(io::ErrorKind::InvalidData,"unsupported SQLite schema version")); }
+    let version = query(&db, "PRAGMA user_version")?[0][0]
+        .parse::<u32>()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    if version > 1 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "unsupported SQLite schema version",
+        ));
+    }
     db.exec("PRAGMA synchronous=FULL")?;
     db.exec(
         "CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT NOT NULL);
@@ -299,17 +349,29 @@ pub fn save(
             .map(|ts| ts.to_string())
             .unwrap_or_else(|| "-".into());
         for (k, v) in [
-            ("embedding_space", store.embedding_space.as_deref().unwrap_or("")),
+            (
+                "embedding_space",
+                store.embedding_space.as_deref().unwrap_or(""),
+            ),
             ("name", profile.name.as_str()),
             ("params", &profile_params_line(profile)),
-            ("mood", &format!("{} {} {}", mood.valence, mood.arousal, mood.disgust)),
+            (
+                "mood",
+                &format!("{} {} {}", mood.valence, mood.arousal, mood.disgust),
+            ),
             ("last_deep", deep.as_str()),
             ("merges_refused", &store.merges_refused.to_string()),
             ("pending", &store.pending_night.join("\t")),
             ("normative", &store.normative.pack()),
             ("associations", &store.associations.encode()),
             ("observation_evidence", &store.observation_evidence.encode()),
-            ("clock", &format!("{clock_jump} {clock_scale} {} {clock_origin}", if clock_detached { 1 } else { 0 })),
+            (
+                "clock",
+                &format!(
+                    "{clock_jump} {clock_scale} {} {clock_origin}",
+                    if clock_detached { 1 } else { 0 }
+                ),
+            ),
             (
                 "cut",
                 &format!(
@@ -320,7 +382,9 @@ pub fn save(
                     if cut.reconstruct { 1 } else { 0 },
                     if cut.util_to_strength { 1 } else { 0 },
                     if cut.merge_support_veto { 1 } else { 0 },
-                    if cut.support_signal {1}else{0},if cut.schema_prototype {1}else{0},if cut.self_cues {1}else{0},
+                    if cut.support_signal { 1 } else { 0 },
+                    if cut.schema_prototype { 1 } else { 0 },
+                    if cut.self_cues { 1 } else { 0 },
                 ),
             ),
             (
@@ -406,15 +470,15 @@ pub fn save(
         q_tr.bind_text(33, &t.reality.claim)?;
         q_tr.bind_i64(34, if t.reality.verifiable { 1 } else { 0 })?;
         q_tr.bind_text(35, &t.source)?;
-        q_tr.bind_text(36,t.stake_kind.token())?;
-        q_tr.bind_text(37,t.bearer.token())?;
-        q_tr.bind_text(38,t.loss_kind.token())?;
-        q_tr.bind_text(39,&t.stake_mark)?;
-        q_tr.bind_text(40,t.absence.map(|a|a.token()).unwrap_or("-"))?;
+        q_tr.bind_text(36, t.stake_kind.token())?;
+        q_tr.bind_text(37, t.bearer.token())?;
+        q_tr.bind_text(38, t.loss_kind.token())?;
+        q_tr.bind_text(39, &t.stake_mark)?;
+        q_tr.bind_text(40, t.absence.map(|a| a.token()).unwrap_or("-"))?;
         q_tr.bind_text(41, &t.interpretation.statement)?;
         q_tr.bind_f64(42, t.interpretation.valence as f64)?;
         q_tr.bind_f64(43, t.interpretation.confidence as f64)?;
-        q_tr.bind_text(44,&t.personal.pack())?;
+        q_tr.bind_text(44, &t.personal.pack())?;
         q_tr.step_done()?;
         for c in &t.cues {
             q_cue.bind_text(1, &t.id)?;
@@ -461,10 +525,10 @@ pub fn save(
         q_ax.bind_opt_text(6, a.superseded_by.as_deref())?;
         q_ax.bind_opt_text(7, a.schema.as_deref())?;
         q_ax.bind_text(8, layer_token(a.layer))?;
-        q_ax.bind_text(9,a.stake_kind.token())?;
-        q_ax.bind_text(10,a.bearer.token())?;
-        q_ax.bind_text(11,a.loss_kind.token())?;
-        q_ax.bind_text(12,&a.stake_mark)?;
+        q_ax.bind_text(9, a.stake_kind.token())?;
+        q_ax.bind_text(10, a.bearer.token())?;
+        q_ax.bind_text(11, a.loss_kind.token())?;
+        q_ax.bind_text(12, &a.stake_mark)?;
         q_ax.step_done()?;
         for tid in &a.support_trace_ids {
             q_sup.bind_text(1, &a.id)?;
@@ -539,7 +603,9 @@ fn query(db: &Db, sql: &str) -> io::Result<Vec<Vec<String>>> {
         let msg = if err.is_null() {
             format!("sqlite query {rc}")
         } else {
-            let s = unsafe { CStr::from_ptr(err) }.to_string_lossy().into_owned();
+            let s = unsafe { CStr::from_ptr(err) }
+                .to_string_lossy()
+                .into_owned();
             unsafe { sqlite3_free(err as *mut c_void) };
             s
         };
@@ -590,10 +656,14 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
     let mood = parse_mood(&mood_s)?;
     let mut store = MemoryStore::new();
     store.embedding_space = embedding_space;
-    if !normative_s.is_empty() { store.normative = crate::normative::NormativeMemory::unpack(&normative_s).map_err(|e|io::Error::new(io::ErrorKind::InvalidData,e))?; }
-    if !observation_evidence_s.is_empty() {
-        store.observation_evidence = crate::core::evidence::ObservationEvidence::decode(&observation_evidence_s)
+    if !normative_s.is_empty() {
+        store.normative = crate::normative::NormativeMemory::unpack(&normative_s)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    }
+    if !observation_evidence_s.is_empty() {
+        store.observation_evidence =
+            crate::core::evidence::ObservationEvidence::decode(&observation_evidence_s)
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     }
     if !associations_s.is_empty() {
         store.associations = crate::core::association::AssociationGraph::decode(&associations_s)
@@ -606,7 +676,11 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
         store.merges_refused = refused_s.parse().unwrap_or(0);
     }
     if !pending_s.is_empty() {
-        store.pending_night = pending_s.split('\t').filter(|s| !s.is_empty()).map(|s| s.to_string()).collect();
+        store.pending_night = pending_s
+            .split('\t')
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .collect();
     }
     if !measures_s.is_empty() {
         for row in measures_s.split('\t') {
@@ -792,8 +866,14 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
 
     for id in legacy_interpretations {
         let t = store.traces.get_mut(&id).unwrap();
-        if let Some(op) = t.operations.iter().rev().find(|o| o.kind == "reinterpret" || o.kind == "encode") {
-            t.interpretation.statement = op.after.clone(); t.interpretation.confidence = op.confidence;
+        if let Some(op) = t
+            .operations
+            .iter()
+            .rev()
+            .find(|o| o.kind == "reinterpret" || o.kind == "encode")
+        {
+            t.interpretation.statement = op.after.clone();
+            t.interpretation.confidence = op.confidence;
         }
     }
     for row in query(&db, "SELECT trace_id,cue FROM cues")? {
@@ -822,7 +902,7 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             ));
         }
     }
-    let mut legacy_axioms=std::collections::HashSet::new();
+    let mut legacy_axioms = std::collections::HashSet::new();
     for row in query(
         &db,
         "SELECT id,statement,valence,strength,created,superseded_by,schema,layer,stake_kind,bearer,loss_kind,stake_mark FROM axioms",
@@ -856,7 +936,11 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             a.support_trace_ids.push(row[1].clone());
         }
     }
-    for a in store.axioms.values_mut(){if legacy_axioms.contains(&a.id){crate::persist::snapshot::recover_legacy_axiom_context(a,&store.traces);}}
+    for a in store.axioms.values_mut() {
+        if legacy_axioms.contains(&a.id) {
+            crate::persist::snapshot::recover_legacy_axiom_context(a, &store.traces);
+        }
+    }
     for row in query(
         &db,
         "SELECT schema,core,valence,weight,hub_id,axiom_id FROM centers",
@@ -889,10 +973,22 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
         profile,
         mood,
         store,
-        clock_jump: clock_s.split_whitespace().nth(0).and_then(|s| s.parse().ok()).unwrap_or(0),
-        clock_scale: clock_s.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(24),
+        clock_jump: clock_s
+            .split_whitespace()
+            .nth(0)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
+        clock_scale: clock_s
+            .split_whitespace()
+            .nth(1)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(24),
         clock_detached: clock_s.split_whitespace().nth(2) == Some("1"),
-        clock_origin: clock_s.split_whitespace().nth(3).and_then(|s| s.parse().ok()).unwrap_or(0),
+        clock_origin: clock_s
+            .split_whitespace()
+            .nth(3)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
         cut: {
             let p: Vec<&str> = cut_s.split_whitespace().collect();
             let mut cut = crate::core::model::OrganCut::full();
@@ -903,9 +999,15 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
                 cut.reconstruct = p[3] == "1";
                 cut.util_to_strength = p[4] == "1";
                 cut.merge_support_veto = p[5] == "1";
-                if let Some(v)=p.get(6){cut.support_signal=*v=="1";}
-                if let Some(v)=p.get(7){cut.schema_prototype=*v=="1";}
-                if let Some(v)=p.get(8){cut.self_cues=*v=="1";}
+                if let Some(v) = p.get(6) {
+                    cut.support_signal = *v == "1";
+                }
+                if let Some(v) = p.get(7) {
+                    cut.schema_prototype = *v == "1";
+                }
+                if let Some(v) = p.get(8) {
+                    cut.self_cues = *v == "1";
+                }
             }
             cut
         },
@@ -913,13 +1015,19 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
 }
 
 fn parse_profile(name: &str, rest: &str) -> io::Result<EntityProfile> {
-    let n: Vec<f32> = rest.split_whitespace().filter_map(|s| s.parse().ok()).collect();
+    let n: Vec<f32> = rest
+        .split_whitespace()
+        .filter_map(|s| s.parse().ok())
+        .collect();
     profile_from_params(name, &n)
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "params sqlite incomplets"))
 }
 
 fn parse_mood(s: &str) -> io::Result<Mood> {
-    let p: Vec<f32> = s.split_whitespace().filter_map(|x| x.parse().ok()).collect();
+    let p: Vec<f32> = s
+        .split_whitespace()
+        .filter_map(|x| x.parse().ok())
+        .collect();
     if p.len() < 3 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "mood sqlite"));
     }
@@ -927,7 +1035,10 @@ fn parse_mood(s: &str) -> io::Result<Mood> {
 }
 
 fn pack_emb(v: &[f32]) -> String {
-    v.iter().map(|x| format!("{x}")).collect::<Vec<_>>().join(",")
+    v.iter()
+        .map(|x| format!("{x}"))
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 fn unpack_emb(s: &str) -> Vec<f32> {
@@ -985,41 +1096,107 @@ fn parse_dk(s: &str) -> DriftKind {
     }
 }
 
-#[cfg(test)]mod axiom_legacy_tests{
- use super::*;
- #[test]fn old_axiom_table_migrates_on_load_and_save(){
-  let p=std::env::temp_dir().join(format!("selmem-old-axioms-{}.db",std::process::id()));let _=std::fs::remove_file(&p);
-  let m=crate::SelectiveMemory::open(&p,EntityProfile::new("test")).unwrap();m.save().unwrap();drop(m);
-  {let db=Db::open(&p).unwrap();db.exec("ALTER TABLE axioms RENAME TO axioms_new; CREATE TABLE axioms(id TEXT PRIMARY KEY,statement TEXT,valence REAL,strength REAL,created INTEGER,superseded_by TEXT,schema TEXT,layer TEXT); DROP TABLE axioms_new;").unwrap();}
-  // Save creates the remaining old-compatible schema and migrates columns.
-  let m=crate::SelectiveMemory::open(&p,EntityProfile::new("test")).unwrap();m.save().unwrap();
-  let db=Db::open(&p).unwrap();let cols=query(&db,"PRAGMA table_info(axioms)").unwrap();for name in ["stake_kind","bearer","loss_kind","stake_mark"]{assert!(cols.iter().any(|r|r[1]==name));}drop(db);std::fs::remove_file(p).unwrap();
- }
+#[cfg(test)]
+mod axiom_legacy_tests {
+    use super::*;
+    #[test]
+    fn old_axiom_table_migrates_on_load_and_save() {
+        let p = std::env::temp_dir().join(format!("selmem-old-axioms-{}.db", std::process::id()));
+        let _ = std::fs::remove_file(&p);
+        let m = crate::SelectiveMemory::open(&p, EntityProfile::new("test")).unwrap();
+        m.save().unwrap();
+        drop(m);
+        {
+            let db = Db::open(&p).unwrap();
+            db.exec("ALTER TABLE axioms RENAME TO axioms_new; CREATE TABLE axioms(id TEXT PRIMARY KEY,statement TEXT,valence REAL,strength REAL,created INTEGER,superseded_by TEXT,schema TEXT,layer TEXT); DROP TABLE axioms_new;").unwrap();
+        }
+        // Save creates the remaining old-compatible schema and migrates columns.
+        let m = crate::SelectiveMemory::open(&p, EntityProfile::new("test")).unwrap();
+        m.save().unwrap();
+        let db = Db::open(&p).unwrap();
+        let cols = query(&db, "PRAGMA table_info(axioms)").unwrap();
+        for name in ["stake_kind", "bearer", "loss_kind", "stake_mark"] {
+            assert!(cols.iter().any(|r| r[1] == name));
+        }
+        drop(db);
+        std::fs::remove_file(p).unwrap();
+    }
 }
 
 #[cfg(test)]
 mod integrity_migrations {
     use super::*;
-    fn path(label: &str) -> std::path::PathBuf { std::env::temp_dir().join(format!("selmem-sql-{label}-{}.db",std::process::id())) }
-    fn initial(p:&Path)->crate::SelectiveMemory { let _=std::fs::remove_file(p);let mut m=crate::SelectiveMemory::open(p,EntityProfile::new("before")).unwrap();let mut e=crate::EncodeInput::new("Mira delivered six batteries.");e.permanence=1.;m.live_with(e);m.save().unwrap();m }
+    fn path(label: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("selmem-sql-{label}-{}.db", std::process::id()))
+    }
+    fn initial(p: &Path) -> crate::SelectiveMemory {
+        let _ = std::fs::remove_file(p);
+        let mut m = crate::SelectiveMemory::open(p, EntityProfile::new("before")).unwrap();
+        let mut e = crate::EncodeInput::new("Mira delivered six batteries.");
+        e.permanence = 1.;
+        m.live_with(e);
+        m.save().unwrap();
+        m
+    }
     #[test]
     fn old_archives_and_trace_columns_migrate_together() {
-        let p=path("old");drop(initial(&p));
-        {let db=Db::open(&p).unwrap();db.exec("ALTER TABLE archives DROP COLUMN released_from;ALTER TABLE archives DROP COLUMN released_at;ALTER TABLE archives DROP COLUMN core;ALTER TABLE traces DROP COLUMN interpretation_statement;ALTER TABLE traces DROP COLUMN interpretation_valence;ALTER TABLE traces DROP COLUMN interpretation_confidence;PRAGMA user_version=0;").unwrap();}
-        let m=crate::SelectiveMemory::open(&p,EntityProfile::new("fallback")).unwrap();assert_eq!(m.profile.name,"before");assert!(m.store.traces.values().all(|t|!t.interpretation.statement.is_empty()));m.save().unwrap();drop(m);std::fs::remove_file(p).unwrap();
+        let p = path("old");
+        drop(initial(&p));
+        {
+            let db = Db::open(&p).unwrap();
+            db.exec("ALTER TABLE archives DROP COLUMN released_from;ALTER TABLE archives DROP COLUMN released_at;ALTER TABLE archives DROP COLUMN core;ALTER TABLE traces DROP COLUMN interpretation_statement;ALTER TABLE traces DROP COLUMN interpretation_valence;ALTER TABLE traces DROP COLUMN interpretation_confidence;PRAGMA user_version=0;").unwrap();
+        }
+        let m = crate::SelectiveMemory::open(&p, EntityProfile::new("fallback")).unwrap();
+        assert_eq!(m.profile.name, "before");
+        assert!(m
+            .store
+            .traces
+            .values()
+            .all(|t| !t.interpretation.statement.is_empty()));
+        m.save().unwrap();
+        drop(m);
+        std::fs::remove_file(p).unwrap();
     }
     #[test]
     fn migration_failure_rolls_back_prior_alterations() {
-        let p=path("rollback-migrate");drop(initial(&p));
-        {let db=Db::open(&p).unwrap();db.exec("ALTER TABLE traces DROP COLUMN core; DROP TABLE archives; CREATE VIEW archives AS SELECT 'a' AS id; PRAGMA user_version=0;").unwrap();}
-        assert!(load(&p).is_err());let db=Db::open(&p).unwrap();let cols=query(&db,"PRAGMA table_info(traces)").unwrap();assert!(!cols.iter().any(|r|r[1]=="core"));assert_eq!(query(&db,"PRAGMA user_version").unwrap()[0][0],"0");drop(db);std::fs::remove_file(p).unwrap();
+        let p = path("rollback-migrate");
+        drop(initial(&p));
+        {
+            let db = Db::open(&p).unwrap();
+            db.exec("ALTER TABLE traces DROP COLUMN core; DROP TABLE archives; CREATE VIEW archives AS SELECT 'a' AS id; PRAGMA user_version=0;").unwrap();
+        }
+        assert!(load(&p).is_err());
+        let db = Db::open(&p).unwrap();
+        let cols = query(&db, "PRAGMA table_info(traces)").unwrap();
+        assert!(!cols.iter().any(|r| r[1] == "core"));
+        assert_eq!(query(&db, "PRAGMA user_version").unwrap()[0][0], "0");
+        drop(db);
+        std::fs::remove_file(p).unwrap();
     }
     #[test]
     fn failed_save_rolls_back_deletes_and_preserves_previous_snapshot() {
-        let p=path("rollback-save");let mut m=initial(&p);
-        {let db=Db::open(&p).unwrap();db.exec("CREATE TRIGGER reject_write BEFORE INSERT ON traces BEGIN SELECT RAISE(ABORT,'injected storage failure'); END;").unwrap();}
-        m.profile.name="after".into();assert!(m.save().is_err());let loaded=load(&p).unwrap();assert_eq!(loaded.profile.name,"before");assert_eq!(loaded.store.traces.len(),1);std::fs::remove_file(p).unwrap();
+        let p = path("rollback-save");
+        let mut m = initial(&p);
+        {
+            let db = Db::open(&p).unwrap();
+            db.exec("CREATE TRIGGER reject_write BEFORE INSERT ON traces BEGIN SELECT RAISE(ABORT,'injected storage failure'); END;").unwrap();
+        }
+        m.profile.name = "after".into();
+        assert!(m.save().is_err());
+        let loaded = load(&p).unwrap();
+        assert_eq!(loaded.profile.name, "before");
+        assert_eq!(loaded.store.traces.len(), 1);
+        std::fs::remove_file(p).unwrap();
     }
     #[test]
-    fn future_schema_is_rejected() {let p=path("future");drop(initial(&p));{let db=Db::open(&p).unwrap();db.exec("PRAGMA user_version=99").unwrap();}assert!(load(&p).is_err());std::fs::remove_file(p).unwrap();}
+    fn future_schema_is_rejected() {
+        let p = path("future");
+        drop(initial(&p));
+        {
+            let db = Db::open(&p).unwrap();
+            db.exec("PRAGMA user_version=99").unwrap();
+        }
+        assert!(load(&p).is_err());
+        std::fs::remove_file(p).unwrap();
+    }
 }

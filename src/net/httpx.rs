@@ -44,8 +44,13 @@ fn curl_post(url: &str, api_key: Option<&str>, body: &str) -> Result<String, Str
     let mut child = cmd.spawn().map_err(|e| e.to_string())?;
     if let Some(stdin) = child.stdin.as_mut() {
         if let Some(k) = api_key {
-            let line = format!("header = \"Authorization: Bearer {}\"\n", k.replace('"', ""));
-            stdin.write_all(line.as_bytes()).map_err(|e| e.to_string())?;
+            let line = format!(
+                "header = \"Authorization: Bearer {}\"\n",
+                k.replace('"', "")
+            );
+            stdin
+                .write_all(line.as_bytes())
+                .map_err(|e| e.to_string())?;
         }
     }
     let out = child.wait_with_output().map_err(|e| e.to_string())?;
@@ -93,19 +98,27 @@ fn raw_http_post(url: &str, api_key: Option<&str>, body: &str) -> Result<String,
     req.push_str("\r\n");
     req.push_str(body);
     let mut stream = TcpStream::connect(format!("{host}:{port}")).map_err(|e| e.to_string())?;
-    let timeout = crate::config::Config::get().http_timeout().parse().unwrap_or(60);
+    let timeout = crate::config::Config::get()
+        .http_timeout()
+        .parse()
+        .unwrap_or(60);
     stream
         .set_read_timeout(Some(Duration::from_secs(timeout)))
         .ok();
     stream
         .set_write_timeout(Some(Duration::from_secs(timeout)))
         .ok();
-    stream.write_all(req.as_bytes()).map_err(|e| e.to_string())?;
+    stream
+        .write_all(req.as_bytes())
+        .map_err(|e| e.to_string())?;
     let mut raw = String::new();
     stream.read_to_string(&mut raw).map_err(|e| e.to_string())?;
     let (status, body) = split_raw_status(&raw);
     if !(200..300).contains(&status) {
-        return Err(format!("HTTP {status}: {}", body.chars().take(180).collect::<String>()));
+        return Err(format!(
+            "HTTP {status}: {}",
+            body.chars().take(180).collect::<String>()
+        ));
     }
     Ok(body)
 }
@@ -116,7 +129,10 @@ fn split_http_status(raw: &str) -> Result<String, String> {
         let body = raw[..i].trim_end_matches(['\n', '\r']).to_string();
         let code: u16 = raw[i + MARK.len()..].trim().parse().unwrap_or(0);
         if !(200..300).contains(&code) {
-            return Err(format!("HTTP {code}: {}", body.chars().take(180).collect::<String>()));
+            return Err(format!(
+                "HTTP {code}: {}",
+                body.chars().take(180).collect::<String>()
+            ));
         }
         return Ok(body);
     }
@@ -233,7 +249,13 @@ fn content_in_first_choice(after_colon: &str) -> Option<String> {
     }
     // message.content — not a sibling "content" on a tool/reasoning blob.
     if let Some(msg) = object_after_key(inner, "message") {
-        for key in ["content", "reasoning_content", "reasoning", "text", "output"] {
+        for key in [
+            "content",
+            "reasoning_content",
+            "reasoning",
+            "text",
+            "output",
+        ] {
             if let Some(s) = first_string_field(msg, key) {
                 if !s.trim().is_empty() {
                     return Some(s);
@@ -319,7 +341,9 @@ pub fn parse_json_string(s: &str) -> Option<(String, usize)> {
                         if let Ok(cp) = u32::from_str_radix(hex, 16) {
                             if (0xD800..=0xDBFF).contains(&cp) {
                                 let tail = s.get(i + 6..i + 12).unwrap_or("");
-                                if let Some(low) = tail.strip_prefix("\\u").and_then(|h| u32::from_str_radix(&h[..4.min(h.len())], 16).ok()) {
+                                if let Some(low) = tail.strip_prefix("\\u").and_then(|h| {
+                                    u32::from_str_radix(&h[..4.min(h.len())], 16).ok()
+                                }) {
                                     if (0xDC00..=0xDFFF).contains(&low) && tail.len() >= 6 {
                                         let u = 0x10000 + (((cp - 0xD800) << 10) | (low - 0xDC00));
                                         if let Some(ch) = char::from_u32(u) {
@@ -420,9 +444,13 @@ mod tests {
     fn http_status_rejects_missing_response_and_preserves_server_errors() {
         assert!(super::split_http_status("\n__SELMEM_HTTP__:000").is_err());
         assert!(super::split_http_status("\n__SELMEM_HTTP__:invalid").is_err());
-        assert_eq!(super::split_http_status("ok\n__SELMEM_HTTP__:200").unwrap(), "ok");
+        assert_eq!(
+            super::split_http_status("ok\n__SELMEM_HTTP__:200").unwrap(),
+            "ok"
+        );
         assert!(super::split_http_status("busy\n__SELMEM_HTTP__:429")
-            .unwrap_err().contains("HTTP 429: busy"));
+            .unwrap_err()
+            .contains("HTTP 429: busy"));
     }
 
     #[test]
@@ -437,29 +465,83 @@ mod tests {
 /// Reasoning/tool text and sibling choices cannot stand in for a missing label.
 pub(crate) fn scorer_answer(body: &str) -> Option<String> {
     fn object_end(s: &str) -> Option<usize> {
-        let mut depth=0usize; let mut quoted=false; let mut escaped=false;
-        for (i,c) in s.char_indices() {
-            if quoted { if escaped {escaped=false;} else if c=='\\' {escaped=true;} else if c=='"' {quoted=false;} continue; }
-            match c { '"'=>quoted=true, '{'|'['=>depth+=1, '}'|']'=>{depth=depth.checked_sub(1)?;if depth==0{return Some(i+1);}},_=>{} }
-        }
-        None
-    }
-    fn field<'a>(s: &'a str, key:&str)->Option<&'a str> {
-        let mut depth=0usize; let mut i=0;
-        while i<s.len() {
-            match s.as_bytes()[i] {
-                b'"'=>{let (name,n)=parse_json_string(&s[i..])?;let after=s[i+n..].trim_start();if depth==1 && name==key && after.starts_with(':'){return Some(after[1..].trim_start());}i+=n;},
-                b'{'|b'['=>{depth+=1;i+=1;},b'}'|b']'=>{depth=depth.checked_sub(1)?;i+=1;},_=>i+=1,
+        let mut depth = 0usize;
+        let mut quoted = false;
+        let mut escaped = false;
+        for (i, c) in s.char_indices() {
+            if quoted {
+                if escaped {
+                    escaped = false;
+                } else if c == '\\' {
+                    escaped = true;
+                } else if c == '"' {
+                    quoted = false;
+                }
+                continue;
+            }
+            match c {
+                '"' => quoted = true,
+                '{' | '[' => depth += 1,
+                '}' | ']' => {
+                    depth = depth.checked_sub(1)?;
+                    if depth == 0 {
+                        return Some(i + 1);
+                    }
+                }
+                _ => {}
             }
         }
         None
     }
-    let body=body.trim(); if !body.starts_with('{') || object_end(body)?!=body.len(){return None;}
-    let choices=field(body,"choices")?;if !choices.starts_with('['){return None;}
-    let first=choices[1..].trim_start();if !first.starts_with('{'){return None;}
-    let first=&first[..object_end(first)?];let message=field(first,"message")?;if !message.starts_with('{'){return None;}
-    let message=&message[..object_end(message)?];let answer=field(message,"content")?;
-    if !answer.starts_with('"'){return None;}parse_json_string(answer).map(|(s,_)|s)
+    fn field<'a>(s: &'a str, key: &str) -> Option<&'a str> {
+        let mut depth = 0usize;
+        let mut i = 0;
+        while i < s.len() {
+            match s.as_bytes()[i] {
+                b'"' => {
+                    let (name, n) = parse_json_string(&s[i..])?;
+                    let after = s[i + n..].trim_start();
+                    if depth == 1 && name == key && after.starts_with(':') {
+                        return Some(after[1..].trim_start());
+                    }
+                    i += n;
+                }
+                b'{' | b'[' => {
+                    depth += 1;
+                    i += 1;
+                }
+                b'}' | b']' => {
+                    depth = depth.checked_sub(1)?;
+                    i += 1;
+                }
+                _ => i += 1,
+            }
+        }
+        None
+    }
+    let body = body.trim();
+    if !body.starts_with('{') || object_end(body)? != body.len() {
+        return None;
+    }
+    let choices = field(body, "choices")?;
+    if !choices.starts_with('[') {
+        return None;
+    }
+    let first = choices[1..].trim_start();
+    if !first.starts_with('{') {
+        return None;
+    }
+    let first = &first[..object_end(first)?];
+    let message = field(first, "message")?;
+    if !message.starts_with('{') {
+        return None;
+    }
+    let message = &message[..object_end(message)?];
+    let answer = field(message, "content")?;
+    if !answer.starts_with('"') {
+        return None;
+    }
+    parse_json_string(answer).map(|(s, _)| s)
 }
 
 #[cfg(test)]

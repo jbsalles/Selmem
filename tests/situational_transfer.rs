@@ -239,14 +239,40 @@ fn incidental_temporal_word_cannot_promote_adoption_into_conflict_evidence() {
     ingest(&mut mem, MIXED, "hike");
     mem.sleep_deep();
     let (_, dump) = mem.remember_with(query, RecallWrite::ReadOnly, RecallBias::Observed, &[]);
-    let adoption_ids: Vec<_> = mem.store.traces.values().filter(|t| t.observation_id.as_deref() == Some("adoption")).map(|t| t.id.clone()).collect();
-    assert!(dump.candidates.iter().filter(|t| adoption_ids.contains(&t.trace_id)).all(|t| t.score == 0.0));
+    let adoption_ids: Vec<_> = mem
+        .store
+        .traces
+        .values()
+        .filter(|t| t.observation_id.as_deref() == Some("adoption"))
+        .map(|t| t.id.clone())
+        .collect();
+    assert!(dump
+        .candidates
+        .iter()
+        .filter(|t| adoption_ids.contains(&t.trace_id))
+        .all(|t| t.score == 0.0));
     assert!(dump.selected.iter().all(|id| !adoption_ids.contains(id)));
-    assert!(dump.selected.iter().any(|id| mem.store.traces[id].core.contains("upset")), "relevant stored social-harm interpretation must still transfer");
+    assert!(
+        dump.selected
+            .iter()
+            .any(|id| mem.store.traces[id].core.contains("upset")),
+        "relevant stored social-harm interpretation must still transfer"
+    );
     let r = ReadingProfile::for_query(&mem.store, &Mood::default(), query, &dump.selected);
     assert!(r.salient.is_empty());
     assert_eq!(r.valence_bias, 0.0);
     // A real adoption query can still recall the same trace.
-    let (_, adoption_dump) = mem.remember_with("What did Caroline say about adoption and building a family?", RecallWrite::ReadOnly, RecallBias::Observed, &[]);
-    assert!(adoption_dump.selected.iter().any(|id| adoption_ids.contains(id)), "direct adoption queries must still recall the observation");
+    let (_, adoption_dump) = mem.remember_with(
+        "What did Caroline say about adoption and building a family?",
+        RecallWrite::ReadOnly,
+        RecallBias::Observed,
+        &[],
+    );
+    assert!(
+        adoption_dump
+            .selected
+            .iter()
+            .any(|id| adoption_ids.contains(id)),
+        "direct adoption queries must still recall the observation"
+    );
 }

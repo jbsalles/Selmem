@@ -52,7 +52,9 @@ impl ReadingProfile {
                 if !selected.contains(id) {
                     continue;
                 }
-                if !crate::recall::interpretation::subject_matches(store, t, query) { continue; }
+                if !crate::recall::interpretation::subject_matches(store, t, query) {
+                    continue;
+                }
                 if crate::recall::interpretation::for_query(t, query).is_some() {
                     // The observed hypothesis is supplied below. Do not turn
                     // its speaker's affect into Claire's personal disposition.
@@ -80,14 +82,19 @@ impl ReadingProfile {
                 scoped.axioms.insert(id.clone(), a.clone());
             }
         }
-        let mut interpretations: Vec<_> = selected.iter().filter_map(|id| store.traces.get(id))
+        let mut interpretations: Vec<_> = selected
+            .iter()
+            .filter_map(|id| store.traces.get(id))
             .filter(|t| crate::recall::interpretation::subject_matches(store, t, query))
             .filter_map(|t| crate::recall::interpretation::for_query(t, query).map(|i| i.render(t)))
             .collect();
         interpretations.sort();
         interpretations.dedup();
         if scoped.traces.is_empty() {
-            return Self { axioms: interpretations, ..Self::empty() };
+            return Self {
+                axioms: interpretations,
+                ..Self::empty()
+            };
         }
         let observed_only = scoped
             .traces

@@ -2,13 +2,11 @@
 
 //! Does not read ORGAN-INTEGRITY.md. A pass here is a runtime fact.
 
-mod support;
 #[path = "support/rewrite.rs"]
 mod rewrite;
+mod support;
 
-use selmem::{
-    Attribution, Channel, EncodeInput, EntityProfile, SelectiveMemory, TraceStatus,
-};
+use selmem::{Attribution, Channel, EncodeInput, EntityProfile, SelectiveMemory, TraceStatus};
 
 fn keep(mem: &mut SelectiveMemory, event: &str) -> String {
     let mut ev = EncodeInput::new(event);
@@ -40,8 +38,15 @@ fn sqlite_keeps_diverged_claim_ops_and_observation() {
     assert_eq!(t.semantic.claim, "I was left.");
     assert_ne!(t.reality.claim, t.semantic.claim);
     assert!(t.observation_id.is_some());
-    assert!(t.operations.iter().any(|op| op.kind == "encode" && op.origin == selmem::EvidenceOrigin::Event));
-    assert!(t.valence <= 1.0, "out of range valence survived sqlite: {}", t.valence);
+    assert!(t
+        .operations
+        .iter()
+        .any(|op| op.kind == "encode" && op.origin == selmem::EvidenceOrigin::Event));
+    assert!(
+        t.valence <= 1.0,
+        "out of range valence survived sqlite: {}",
+        t.valence
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -54,13 +59,22 @@ fn post_p1_file_without_attr_does_not_load() {
     let _ = keep(&mut mem, "The Lyon file is cancelled in front of the team.");
     mem.save().unwrap();
     let raw = std::fs::read_to_string(&path).unwrap();
-    assert!(raw.contains("attr "), "writer must emit attr, not rely on a default");
-    let stripped = raw.replace("attr none\n", "").replace("attr external\n", "").replace("attr internal\n", "");
+    assert!(
+        raw.contains("attr "),
+        "writer must emit attr, not rely on a default"
+    );
+    let stripped = raw
+        .replace("attr none\n", "")
+        .replace("attr external\n", "")
+        .replace("attr internal\n", "");
     assert!(!stripped.contains("attr "), "strip failed");
     let bad = dir.join("no-attr.selmem");
     std::fs::write(&bad, stripped).unwrap();
     let loaded = SelectiveMemory::open(bad.to_str().unwrap(), EntityProfile::tender("x"));
-    assert!(loaded.is_err(), "missing attr on a current file must not become None");
+    assert!(
+        loaded.is_err(),
+        "missing attr on a current file must not become None"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -93,7 +107,10 @@ fn merge_does_not_import_a_word_absent_from_the_hour() {
     }
     selmem::dream::merge::run(&mut mem.store, &mem.profile, &selmem::HashEmbedder, false);
     let core = mem.store.traces[&keep].core.clone();
-    assert!(!core.to_lowercase().contains("unicornword"), "foreign core word entered keeper: {core}");
+    assert!(
+        !core.to_lowercase().contains("unicornword"),
+        "foreign core word entered keeper: {core}"
+    );
 }
 
 #[test]
@@ -194,9 +211,16 @@ fn outside_score_stores_the_label_and_does_not_write() {
     assert_eq!(t.core, core);
     assert_eq!(t.gist, gist);
     assert_eq!(t.operations.len(), ops);
-    assert!(mem.store.measures.iter().any(|(tid, lab)| tid == &id && lab == "contradict"));
+    assert!(mem
+        .store
+        .measures
+        .iter()
+        .any(|(tid, lab)| tid == &id && lab == "contradict"));
     assert_eq!(
-        selmem::accept_core("Paul betray Jean.", "Paul did not betray Jean, but Jean betrayed Paul."),
+        selmem::accept_core(
+            "Paul betray Jean.",
+            "Paul did not betray Jean, but Jean betrayed Paul."
+        ),
         None
     );
     assert_eq!(
@@ -223,7 +247,9 @@ fn sealed_token_loads_active_and_leaves_a_drift() {
     assert_ne!(t.status, TraceStatus::Myth);
     assert!(t.channel == Channel::Selfhood || t.channel == Channel::World);
     assert!(
-        t.drifts.iter().any(|d| d.note.contains("sealed token loaded as active")),
+        t.drifts
+            .iter()
+            .any(|d| d.note.contains("sealed token loaded as active")),
         "sealed load left no trace: {:?}",
         t.drifts.iter().map(|d| &d.note).collect::<Vec<_>>()
     );

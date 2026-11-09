@@ -296,9 +296,37 @@ pub fn parse_layer_token(s: &str) -> AxiomLayer {
 
 /// Recover fields absent in legacy containers only from unanimous lived supports.
 /// Existing explicit context, traits, missing or mixed support are left untouched.
-pub(crate) fn recover_legacy_axiom_context(a:&mut IdentityAxiom,traces:&std::collections::HashMap<String,MemoryTrace>) {
-    if a.layer==AxiomLayer::Trait || a.stake_kind!=StakeKind::None || a.bearer!=Bearer::World || a.loss_kind!=LossKind::None || !a.stake_mark.is_empty() || a.support_trace_ids.is_empty(){return;}
-    let Some(first)=traces.get(&a.support_trace_ids[0]) else{return};
-    if first.schema!=a.schema || !a.support_trace_ids.iter().all(|id|traces.get(id).is_some_and(|t|t.schema==a.schema && t.stake_kind==first.stake_kind && t.bearer==first.bearer && t.loss_kind==first.loss_kind && t.stake_mark==first.stake_mark)){return;}
-    a.stake_kind=first.stake_kind;a.bearer=first.bearer;a.loss_kind=first.loss_kind;a.stake_mark=first.stake_mark.clone();
+pub(crate) fn recover_legacy_axiom_context(
+    a: &mut IdentityAxiom,
+    traces: &std::collections::HashMap<String, MemoryTrace>,
+) {
+    if a.layer == AxiomLayer::Trait
+        || a.stake_kind != StakeKind::None
+        || a.bearer != Bearer::World
+        || a.loss_kind != LossKind::None
+        || !a.stake_mark.is_empty()
+        || a.support_trace_ids.is_empty()
+    {
+        return;
+    }
+    let Some(first) = traces.get(&a.support_trace_ids[0]) else {
+        return;
+    };
+    if first.schema != a.schema
+        || !a.support_trace_ids.iter().all(|id| {
+            traces.get(id).is_some_and(|t| {
+                t.schema == a.schema
+                    && t.stake_kind == first.stake_kind
+                    && t.bearer == first.bearer
+                    && t.loss_kind == first.loss_kind
+                    && t.stake_mark == first.stake_mark
+            })
+        })
+    {
+        return;
+    }
+    a.stake_kind = first.stake_kind;
+    a.bearer = first.bearer;
+    a.loss_kind = first.loss_kind;
+    a.stake_mark = first.stake_mark.clone();
 }

@@ -1,5 +1,6 @@
-use selmem::{Channel, EncodeInput, EntityProfile, MemoryContextFormat,
-    MemoryContextOptions, SelectiveMemory};
+use selmem::{
+    Channel, EncodeInput, EntityProfile, MemoryContextFormat, MemoryContextOptions, SelectiveMemory,
+};
 
 fn fixture(format: MemoryContextFormat, words: usize) -> SelectiveMemory {
     let mut profile = EntityProfile::new("observer");
@@ -16,9 +17,13 @@ fn fixture(format: MemoryContextFormat, words: usize) -> SelectiveMemory {
         input.permanence = 1.0;
         assert!(memory.live_with(input).kept);
     }
-    memory.set_memory_context_options(MemoryContextOptions {
-        format, words, ..Default::default()
-    }).unwrap();
+    memory
+        .set_memory_context_options(MemoryContextOptions {
+            format,
+            words,
+            ..Default::default()
+        })
+        .unwrap();
     memory
 }
 
@@ -29,18 +34,33 @@ fn structured_conversation_delivers_four_selected_episodes() {
     assert_eq!(draft.dump.selected.len(), 4);
     let context = draft.memory_reply().filtered_context();
     assert_eq!(context.episodes.len(), 4);
-    assert_eq!(context.episodes.iter().map(|e| &e.trace_id).collect::<Vec<_>>(),
-        draft.dump.selected.iter().collect::<Vec<_>>());
+    assert_eq!(
+        context
+            .episodes
+            .iter()
+            .map(|e| &e.trace_id)
+            .collect::<Vec<_>>(),
+        draft.dump.selected.iter().collect::<Vec<_>>()
+    );
     assert!(context.content_words <= 128);
 }
 
 #[test]
 fn legacy_keeps_two_scenes_and_structured_keeps_its_word_limit() {
     let mut memory = fixture(MemoryContextFormat::Legacy, 128);
-    assert_eq!(memory.open_mouth("Tell me about the workshop.").memories.len(), 2);
+    assert_eq!(
+        memory
+            .open_mouth("Tell me about the workshop.")
+            .memories
+            .len(),
+        2
+    );
     let mut memory = fixture(MemoryContextFormat::Structured, 32);
     let draft = memory.open_mouth("Tell me about the workshop.");
     let context = draft.memory_reply().filtered_context();
     assert!(context.content_words <= 32);
-    assert!(context.episodes.iter().all(|e| draft.dump.selected.contains(&e.trace_id)));
+    assert!(context
+        .episodes
+        .iter()
+        .all(|e| draft.dump.selected.contains(&e.trace_id)));
 }

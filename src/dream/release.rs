@@ -6,10 +6,7 @@ use crate::core::store::MemoryStore;
 
 /// Scene already gone, charge unused, no living axiom leans on it → leave the book.
 /// Not a cap. Benches never reach this state.
-pub fn run(
-    store: &mut MemoryStore,
-    previously_latent: &std::collections::HashSet<String>,
-) -> u32 {
+pub fn run(store: &mut MemoryStore, previously_latent: &std::collections::HashSet<String>) -> u32 {
     let supported: std::collections::HashSet<String> = store
         .living_axioms()
         .into_iter()
@@ -19,7 +16,8 @@ pub fn run(
         .traces
         .values()
         .filter(|t| {
-            t.personal.protected_until<=crate::now_secs() && previously_latent.contains(&t.id)
+            t.personal.protected_until <= crate::now_secs()
+                && previously_latent.contains(&t.id)
                 && !t.channel.verbatim()
                 && t.status == TraceStatus::Latent
                 && t.access < 0.10

@@ -24,7 +24,10 @@ fn hazard_falls_as_the_hour_survives() {
 
     mem.store.traces.get_mut(&id).unwrap().created_at = now_secs().saturating_sub(30 * 86_400);
     let month = hazard_scale(mem.store.traces.get(&id).unwrap());
-    assert!(month < young / 5.0, "a month must be much safer: {month} vs {young}");
+    assert!(
+        month < young / 5.0,
+        "a month must be much safer: {month} vs {young}"
+    );
 
     mem.store.traces.get_mut(&id).unwrap().created_at = now_secs().saturating_sub(365 * 86_400);
     let year = hazard_scale(mem.store.traces.get(&id).unwrap());
@@ -37,7 +40,8 @@ fn recent_use_weighs_more_than_an_old_use() {
     mem.live("the board kept the credit");
     let id = mem.store.active_ids()[0].clone();
     let fresh = behavior_weight(mem.store.traces.get(&id).unwrap());
-    mem.store.traces.get_mut(&id).unwrap().last_recalled_at = Some(now_secs().saturating_sub(200 * 86_400));
+    mem.store.traces.get_mut(&id).unwrap().last_recalled_at =
+        Some(now_secs().saturating_sub(200 * 86_400));
     let old = behavior_weight(mem.store.traces.get(&id).unwrap());
     assert!(fresh > 0.9, "just encoded weighs near 1: {fresh}");
     assert!(old < fresh, "an old use weighs less: {old} vs {fresh}");
@@ -48,12 +52,19 @@ fn recent_use_weighs_more_than_an_old_use() {
 fn cloud_uses_a_neighbor_weighted_by_age() {
     let mut mem = SelectiveMemory::new(EntityProfile::tender(""));
     mem.live_with(hour("the long assignment starts monday", "work", 0.9));
-    mem.live_with(hour("the mandate was withdrawn after the draft", "work", 0.9));
+    mem.live_with(hour(
+        "the mandate was withdrawn after the draft",
+        "work",
+        0.9,
+    ));
     let ids = mem.store.active_ids();
-    let neighbor = ids.iter().find(|id| {
-        mem.store.traces.get(*id).unwrap().gist.contains("mandate")
-            || mem.store.traces.get(*id).unwrap().core.contains("mandate")
-    }).cloned();
+    let neighbor = ids
+        .iter()
+        .find(|id| {
+            mem.store.traces.get(*id).unwrap().gist.contains("mandate")
+                || mem.store.traces.get(*id).unwrap().core.contains("mandate")
+        })
+        .cloned();
     let Some(neighbor) = neighbor else {
         panic!("mandate hour was not kept");
     };
@@ -61,16 +72,33 @@ fn cloud_uses_a_neighbor_weighted_by_age() {
     assert!(!cloud.is_empty(), "the query must touch a cloud");
     let neighbor_share = statement_share(&cloud, "the mandate was withdrawn");
     let touched_share = statement_share(&cloud, "the long assignment starts monday");
-    assert!(touched_share > neighbor_share, "the touched hour must outweigh a schema neighbor");
-    assert!(neighbor_share < 0.5, "one shared token must not weigh like a real anchor: {neighbor_share}");
-    assert!(statement_anchored(&cloud, "the long assignment starts monday"));
+    assert!(
+        touched_share > neighbor_share,
+        "the touched hour must outweigh a schema neighbor"
+    );
+    assert!(
+        neighbor_share < 0.5,
+        "one shared token must not weigh like a real anchor: {neighbor_share}"
+    );
+    assert!(statement_anchored(
+        &cloud,
+        "the long assignment starts monday"
+    ));
     let young = cloud.get("assignment").copied().unwrap_or(0.0);
 
-    mem.store.traces.get_mut(&neighbor).unwrap().created_at = now_secs().saturating_sub(400 * 86_400);
-    mem.store.traces.get_mut(&neighbor).unwrap().last_recalled_at = Some(now_secs().saturating_sub(400 * 86_400));
+    mem.store.traces.get_mut(&neighbor).unwrap().created_at =
+        now_secs().saturating_sub(400 * 86_400);
+    mem.store
+        .traces
+        .get_mut(&neighbor)
+        .unwrap()
+        .last_recalled_at = Some(now_secs().saturating_sub(400 * 86_400));
     let aged = context_cloud_pub(&mem.store, "assignment");
     let still = aged.get("assignment").copied().unwrap_or(0.0);
-    assert!(still <= young + 0.001, "aging a neighbor must not raise the seed token");
+    assert!(
+        still <= young + 0.001,
+        "aging a neighbor must not raise the seed token"
+    );
     let _ = advance_hours;
 }
 

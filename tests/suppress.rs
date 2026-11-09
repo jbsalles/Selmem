@@ -22,9 +22,7 @@ fn suppress_leaves_the_hour_but_drops_it_from_remember() {
     p.encode_threshold = 0.05;
     let mut mem = SelectiveMemory::new(p);
     let id = mem
-        .live_with(hour(
-            "The project was cancelled in front of the team.",
-        ))
+        .live_with(hour("The project was cancelled in front of the team."))
         .trace_id
         .expect("kept");
     let hits = mem.remember("cancelled project team");
@@ -152,11 +150,7 @@ fn low_confidence_mouth_speaks_the_core() {
         t.fidelity = 0.80;
         t.access = 0.90;
     }
-    let spoken = RuleNarrator.reconstruct(
-        &mem.store.traces[&id],
-        &mem.mood,
-        "what happened",
-    );
+    let spoken = RuleNarrator.reconstruct(&mem.store.traces[&id], &mem.mood, "what happened");
     assert_eq!(spoken, mem.store.traces[&id].core);
 }
 

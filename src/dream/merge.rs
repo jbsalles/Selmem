@@ -15,7 +15,11 @@ pub fn run(
 ) -> u32 {
     let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for t in store.traces.values() {
-        if t.channel != Channel::Selfhood || t.personal.role!=crate::SelfRole::Episode || !t.personal.appraisal.prior_ids.is_empty() || t.personal.protected_until>now_secs() {
+        if t.channel != Channel::Selfhood
+            || t.personal.role != crate::SelfRole::Episode
+            || !t.personal.appraisal.prior_ids.is_empty()
+            || t.personal.protected_until > now_secs()
+        {
             continue;
         }
         if let Some(s) = &t.schema {
@@ -38,7 +42,9 @@ pub fn run(
             continue;
         };
         for other in ids.iter().filter(|id| *id != &keep) {
-            if store.normative.get(&keep).is_some() || store.normative.get(other).is_some() { continue; }
+            if store.normative.get(&keep).is_some() || store.normative.get(other).is_some() {
+                continue;
+            }
             let similar = {
                 let a = store.traces.get(&keep);
                 let b = store.traces.get(other);
@@ -75,9 +81,16 @@ pub fn run(
                 store.merges_refused = store.merges_refused.saturating_add(1);
                 continue;
             }
-            let supported=store.observation_evidence.groups.contains_key(&keep)||store.observation_evidence.groups.contains_key(other);
-            if supported && (store.traces[&keep].source!=store.traces[other].source
-                || !store.observation_evidence.can_transfer_on_merge(&keep,other)) {continue;}
+            let supported = store.observation_evidence.groups.contains_key(&keep)
+                || store.observation_evidence.groups.contains_key(other);
+            if supported
+                && (store.traces[&keep].source != store.traces[other].source
+                    || !store
+                        .observation_evidence
+                        .can_transfer_on_merge(&keep, other))
+            {
+                continue;
+            }
             let other_clone = store.traces.get(other).cloned();
             let Some(src) = other_clone else { continue };
             let keep_charged = !store.living_axiom_ids_for(&keep).is_empty();

@@ -3,15 +3,15 @@ use std::io::{self, BufRead, BufReader, Seek, SeekFrom, Write};
 use std::path::Path;
 
 use crate::core::model::{
-    Attribution, AxiomLayer, Channel, DriftEvent, DriftKind, EvidenceOrigin, IdentityAxiom, MemoryOperation, MemoryTrace, Mood,
-    SchemaCenter, TraceStatus,
+    Attribution, AxiomLayer, Channel, DriftEvent, DriftKind, EvidenceOrigin, IdentityAxiom,
+    MemoryOperation, MemoryTrace, Mood, SchemaCenter, TraceStatus,
 };
 use crate::core::profile::EntityProfile;
 use crate::core::store::MemoryStore;
 use crate::persist::snapshot::{
-    assemble_archive, assemble_axiom, assemble_drift, assemble_mood, assemble_trace,
-    channel_token, drift_token, layer_token, parse_layer_token, profile_from_params,
-    profile_params_line, status_token, Snapshot,
+    assemble_archive, assemble_axiom, assemble_drift, assemble_mood, assemble_trace, channel_token,
+    drift_token, layer_token, parse_layer_token, profile_from_params, profile_params_line,
+    status_token, Snapshot,
 };
 
 const MAGIC: &str = "SELMEM1";
@@ -34,10 +34,18 @@ pub fn save(
     }
     static SERIAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let mut name = path.as_os_str().to_os_string();
-    name.push(format!(".{}.{}.tmp", std::process::id(), SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
+    name.push(format!(
+        ".{}.{}.tmp",
+        std::process::id(),
+        SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
     let tmp = std::path::PathBuf::from(name);
     struct Cleanup(std::path::PathBuf);
-    impl Drop for Cleanup { fn drop(&mut self) { let _ = fs::remove_file(&self.0); } }
+    impl Drop for Cleanup {
+        fn drop(&mut self) {
+            let _ = fs::remove_file(&self.0);
+        }
+    }
     let mut w = File::options().write(true).create_new(true).open(&tmp)?;
     let _cleanup = Cleanup(tmp.clone());
     {
@@ -50,9 +58,11 @@ pub fn save(
         writeln!(w, "archives {}", store.archives.len())?;
         for a in store.archives.values() {
             match (a.released_from.as_deref(), a.released_at) {
-                (Some(from), Some(at)) => {
-                    writeln!(w, "archive {} {} released {} {}", a.id, a.created_at, at, from)?
-                }
+                (Some(from), Some(at)) => writeln!(
+                    w,
+                    "archive {} {} released {} {}",
+                    a.id, a.created_at, at, from
+                )?,
                 _ => writeln!(w, "archive {} {}", a.id, a.created_at)?,
             }
             write_blob(&mut w, &a.source)?;
@@ -113,13 +123,19 @@ pub fn save(
             flag(cut.reconstruct),
             flag(cut.util_to_strength),
             flag(cut.merge_support_veto),
-            flag(cut.support_signal),flag(cut.schema_prototype),flag(cut.self_cues),
+            flag(cut.support_signal),
+            flag(cut.schema_prototype),
+            flag(cut.self_cues),
         )?;
         writeln!(w, "embedding-space")?;
         write_blob(&mut w, store.embedding_space.as_deref().unwrap_or(""))?;
         writeln!(w, "normative {}", store.normative.pack())?;
         writeln!(w, "associations {}", store.associations.encode())?;
-        writeln!(w, "observation-evidence {}", store.observation_evidence.encode())?;
+        writeln!(
+            w,
+            "observation-evidence {}",
+            store.observation_evidence.encode()
+        )?;
         writeln!(w, "measures {}", store.measures.len())?;
         for (id, label) in &store.measures {
             writeln!(w, "measure {id} {label}")?;
@@ -128,7 +144,12 @@ pub fn save(
     }
     fs::rename(&tmp, path)?;
     #[cfg(unix)]
-    File::open(path.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new(".")))?.sync_all()?;
+    File::open(
+        path.parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or(Path::new(".")),
+    )?
+    .sync_all()?;
     Ok(())
 }
 
@@ -139,7 +160,10 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
         return fail(format!("fichier inconnu: {magic}"));
     }
     let mut profile = read_profile(&mut r)?;
-    if next_line_starts_with(&mut r, "profile-name")? { read_line(&mut r)?; profile.name = read_blob(&mut r)?; }
+    if next_line_starts_with(&mut r, "profile-name")? {
+        read_line(&mut r)?;
+        profile.name = read_blob(&mut r)?;
+    }
     let mood = parse_mood(&read_line(&mut r)?)?;
 
     let mut store = MemoryStore::new();
@@ -159,7 +183,10 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
             rec.released_at = parse_u64(p[4]).ok();
             rec.released_from = Some(p[5].to_string());
         }
-        if next_line_starts_with(&mut r, "archive-core")? { read_line(&mut r)?; rec.core = read_blob(&mut r)?; }
+        if next_line_starts_with(&mut r, "archive-core")? {
+            read_line(&mut r)?;
+            rec.core = read_blob(&mut r)?;
+        }
         store.archives.insert(id, rec);
     }
 
@@ -171,8 +198,10 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
 
     let n_ax = parse_count(&read_line(&mut r)?, "axioms")?;
     for _ in 0..n_ax {
-        let (mut a,legacy) = read_axiom(&mut r)?;
-        if legacy{crate::persist::snapshot::recover_legacy_axiom_context(&mut a, &store.traces);}
+        let (mut a, legacy) = read_axiom(&mut r)?;
+        if legacy {
+            crate::persist::snapshot::recover_legacy_axiom_context(&mut a, &store.traces);
+        }
         store.axioms.insert(a.id.clone(), a);
     }
 
@@ -253,14 +282,16 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
                 } else if line == "embedding-space" {
                     store.embedding_space = empty_none(read_blob(&mut r)?);
                 } else if let Some(rest) = line.strip_prefix("normative ") {
-                    store.normative = crate::normative::NormativeMemory::unpack(rest).map_err(invalid)?;
+                    store.normative =
+                        crate::normative::NormativeMemory::unpack(rest).map_err(invalid)?;
                 } else if let Some(rest) = line.strip_prefix("associations ") {
                     store.associations =
                         crate::core::association::AssociationGraph::decode(rest)
                             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
                 } else if let Some(rest) = line.strip_prefix("observation-evidence ") {
-                    store.observation_evidence = crate::core::evidence::ObservationEvidence::decode(rest)
-                        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+                    store.observation_evidence =
+                        crate::core::evidence::ObservationEvidence::decode(rest)
+                            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
                 } else if let Some(rest) = line.strip_prefix("measures ") {
                     let n: usize = rest.trim().parse().unwrap_or(0);
                     for _ in 0..n {
@@ -281,9 +312,15 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
                         cut.reconstruct = p[3] == "1";
                         cut.util_to_strength = p[4] == "1";
                         cut.merge_support_veto = p[5] == "1";
-                if let Some(v)=p.get(6){cut.support_signal=*v=="1";}
-                if let Some(v)=p.get(7){cut.schema_prototype=*v=="1";}
-                if let Some(v)=p.get(8){cut.self_cues=*v=="1";}
+                        if let Some(v) = p.get(6) {
+                            cut.support_signal = *v == "1";
+                        }
+                        if let Some(v) = p.get(7) {
+                            cut.schema_prototype = *v == "1";
+                        }
+                        if let Some(v) = p.get(8) {
+                            cut.self_cues = *v == "1";
+                        }
                     }
                 }
             }
@@ -306,7 +343,11 @@ pub fn load(path: &Path) -> io::Result<Snapshot> {
 }
 
 fn flag(on: bool) -> u8 {
-    if on { 1 } else { 0 }
+    if on {
+        1
+    } else {
+        0
+    }
 }
 
 fn write_profile(w: &mut impl Write, p: &EntityProfile) -> io::Result<()> {
@@ -321,7 +362,9 @@ fn read_profile(r: &mut impl BufRead) -> io::Result<EntityProfile> {
         .ok_or_else(|| invalid("profile manquant"))?
         .to_string();
     let raw = read_line(r)?;
-    let rest = raw.strip_prefix("params ").ok_or_else(|| invalid("params manquants"))?;
+    let rest = raw
+        .strip_prefix("params ")
+        .ok_or_else(|| invalid("params manquants"))?;
     let n: Vec<f32> = rest
         .split_whitespace()
         .map(|s| s.parse::<f32>())
@@ -418,7 +461,11 @@ fn write_trace(w: &mut impl Write, t: &MemoryTrace) -> io::Result<()> {
         write_blob(w, &op.source_trace_ids.join("\t"))?;
         write_blob(w, &op.source_axiom_ids.join("\t"))?;
     }
-    writeln!(w, "interpretation {} {}", t.interpretation.valence, t.interpretation.confidence)?;
+    writeln!(
+        w,
+        "interpretation {} {}",
+        t.interpretation.valence, t.interpretation.confidence
+    )?;
     write_blob(w, &t.interpretation.statement)?;
     writeln!(w, "sem {} {}", t.semantic.polarity, t.semantic.confidence)?;
     write_blob(w, &t.semantic.claim)?;
@@ -430,7 +477,8 @@ fn write_trace(w: &mut impl Write, t: &MemoryTrace) -> io::Result<()> {
     write_blob(w, t.observation_id.as_deref().unwrap_or(""))?;
     writeln!(w, "source")?;
     write_blob(w, &t.source)?;
-    writeln!(w,"personal-v3")?;write_blob(w,&t.personal.pack())?;
+    writeln!(w, "personal-v3")?;
+    write_blob(w, &t.personal.pack())?;
     Ok(())
 }
 
@@ -552,7 +600,8 @@ fn read_trace(r: &mut (impl BufRead + Seek)) -> io::Result<MemoryTrace> {
             if bits[4] != "-" {
                 trace.stake_mark = bits[4].to_string();
             }
-            trace.absence = crate::core::model::AbsenceKind::parse(bits.get(5).copied().unwrap_or("-"));
+            trace.absence =
+                crate::core::model::AbsenceKind::parse(bits.get(5).copied().unwrap_or("-"));
         }
     } else {
         let (k, b, l, m, a) = crate::core::model::derive_stake(&trace.gist);
@@ -562,10 +611,18 @@ fn read_trace(r: &mut (impl BufRead + Seek)) -> io::Result<MemoryTrace> {
         trace.stake_mark = m;
         trace.absence = a;
     }
-    if next_line_starts_with(r, "stake-mark")? { read_line(r)?; trace.stake_mark = read_blob(r)?; }
+    if next_line_starts_with(r, "stake-mark")? {
+        read_line(r)?;
+        trace.stake_mark = read_blob(r)?;
+    }
     if next_line_starts_with(r, "ops ")? {
         let line = read_line(r).unwrap_or_default();
-        let n: usize = line.strip_prefix("ops ").unwrap_or("0").trim().parse().unwrap_or(0);
+        let n: usize = line
+            .strip_prefix("ops ")
+            .unwrap_or("0")
+            .trim()
+            .parse()
+            .unwrap_or(0);
         for _ in 0..n {
             let head = read_line(r)?;
             let hp: Vec<&str> = head.split_whitespace().collect();
@@ -573,8 +630,15 @@ fn read_trace(r: &mut (impl BufRead + Seek)) -> io::Result<MemoryTrace> {
                 return fail(format!("malformed op: {head}"));
             }
             let center = if next_line_starts_with(r, "op-center")? {
-                read_line(r)?; empty_none(read_blob(r)?)
-            } else { if hp[5] == "-" { None } else { Some(hp[5].to_string()) } };
+                read_line(r)?;
+                empty_none(read_blob(r)?)
+            } else {
+                if hp[5] == "-" {
+                    None
+                } else {
+                    Some(hp[5].to_string())
+                }
+            };
             let before = read_blob(r)?;
             let after = read_blob(r)?;
             let traces = read_blob(r)?;
@@ -582,8 +646,16 @@ fn read_trace(r: &mut (impl BufRead + Seek)) -> io::Result<MemoryTrace> {
             trace.operations.push(MemoryOperation {
                 kind: hp[1].replace('_', " "),
                 at: hp[2].parse().unwrap_or(0),
-                source_trace_ids: if traces.is_empty() { Vec::new() } else { traces.split('\t').map(|s| s.to_string()).collect() },
-                source_axiom_ids: if axioms.is_empty() { Vec::new() } else { axioms.split('\t').map(|s| s.to_string()).collect() },
+                source_trace_ids: if traces.is_empty() {
+                    Vec::new()
+                } else {
+                    traces.split('\t').map(|s| s.to_string()).collect()
+                },
+                source_axiom_ids: if axioms.is_empty() {
+                    Vec::new()
+                } else {
+                    axioms.split('\t').map(|s| s.to_string()).collect()
+                },
                 source_center: center,
                 before,
                 after,
@@ -592,14 +664,21 @@ fn read_trace(r: &mut (impl BufRead + Seek)) -> io::Result<MemoryTrace> {
             });
         }
     }
-    if let Some(op) = trace.operations.iter().rev().find(|o| o.kind == "encode" || o.kind == "reinterpret") {
+    if let Some(op) = trace
+        .operations
+        .iter()
+        .rev()
+        .find(|o| o.kind == "encode" || o.kind == "reinterpret")
+    {
         trace.interpretation.statement = op.after.clone();
         trace.interpretation.confidence = op.confidence;
     }
     if next_line_starts_with(r, "interpretation ")? {
         let line = read_line(r)?;
         let p: Vec<_> = line.split_whitespace().collect();
-        if p.len() != 3 { return fail("malformed interpretation"); }
+        if p.len() != 3 {
+            return fail("malformed interpretation");
+        }
         trace.interpretation.valence = p[1].parse().map_err(invalid)?;
         trace.interpretation.confidence = p[2].parse().map_err(invalid)?;
         trace.interpretation.statement = read_blob(r)?;
@@ -610,15 +689,30 @@ fn read_trace(r: &mut (impl BufRead + Seek)) -> io::Result<MemoryTrace> {
         let claim = read_blob(r)?;
         let entities = read_blob(r)?;
         let actions = read_blob(r)?;
-        trace.semantic.polarity = hp.get(1).and_then(|s| s.parse().ok()).unwrap_or(trace.valence);
+        trace.semantic.polarity = hp
+            .get(1)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(trace.valence);
         trace.semantic.confidence = hp.get(2).and_then(|s| s.parse().ok()).unwrap_or(0.55);
         trace.semantic.claim = claim;
-        trace.semantic.entities = if entities.is_empty() { Vec::new() } else { entities.split('\t').map(|s| s.to_string()).collect() };
-        trace.semantic.actions = if actions.is_empty() { Vec::new() } else { actions.split('\t').map(|s| s.to_string()).collect() };
+        trace.semantic.entities = if entities.is_empty() {
+            Vec::new()
+        } else {
+            entities.split('\t').map(|s| s.to_string()).collect()
+        };
+        trace.semantic.actions = if actions.is_empty() {
+            Vec::new()
+        } else {
+            actions.split('\t').map(|s| s.to_string()).collect()
+        };
     }
     if next_line_starts_with(r, "real ")? {
         let line = read_line(r).unwrap_or_default();
-        let verifiable = line.split_whitespace().nth(1).map(|s| s == "1").unwrap_or(false);
+        let verifiable = line
+            .split_whitespace()
+            .nth(1)
+            .map(|s| s == "1")
+            .unwrap_or(false);
         let claim = read_blob(r)?;
         trace.reality.verifiable = verifiable;
         trace.reality.claim = claim;
@@ -633,7 +727,13 @@ fn read_trace(r: &mut (impl BufRead + Seek)) -> io::Result<MemoryTrace> {
         read_line(r)?;
         trace.source = read_blob(r)?;
     }
-    if next_line_starts_with(r,"personal-v3")?||next_line_starts_with(r,"personal-v2")?||next_line_starts_with(r,"personal-v1")? {read_line(r)?;trace.personal=crate::SelfMemory::unpack(&read_blob(r)?).map_err(invalid)?;}
+    if next_line_starts_with(r, "personal-v3")?
+        || next_line_starts_with(r, "personal-v2")?
+        || next_line_starts_with(r, "personal-v1")?
+    {
+        read_line(r)?;
+        trace.personal = crate::SelfMemory::unpack(&read_blob(r)?).map_err(invalid)?;
+    }
     if p.get(3) == Some(&"sealed") {
         trace.drifts.push(assemble_drift(
             crate::core::model::DriftKind::Fade,
@@ -689,7 +789,11 @@ fn read_center(r: &mut impl BufRead) -> io::Result<SchemaCenter> {
         schema: p[1].replace('_', " "),
         weight: parse_f(p[2])?,
         valence: parse_f(p[3])?,
-        hub_id: if p[4] == "-" { None } else { Some(p[4].to_string()) },
+        hub_id: if p[4] == "-" {
+            None
+        } else {
+            Some(p[4].to_string())
+        },
         axiom_id: match p.get(5) {
             Some(&"-") | None => None,
             Some(s) => Some((*s).to_string()),
@@ -710,7 +814,13 @@ fn write_axiom(w: &mut impl Write, a: &IdentityAxiom) -> io::Result<()> {
         a.superseded_by.as_deref().unwrap_or("-"),
         layer_token(a.layer)
     )?;
-    writeln!(w, "axiom_context {} {} {}", a.stake_kind.token(), a.bearer.token(), a.loss_kind.token())?;
+    writeln!(
+        w,
+        "axiom_context {} {} {}",
+        a.stake_kind.token(),
+        a.bearer.token(),
+        a.loss_kind.token()
+    )?;
     write_blob(w, &a.stake_mark)?;
     write_blob(w, &a.statement)?;
     write_blob(w, a.schema.as_deref().unwrap_or(""))?;
@@ -720,7 +830,7 @@ fn write_axiom(w: &mut impl Write, a: &IdentityAxiom) -> io::Result<()> {
     Ok(())
 }
 
-fn read_axiom(r: &mut (impl BufRead + Seek)) -> io::Result<(IdentityAxiom,bool)> {
+fn read_axiom(r: &mut (impl BufRead + Seek)) -> io::Result<(IdentityAxiom, bool)> {
     let header = read_line(r)?;
     let p: Vec<&str> = header.split_whitespace().collect();
     if p.len() < 7 || p[0] != "axiom" {
@@ -733,12 +843,21 @@ fn read_axiom(r: &mut (impl BufRead + Seek)) -> io::Result<(IdentityAxiom,bool)>
     };
     let n_sup: usize = p[5].parse().map_err(invalid)?;
     let context = if next_line_starts_with(r, "axiom_context ")? {
-        let line=read_line(r)?;let fields:Vec<_>=line.split_whitespace().collect();
-        if fields.len()!=4{return fail("malformed axiom context");}
-        let kind=crate::core::model::StakeKind::parse(fields[1]);let bearer=crate::core::model::Bearer::parse(fields[2]);let loss=crate::core::model::LossKind::parse(fields[3]);
-        if kind.token()!=fields[1] || bearer.token()!=fields[2] || loss.token()!=fields[3]{return fail("invalid axiom context token");}
-        Some((kind,bearer,loss,read_blob(r)?))
-    }else{None};
+        let line = read_line(r)?;
+        let fields: Vec<_> = line.split_whitespace().collect();
+        if fields.len() != 4 {
+            return fail("malformed axiom context");
+        }
+        let kind = crate::core::model::StakeKind::parse(fields[1]);
+        let bearer = crate::core::model::Bearer::parse(fields[2]);
+        let loss = crate::core::model::LossKind::parse(fields[3]);
+        if kind.token() != fields[1] || bearer.token() != fields[2] || loss.token() != fields[3] {
+            return fail("invalid axiom context token");
+        }
+        Some((kind, bearer, loss, read_blob(r)?))
+    } else {
+        None
+    };
     let statement = read_blob(r)?;
     let schema = empty_none(read_blob(r)?);
     let mut support = Vec::with_capacity(n_sup);
@@ -750,7 +869,7 @@ fn read_axiom(r: &mut (impl BufRead + Seek)) -> io::Result<(IdentityAxiom,bool)>
                 .to_string(),
         );
     }
-    let mut axiom=assemble_axiom(
+    let mut axiom = assemble_axiom(
         p[1].to_string(),
         statement,
         parse_f(p[3])?,
@@ -765,9 +884,14 @@ fn read_axiom(r: &mut (impl BufRead + Seek)) -> io::Result<(IdentityAxiom,bool)>
         layer,
         support,
     );
-    let legacy=context.is_none();
-    if let Some((kind,bearer,loss,mark))=context {axiom.stake_kind=kind;axiom.bearer=bearer;axiom.loss_kind=loss;axiom.stake_mark=mark;}
-    Ok((axiom,legacy))
+    let legacy = context.is_none();
+    if let Some((kind, bearer, loss, mark)) = context {
+        axiom.stake_kind = kind;
+        axiom.bearer = bearer;
+        axiom.loss_kind = loss;
+        axiom.stake_mark = mark;
+    }
+    Ok((axiom, legacy))
 }
 
 fn write_blob(w: &mut impl Write, s: &str) -> io::Result<()> {
@@ -794,7 +918,10 @@ fn read_line(r: &mut impl BufRead) -> io::Result<String> {
     let mut s = String::new();
     let n = r.read_line(&mut s)?;
     if n == 0 {
-        return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "fin de fichier"));
+        return Err(io::Error::new(
+            io::ErrorKind::UnexpectedEof,
+            "fin de fichier",
+        ));
     }
     if s.ends_with('\n') {
         s.pop();
@@ -814,12 +941,18 @@ fn parse_count(line: &str, key: &str) -> io::Result<usize> {
 }
 
 fn parse_mood(line: &str) -> io::Result<Mood> {
-    let rest = line.strip_prefix("mood ").ok_or_else(|| invalid("mood manquant"))?;
+    let rest = line
+        .strip_prefix("mood ")
+        .ok_or_else(|| invalid("mood manquant"))?;
     let p: Vec<&str> = rest.split_whitespace().collect();
     if p.len() < 3 {
         return fail("mood incomplet");
     }
-    Ok(assemble_mood(parse_f(p[0])?, parse_f(p[1])?, parse_f(p[2])?))
+    Ok(assemble_mood(
+        parse_f(p[0])?,
+        parse_f(p[1])?,
+        parse_f(p[2])?,
+    ))
 }
 
 fn opt(v: Option<u64>) -> String {
@@ -908,10 +1041,8 @@ mod tests {
     #[test]
     fn optional_markers_cross_buffer_boundaries_without_consuming_input() {
         for capacity in 1..=8 {
-            let mut reader = BufReader::with_capacity(
-                capacity,
-                Cursor::new(b"attr internal\nstake none\n"),
-            );
+            let mut reader =
+                BufReader::with_capacity(capacity, Cursor::new(b"attr internal\nstake none\n"));
             assert!(next_line_starts_with(&mut reader, "attr ").unwrap());
             assert!(!next_line_starts_with(&mut reader, "ops ").unwrap());
             assert_eq!(read_line(&mut reader).unwrap(), "attr internal");

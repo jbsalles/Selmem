@@ -22,14 +22,26 @@ fn native_intake_recalls_scoped_versions_with_unseen_names() {
         memory.advance_hours(0.01);
     }
     // The core need not retain the full explicit reference; no archive is read.
-    for archive in memory.store.archives.values_mut() { archive.verbatim = "SEALED_SENTINEL".into(); }
-    memory.set_memory_context_options(MemoryContextOptions {
-        words: 128, dispositions: false, associations: false, affect: false,
-        ..Default::default()
-    }).unwrap();
-    let draft = memory.open_mouth("Request: workspace Cedar, category red, audience Orion, purpose audit");
+    for archive in memory.store.archives.values_mut() {
+        archive.verbatim = "SEALED_SENTINEL".into();
+    }
+    memory
+        .set_memory_context_options(MemoryContextOptions {
+            words: 128,
+            dispositions: false,
+            associations: false,
+            affect: false,
+            ..Default::default()
+        })
+        .unwrap();
+    let draft =
+        memory.open_mouth("Request: workspace Cedar, category red, audience Orion, purpose audit");
     let context = draft.memory_reply().filtered_context();
-    let selected: Vec<_> = context.episodes.iter().map(|e| e.trace_id.as_str()).collect();
+    let selected: Vec<_> = context
+        .episodes
+        .iter()
+        .map(|e| e.trace_id.as_str())
+        .collect();
     assert_eq!(selected, vec![ids[0].as_str(), ids[2].as_str()]);
     assert!(context.content_words <= 128);
     assert!(!context.to_json().contains("SEALED_SENTINEL"));
