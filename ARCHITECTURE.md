@@ -21,6 +21,17 @@ A lived trace contains gist, core, schema, affect, confidence, accessibility and
 
 State transformations carry provenance operations. Readonly recall may generate new output but must not modify the saved memory. GENESIS probes use independent snapshot clones and verify hashes.
 
+Suppression also withholds consolidation inputs: suppressed episodes cannot supply
+merge content, ladder evidence, rewrite neighbors or schema prototypes. Axioms
+with suppressed support are temporarily withheld intact, preserving their support
+links for unsuppression. Cached centers validate their hub and axiom before use.
+This prevents new propagation; it does not undo transformations made before suppression.
+
+Living axioms use descending strength followed by statement, creation time and ID
+as deterministic ties. Schema centers and axiom-based confabulation therefore
+select the strongest eligible axiom independently of HashMap iteration order.
+Existing experimental evidence retains its original implementation identity.
+
 ## Independent observation support
 
 `SelectiveMemory::set_observation_evidence(true)` enables bounded support accumulation for `EncodeInput` with a stable `source` and `observation_id`. Exact repeated propositions with new identities update an existing active trace instead of creating another trace. Repeated ingestion of the same identity and conflicting reuse of it are rejected. Recall never increments the observation count.

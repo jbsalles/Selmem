@@ -10,7 +10,7 @@ fn axiom_support_strengths(store: &MemoryStore) -> std::collections::HashMap<&st
     for axiom in store
         .axioms
         .values()
-        .filter(|a| a.superseded_by.is_none() && a.layer != AxiomLayer::Motif)
+        .filter(|a| store.axiom_available(a) && a.layer != AxiomLayer::Motif)
     {
         let observations: HashSet<_> = axiom
             .support_trace_ids

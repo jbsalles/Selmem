@@ -10,7 +10,8 @@ use crate::encode::scoring::lexical_similarity;
 const HOLE_FIDELITY: f32 = 0.42;
 
 pub fn is_hole(trace: &MemoryTrace) -> bool {
-    if trace.personal.role != crate::SelfRole::Episode
+    if trace.suppressed
+        || trace.personal.role != crate::SelfRole::Episode
         || trace.personal.protected_until > crate::now_secs()
         || trace.channel.verbatim()
         || trace.channel == Channel::Log
@@ -116,7 +117,7 @@ fn filler(
     let mut source_ids = Vec::new();
     let mut axiom_ids = Vec::new();
     if let Some(s) = schema {
-        if let Some(c) = store.centers.get(s) {
+        if let Some(c) = store.visible_center(s) {
             extra = first_new_clause(&c.core, &t.core);
             if !extra.is_empty() {
                 if let Some(hub) = &c.hub_id {

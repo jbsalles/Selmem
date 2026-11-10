@@ -210,11 +210,7 @@ fn salient_marks(store: &MemoryStore) -> Vec<SalientMark> {
 }
 
 fn living_lines(store: &MemoryStore) -> Vec<String> {
-    let mut axioms: Vec<_> = store
-        .axioms
-        .values()
-        .filter(|a| a.superseded_by.is_none())
-        .collect();
+    let mut axioms = store.living_axioms();
     axioms.sort_by(|a, b| {
         let rank = |l| match l {
             AxiomLayer::Trait => 2,
@@ -237,7 +233,7 @@ fn living_lines(store: &MemoryStore) -> Vec<String> {
 /// Schema and sense only. The hour text is not a stake name.
 fn stakes_from(store: &MemoryStore, axioms: &[String]) -> Vec<String> {
     let mut out = Vec::new();
-    let mut ordered: Vec<_> = store.axioms.values().collect();
+    let mut ordered = store.living_axioms();
     ordered.sort_by(|a, b| {
         a.statement
             .cmp(&b.statement)

@@ -64,7 +64,7 @@ pub fn run_report(
         let mut neighbors: Vec<crate::core::model::MemoryTrace> = store
             .traces
             .values()
-            .filter(|o| o.id != id && o.channel == Channel::Selfhood)
+            .filter(|o| !o.suppressed && o.id != id && o.channel == Channel::Selfhood)
             .filter(|o| {
                 if let (Some(a), Some(b)) = (schema.as_ref(), o.schema.as_ref()) {
                     if a == b && stake_near(store, &id, &o) {
@@ -81,7 +81,7 @@ pub fn run_report(
         neighbors.sort_by(|a, b| a.id.cmp(&b.id));
         neighbors.truncate(3);
         if let Some(s) = schema.as_ref() {
-            if let Some(c) = store.centers.get(s) {
+            if let Some(c) = store.visible_center(s) {
                 if let Some(hub) = c
                     .hub_id
                     .as_ref()
@@ -200,7 +200,8 @@ pub fn skip_rewrite(store: &MemoryStore, id: &str) -> bool {
     let Some(t) = store.traces.get(id) else {
         return true;
     };
-    if t.personal.role != crate::SelfRole::Episode
+    if t.suppressed
+        || t.personal.role != crate::SelfRole::Episode
         || t.personal.protected_until > crate::now_secs()
         || t.channel.verbatim()
         || t.status == TraceStatus::Latent
@@ -229,7 +230,8 @@ fn skip_rewrite_legacy(store: &MemoryStore, t: &MemoryTrace) -> bool {
         .traces
         .values()
         .filter(|o| {
-            o.schema.as_deref() == Some(schema)
+            !o.suppressed
+                && o.schema.as_deref() == Some(schema)
                 && o.channel == Channel::Selfhood
                 && o.self_relevance >= 0.80
                 && o.valence.abs() >= 0.40

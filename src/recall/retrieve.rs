@@ -703,7 +703,7 @@ fn context_cloud(
             }
         }
         for a in store.axioms.values() {
-            if a.superseded_by.is_some() {
+            if !store.axiom_available(a) {
                 continue;
             }
             if a.support_trace_ids.iter().any(|s| s == id) {

@@ -36,7 +36,7 @@ fn build(store: &MemoryStore, schema: &str) -> Option<SchemaCenter> {
         .values()
         .filter(|t| t.schema.as_deref() == Some(schema))
         .filter(|t| t.channel != Channel::Log && t.personal.role == crate::SelfRole::Episode)
-        .filter(|t| t.status != TraceStatus::Latent)
+        .filter(|t| !t.suppressed && t.status != TraceStatus::Latent)
         .collect();
     hours.sort_by(|a, b| hub_key(b).cmp(&hub_key(a)).then_with(|| a.id.cmp(&b.id)));
 
@@ -88,11 +88,12 @@ fn hub_key(t: &crate::core::model::MemoryTrace) -> (i32, i32, i32) {
 
 /// Pull faded Internal periphery onto the schema prototype. Core stays.
 pub fn gravitate(store: &mut MemoryStore) -> u32 {
-    let schemas: Vec<String> = store.centers.keys().cloned().collect();
+    let mut schemas: Vec<String> = store.centers.keys().cloned().collect();
+    schemas.sort();
     let mut n = 0u32;
     for schema in schemas {
         let (hub, proto, valence) = {
-            let Some(c) = store.centers.get(&schema) else {
+            let Some(c) = store.visible_center(&schema) else {
                 continue;
             };
             (c.hub_id.clone(), c.core.clone(), c.valence)
@@ -113,7 +114,8 @@ pub fn gravitate(store: &mut MemoryStore) -> u32 {
             let Some(t) = store.traces.get(&id) else {
                 continue;
             };
-            if t.personal.role != crate::SelfRole::Episode
+            if t.suppressed
+                || t.personal.role != crate::SelfRole::Episode
                 || t.channel.verbatim()
                 || t.status == TraceStatus::Latent
             {

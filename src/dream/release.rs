@@ -8,8 +8,10 @@ use crate::core::store::MemoryStore;
 /// Not a cap. Benches never reach this state.
 pub fn run(store: &mut MemoryStore, previously_latent: &std::collections::HashSet<String>) -> u32 {
     let supported: std::collections::HashSet<String> = store
-        .living_axioms()
-        .into_iter()
+        .axioms
+        .values()
+        // Withheld axioms still retain their support links for unsuppression.
+        .filter(|a| a.superseded_by.is_none())
         .flat_map(|a| a.support_trace_ids.iter().cloned())
         .collect();
     let drop: Vec<String> = store

@@ -15,7 +15,8 @@ pub fn run(
 ) -> u32 {
     let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for t in store.traces.values() {
-        if t.channel != Channel::Selfhood
+        if t.suppressed
+            || t.channel != Channel::Selfhood
             || t.personal.role != crate::SelfRole::Episode
             || !t.personal.appraisal.prior_ids.is_empty()
             || t.personal.protected_until > now_secs()

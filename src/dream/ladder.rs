@@ -106,7 +106,8 @@ fn rust_unused(store: &mut MemoryStore, prior: &[String]) {
 fn extract_axioms(store: &mut MemoryStore) -> Vec<IdentityAxiom> {
     let mut groups: BTreeMap<Family, Vec<String>> = BTreeMap::new();
     for t in store.traces.values() {
-        if t.personal.role == crate::SelfRole::Episode
+        if !t.suppressed
+            && t.personal.role == crate::SelfRole::Episode
             && !t.channel.verbatim()
             && matches!(
                 t.status,

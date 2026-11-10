@@ -189,11 +189,45 @@ impl MemoryStore {
         out
     }
 
+    /// Withhold mixed-support statements intact until their support is unsuppressed.
+    pub fn axiom_available(&self, axiom: &IdentityAxiom) -> bool {
+        axiom.superseded_by.is_none()
+            && !axiom
+                .support_trace_ids
+                .iter()
+                .any(|id| self.traces.get(id).is_some_and(|trace| trace.suppressed))
+    }
+
+    /// Strongest first, with deterministic content/time/id ties.
     pub fn living_axioms(&self) -> Vec<&IdentityAxiom> {
-        self.axioms
+        let mut axioms: Vec<_> = self
+            .axioms
             .values()
-            .filter(|a| a.superseded_by.is_none())
-            .collect()
+            .filter(|a| self.axiom_available(a))
+            .collect();
+        axioms.sort_by(|a, b| {
+            b.strength
+                .total_cmp(&a.strength)
+                .then(a.statement.cmp(&b.statement))
+                .then(a.created_at.cmp(&b.created_at))
+                .then(a.id.cmp(&b.id))
+        });
+        axioms
+    }
+
+    /// A cached prototype must not revive a suppressed hub or derived axiom.
+    pub fn visible_center(&self, schema: &str) -> Option<&SchemaCenter> {
+        self.centers.get(schema).filter(|center| {
+            !center
+                .hub_id
+                .as_ref()
+                .is_some_and(|id| self.traces.get(id).is_some_and(|trace| trace.suppressed))
+                && !center.axiom_id.as_ref().is_some_and(|id| {
+                    self.axioms
+                        .get(id)
+                        .is_some_and(|axiom| !self.axiom_available(axiom))
+                })
+        })
     }
 
     /// Living axiom ids that list this hour as support.

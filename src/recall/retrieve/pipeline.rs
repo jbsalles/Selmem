@@ -248,7 +248,7 @@ pub fn recall_with(
             if let Some(trace) = store.traces.get(&memory.trace_id) {
                 if trace.attribution == crate::core::model::Attribution::Internal {
                     if let Some(schema) = &trace.schema {
-                        if let Some(center) = store.centers.get(schema) {
+                        if let Some(center) = store.visible_center(schema) {
                             let proto = center.core.chars().take(120).collect::<String>();
                             if !proto.is_empty() {
                                 memory.narrative.push_str(&format!(
