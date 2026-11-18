@@ -50,3 +50,9 @@ jobs:
 
       - name: Check published evidence checksums
         run: cd experiments/evidence && sha256sum --check SHA256SUMS
+
+      - name: Check Van Gogh preparation tools (offline)
+        run: |
+          cargo fmt --manifest-path experiments/vangogh-realistic/Cargo.toml -- --check
+          cargo clippy --locked --manifest-path experiments/vangogh-realistic/Cargo.toml --all-targets -- -D warnings
+          cargo test --locked --manifest-path experiments/vangogh-realistic/Cargo.toml

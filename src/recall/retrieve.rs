@@ -224,28 +224,39 @@ fn transfer_terms(text: &str) -> String {
 
 /// Marginal relevance penalizes redundant content only among eligible traces.
 fn select_transfer(ranked: &[ScoredTrace], store: &MemoryStore, cap: usize) -> Vec<String> {
-    let mut chosen: Vec<String> = Vec::new();
+    use crate::encode::scoring::{event_content, lexical_similarity};
+    let mut remaining: Vec<_> = ranked
+        .iter()
+        .filter(|candidate| candidate.is_eligible())
+        .map(|candidate| {
+            (
+                candidate,
+                event_content(&store.traces[&candidate.trace_id].core),
+                0.0_f32,
+            )
+        })
+        .collect();
+    let mut chosen = Vec::new();
     while chosen.len() < cap {
-        let best = ranked
-            .iter()
-            .filter(|c| c.is_eligible() && !chosen.contains(&c.trace_id))
-            .map(|c| {
-                let content = crate::encode::scoring::event_content;
-                let text = content(&store.traces[&c.trace_id].core);
-                let redundancy = chosen
-                    .iter()
-                    .map(|id| {
-                        crate::encode::scoring::lexical_similarity(
-                            text,
-                            content(&store.traces[id].core),
-                        )
-                    })
-                    .fold(0.0_f32, f32::max);
-                (c, c.score * (1.0 - 0.5 * redundancy))
-            })
-            .max_by(|(a, x), (b, y)| x.total_cmp(y).then_with(|| b.trace_id.cmp(&a.trace_id)));
-        let Some((next, _)) = best else { break };
+        let Some((index, _)) =
+            remaining
+                .iter()
+                .enumerate()
+                .max_by(|(_, (a, _, x)), (_, (b, _, y))| {
+                    (a.score * (1.0 - 0.5 * x))
+                        .total_cmp(&(b.score * (1.0 - 0.5 * y)))
+                        .then_with(|| b.trace_id.cmp(&a.trace_id))
+                })
+        else {
+            break;
+        };
+        let (next, text, _) = remaining.swap_remove(index);
         chosen.push(next.trace_id.clone());
+        if chosen.len() < cap {
+            for (_, other, redundancy) in &mut remaining {
+                *redundancy = redundancy.max(lexical_similarity(other, text));
+            }
+        }
     }
     chosen
 }
@@ -690,7 +701,8 @@ fn context_cloud(
         add(&mut weights, &t.gist, w);
         add(&mut weights, &t.core, w * 0.5);
     }
-    let mut linked: Vec<String> = Vec::new();
+    let seed_set: std::collections::HashSet<&str> = seeds.iter().map(String::as_str).collect();
+    let mut linked = std::collections::BTreeSet::<&str>::new();
     for id in &seeds {
         let seed_schema = store.traces.get(id).and_then(|t| t.schema.clone());
         if let Some(neigh) = store.edges.get(id) {
@@ -698,26 +710,25 @@ fn context_cloud(
                 let same = seed_schema.as_ref().is_some()
                     && store.traces.get(n).and_then(|t| t.schema.as_ref()) == seed_schema.as_ref();
                 if !same {
-                    linked.push(n.clone());
+                    linked.insert(n.as_str());
                 }
             }
         }
-        for a in store.axioms.values() {
-            if !store.axiom_available(a) {
-                continue;
-            }
-            if a.support_trace_ids.iter().any(|s| s == id) {
-                linked.extend(a.support_trace_ids.iter().cloned());
-            }
+    }
+    for a in store.axioms.values() {
+        if store.axiom_available(a)
+            && a.support_trace_ids
+                .iter()
+                .any(|s| seed_set.contains(s.as_str()))
+        {
+            linked.extend(a.support_trace_ids.iter().map(String::as_str));
         }
     }
-    linked.sort();
-    linked.dedup();
     for id in linked {
-        if seeds.iter().any(|s| s == &id) {
+        if seed_set.contains(id) {
             continue;
         }
-        let Some(t) = store.traces.get(&id) else {
+        let Some(t) = store.traces.get(id) else {
             continue;
         };
         if t.suppressed || t.status == TraceStatus::Latent {

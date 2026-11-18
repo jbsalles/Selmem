@@ -16,3 +16,5 @@
 /selmem.conf
 *.vault
 *.vault.*.tmp
+
+target/

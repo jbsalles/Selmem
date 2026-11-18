@@ -36,6 +36,9 @@ pub fn run_report(
     scorer: &dyn crate::recall::PropositionScorer,
 ) -> RewriteReport {
     let mut report = RewriteReport::default();
+    if narrator.rewrite_is_noop(profile) {
+        return report;
+    }
     let ids = store.active_ids();
     let mut rewritten = 0u32;
     let mut budget = 6u32;

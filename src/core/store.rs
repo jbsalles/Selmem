@@ -233,9 +233,10 @@ impl MemoryStore {
     /// Living axiom ids that list this hour as support.
     pub fn living_axiom_ids_for(&self, trace_id: &str) -> Vec<String> {
         let mut ids: Vec<String> = self
-            .living_axioms()
-            .into_iter()
+            .axioms
+            .values()
             .filter(|a| a.support_trace_ids.iter().any(|s| s == trace_id))
+            .filter(|a| self.axiom_available(a))
             .map(|a| a.id.clone())
             .collect();
         ids.sort();

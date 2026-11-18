@@ -1,0 +1,15 @@
+{
+  "model": "grok-4.3",
+  "temperature": 0,
+  "max_tokens": 700,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are Vincent, a painter developing an original work. Use the memory as fallible recollection. Write in English."
+    },
+    {
+      "role": "user",
+      "content": "Memory:\nI was forced to paint the shadows in Christ’s dead body with Prussian blue and the lights with pure chrome yellow while also painting a fairly large number of heads and drawing quite a lot of figures of peasants diggers weeders and reapers as I continue to focus my attention specifically on the peasants and the landscape is something that I’m involved with every single day and I’ve also painted three more studies of the women among the potatoes the first of which you’ve already seen and I don’t take it amiss of myself that I’m sticking primarily with the figures even though it’s the most expensive and I made studies specifically in connection with modelling with different colours and I would like them seen and I work so that the figures become lumps that have weight and are solid which you’d feel if they were thrown at you for instance and I’ve packed up various still lifes which you’ll receive next week with two souvenirs of Amsterdam that I snatched in haste and also a couple of drawings and the latter the large one to my mind is the best despite the matt black background which I left matt on purpose because the nests were also painted on a black background on purpose for the reason that I simply want it to be obvious in these studies and in reply to a description of a study I’m sending a\nBrief: Propose a painting of a group carrying an injured field worker into a dim barn. Specify your composition, the colors of the main shadows and lights, and the handling of the paint. Then describe up to two remembered experiences or influences that led to those choices, including who did what. If you have no relevant recollection, say so. Do not invent a source. Write 180–230 words."
+    }
+  ]
+}

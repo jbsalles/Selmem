@@ -49,6 +49,7 @@ pub(super) fn rank_candidates(
     let is_episode_query = episode_ask(query);
     let axiom_strength = axiom_support_strengths(store);
     let cloud = context_cloud(store, query, &query_embedding);
+    let subject_matches = crate::recall::interpretation::subject_matcher(store, query);
     let ids: Vec<String> = store.active_ids();
     let mut ranked: Vec<ScoredTrace> = ids
         .into_iter()
@@ -79,7 +80,7 @@ pub(super) fn rank_candidates(
             }
             let relevance = topic_relevance(query, &trace.core);
             let base_score = score;
-            let transfer = if crate::recall::interpretation::subject_matches(store, trace, query) {
+            let transfer = if subject_matches(trace) {
                 crate::recall::interpretation::for_query(trace, query)
             } else {
                 None
@@ -161,7 +162,7 @@ pub(super) fn rank_candidates(
             // Schema names are metadata, not query evidence.
             if bias != RecallBias::Transfer
                 && trace.attribution == crate::core::model::Attribution::External
-                && (!crate::recall::interpretation::subject_matches(store, trace, query)
+                && (!subject_matches(trace)
                     || !crate::recall::interpretation::factual_relation_matches(query, &trace.core))
             {
                 score = 0.0;

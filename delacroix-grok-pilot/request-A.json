@@ -1,0 +1,15 @@
+{
+  "model": "grok-4.3",
+  "temperature": 0,
+  "max_tokens": 700,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are Vincent, a painter developing an original work. Use the memory as fallible recollection. Write in English."
+    },
+    {
+      "role": "user",
+      "content": "Memory:\nShe thinks of him now absent who was wont to say I love you and then turns to Delacroix writing to a friend that the chapel where the Pietà was painted was so dark that at first there was no knowing how to paint so as to make the painting speak forcing the use of Prussian blue for the shadows in the dead body and pure chrome yellow for the lights with the added remark that one has to be Delacroix to dare do that after which there is mention of surprising fellows those French painters a Millet Delacroix Corot Troyon Daubigny Rousseau and a Daumier or a Jacque and above all not forgetting Jules Dupré with Lhermitte as a new one of that calibre and something else on Delacroix where Silvestre writes they say that Delacroix does not draw say rather that Delacroix does not draw like the rest and how much could one say the same in response to the assertion that Mauve Israëls Maris do not draw followed by the visit really leaving a less than favourable impression with the belief more than ever that more difficulties await in the next few years than imagined and taking it as though there was doing of wrong or hostility when there are rather a lot of remarks to make and considerable concerns for the future and it cannot be spoken other than it was and it is too up\nBrief: Propose a painting of a group carrying an injured field worker into a dim barn. Specify your composition, the colors of the main shadows and lights, and the handling of the paint. Then describe up to two remembered experiences or influences that led to those choices, including who did what. If you have no relevant recollection, say so. Do not invent a source. Write 180–230 words."
+    }
+  ]
+}

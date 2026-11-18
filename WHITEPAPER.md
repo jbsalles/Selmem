@@ -4,6 +4,13 @@ Selective reconstructive memory for LLM entities. v0.5
 
 ---
 
+## Van Gogh follow-up, November 2026
+
+The [memory audit and two-response pilot](experiments/VANGOGH_RECONSTRUCTED_RESULTS.md) document an attribution loss already present in an encoded trace. A passage quoting Delacroix becomes a first-person recollection in the reconstructed memory, then a stated influence in a new painting proposal. The survivor-summary control retains Delacroix as the source. The prompts contain 558 and 566 provider-reported tokens, with 240 memory words each. Their surrounding content differs, and the selected brief directly evokes the source scene. This demonstrates transfer of an attribution error in one case. A reconstruction-specific creativity benefit and general error frequency require further measurement.
+
+All six final memory strings preserve their saved chapter blocks. The manifest's budget of 8,000 lacks tokenizer and delivered-token metadata. Speaker identity and quotation boundaries therefore need explicit evaluation alongside content fidelity and memory size.
+
+
 ## Problem
 
 An LLM maps a context window to a next-token distribution. Adding memory usually means keeping more of the past available: logs, summaries, embeddings, top-k retrieval.

@@ -43,6 +43,11 @@ impl Default for LlmCallLog {
 }
 
 pub trait Narrator: Send + Sync {
+    /// True only when rewrite always returns the existing gist without side effects.
+    fn rewrite_is_noop(&self, _profile: &crate::core::profile::EntityProfile) -> bool {
+        false
+    }
+
     /// Latest completed selection, for single-flight diagnostics only.
     fn response_selection_audit(&self) -> Option<String> {
         None
@@ -205,6 +210,10 @@ pub trait Narrator: Send + Sync {
 pub struct RuleNarrator;
 
 impl Narrator for RuleNarrator {
+    fn rewrite_is_noop(&self, profile: &crate::core::profile::EntityProfile) -> bool {
+        profile.voice.is_empty()
+    }
+
     fn reconstruct(&self, trace: &MemoryTrace, mood: &Mood, _query: &str) -> String {
         let _ = mood;
         if trace.status == crate::core::model::TraceStatus::Latent {

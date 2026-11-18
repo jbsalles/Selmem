@@ -19,7 +19,7 @@ fn which_curl() -> bool {
 
 fn curl_post(url: &str, api_key: Option<&str>, body: &str) -> Result<String, String> {
     let mut cmd = Command::new("curl");
-    let timeout = crate::config::Config::get().http_timeout();
+    let timeout = std::env::var("SELMEM_RUN_HTTP_TIMEOUT").unwrap_or_else(|_| crate::config::Config::get().http_timeout().to_string());
     // Secret stays on stdin (--config -), never in argv.
     cmd.args([
         "-sS",

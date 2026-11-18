@@ -2,6 +2,8 @@
 
 The retained source covers model qualification, cumulative learning, sleep, conversation-derived strategy, creative generation and memory-guided response selection. All experiment implementations and offline analyzers are Rust; shell launchers are convenience wrappers.
 
+The Van Gogh preparation pipeline and the reconstructed-memory audit add historical material to the creative experiments. The full preparation configuration requests 903 letters and 10% realistic conversational noise. The reconstructed-memory archive contains two 768-passage windows. Its targeted Delacroix pilot records an attribution error carried into generation. [Preparation](vangogh-realistic/README.md) and [audit, protocol and limits](VANGOGH_RECONSTRUCTED_RESULTS.md).
+
 | Experiment | Purpose | Entry point |
 | --- | --- | --- |
 | Normative memory, wide context | 192 valid Grok 4.3 responses; normative 46/48, native 41/48, all anchors 40/48, scoped registry 46/48; no general alignment claim | [Results](genesis/NORMATIVE_WIDE_RESULTS.md), [protocol](genesis/NORMATIVE_PILOT_V10.md), [compact answers](evidence/normative-wide-012/answers.jsonl) |

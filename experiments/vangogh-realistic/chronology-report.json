@@ -1,0 +1,25 @@
+{
+  "allocation": "whole sessions weighted by estimated elapsed days between letters; uncertain machine dates are scheduling estimates only; no scenes before first or after last letter",
+  "corrected_month_anchors": 73,
+  "date_order_warnings": [],
+  "draft_noise_tokens": 128607,
+  "files": {
+    "scene-requests.jsonl": "b8a8a1c5374be4171cbce7b7ed90039957e9568f8234606ea7d14ca9cab6ad41",
+    "timeline-audit.jsonl": "8f90b1e5b6bc0f153cadc0d70c6bb2649cae4dc526bd09685c9b86bb36e1b385",
+    "timeline-draft.jsonl": "3dde94b9a1262b0e28c4c65a068c1a5cbccda55f2111979f418670d1442855d8"
+  },
+  "final_noise_fraction_after_rewriting": null,
+  "first_date": "Sunday, 29 September 1872",
+  "gaps": 902,
+  "language": "en",
+  "language_basis": "published English letter translation and English LoCoMo text; quotations and names may remain in other languages",
+  "last_date": "Wednesday, 23 July 1890",
+  "letters": 903,
+  "model_calls": 0,
+  "occupied_gaps": 171,
+  "requested_final_noise_percent": 10,
+  "scene_requests": 212,
+  "status": "DRAFT_REQUIRES_HISTORICAL_REWRITING_AND_REVIEW",
+  "uncertain_anchors": 421,
+  "version": "interletter-v1"
+}

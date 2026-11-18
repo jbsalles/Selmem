@@ -37,6 +37,20 @@ fn weather_does_not_keep_only_a_comma_separated_subject() {
 }
 
 #[test]
+fn weather_preserves_an_artistic_comparison_after_an_introductory_comma() {
+    let event = "For after all in figures, Delacroix and Millet did better than the Impressionists.";
+    let mut mem = SelectiveMemory::new(EntityProfile::tender("test")).detach_clock();
+    let id = mem.live(event).trace_id.unwrap();
+    assert!(mem.pin(&id));
+    mem.advance_hours(24.0 * 365.0);
+    let trace = mem.store.traces.get_mut(&id).unwrap();
+    let _clock = selmem::core::model::ClockGuard::push(mem.clock.clone());
+    assert!(selmem::dream::drift::weather(trace, &mem.profile, false).is_some());
+    assert!((0.38..0.62).contains(&trace.fidelity));
+    assert_eq!(trace.gist, event);
+}
+
+#[test]
 fn weather_keeps_extra_detail_when_the_remaining_gist_contains_the_core() {
     let event = "The client left because of the copier on 3 January. That date is why the file was late. You keep 3 January.";
     let mut mem = SelectiveMemory::new(EntityProfile::tender("test"));

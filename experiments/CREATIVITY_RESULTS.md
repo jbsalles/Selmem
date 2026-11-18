@@ -59,3 +59,7 @@ The influence diagnostic separates generation, anonymous task-only quality and a
 5. Fresh independent histories and model replications, with negative outcomes retained.
 
 The 600- and 6,480-proposal longitudinal plans remain available; their scale is not a substitute for a qualified measurement. [Replay instructions](REPRODUCIBILITY.md) and [protocol index](README.md) distinguish fresh replication from exact historical resumption.
+
+## Van Gogh attribution follow-up, November 2026
+
+The [reconstructed-memory audit](VANGOGH_RECONSTRUCTED_RESULTS.md) compares six final memories over two historical windows. A targeted Grok 4.3 pilot supplies 240 words per condition and obtains two completed painting proposals. The survivor-summary output attributes a blue-shadow and yellow-light technique to Delacroix. The reconstructed output recalls performing it personally. Both use the same main palette. The encoded trace already lost the quotation speaker, and generation carries that error forward. The brief was selected after inspecting the failure, surrounding memory content differs, and the review was qualitative. This supplies a concrete attribution-transfer case. The creativity question remains open.

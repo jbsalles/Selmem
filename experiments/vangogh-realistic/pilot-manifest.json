@@ -1,0 +1,64 @@
+{
+  "checkpoints": [
+    {
+      "clean_events": 18,
+      "last_letter": "let009",
+      "letters": 10,
+      "mixed_events": 1177,
+      "percent": 25
+    },
+    {
+      "clean_events": 55,
+      "last_letter": "let018",
+      "letters": 19,
+      "mixed_events": 3922,
+      "percent": 50
+    },
+    {
+      "clean_events": 71,
+      "last_letter": "let028",
+      "letters": 29,
+      "mixed_events": 4889,
+      "percent": 75
+    },
+    {
+      "clean_events": 88,
+      "last_letter": "let037",
+      "letters": 38,
+      "mixed_events": 5852,
+      "percent": 100
+    }
+  ],
+  "files": {
+    "audit-clean.jsonl": "9da7b536e31d74d5672cb3e9de44a7fd4bc65fd6e42c099327b697415a90fb16",
+    "audit-mixed.jsonl": "cd0c21d8fc59587fec1d9434460d5824d3d43a077eb82e21bdac3b7c18d31f01",
+    "stream-clean.jsonl": "d7a93bde0e3b7f6c11f6d8c2eb16fcf98aeda5795a486e4427e181717685edd5",
+    "stream-mixed.jsonl": "44ee5b1c50416825e4354a04b5faef18fe8ffaf3dcba29fc53dfda110490ec60"
+  },
+  "full_letter_count": 903,
+  "full_source_tokens": 1157464,
+  "last_selected_letter": "let037",
+  "letters_sha256": "54e5513c2e6540946d7bc5a8739d9517b2de987941843204d2ab6ec3ec9a2167",
+  "locomo_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "mode": "pilot",
+  "noise_fraction": 0.9,
+  "noise_inventory": {
+    "available_body_tokens": 166284,
+    "conversations": 10,
+    "duplicate_sessions_removed": 0,
+    "exact_duplicate_turn_occurrences": 10,
+    "raw_turns": 5882,
+    "unique_sessions": 272
+  },
+  "noise_tokens": 163107,
+  "partial_boundary_sessions": 1,
+  "seed": 42,
+  "selected_letters": 38,
+  "selected_sessions": 267,
+  "selection": "without replacement; session and turn order preserved within each conversation; final boundary may be a prefix",
+  "source_tokens": 18123,
+  "status": "CORPUS_ONLY_NOT_AN_ACTOR_RESULT",
+  "token_accounting": "sum of independent <=256-token event bodies; metadata excluded",
+  "tokenizer": "cl100k_base/tiktoken-rs-0.6.0",
+  "version": "realistic-noise-v1"
+}

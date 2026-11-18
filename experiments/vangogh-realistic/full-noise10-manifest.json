@@ -1,0 +1,66 @@
+{
+  "checkpoints": [
+    {
+      "clean_events": 1213,
+      "last_letter": "let225",
+      "letters": 226,
+      "mixed_events": 2372,
+      "percent": 25
+    },
+    {
+      "clean_events": 2823,
+      "last_letter": "let451",
+      "letters": 452,
+      "mixed_events": 5428,
+      "percent": 50
+    },
+    {
+      "clean_events": 3966,
+      "last_letter": "let677",
+      "letters": 678,
+      "mixed_events": 7620,
+      "percent": 75
+    },
+    {
+      "clean_events": 4971,
+      "last_letter": "let902",
+      "letters": 903,
+      "mixed_events": 9496,
+      "percent": 100
+    }
+  ],
+  "files": {
+    "audit-clean.jsonl": "52b88073d6f53dae5aeb0ae48958ea9669e1a4126aa4abcf1265822e0e625aee",
+    "audit-mixed.jsonl": "700287466591544fddc6b080120133d1f9dbb33aa0b99ddcf71ef1bbda11b401",
+    "stream-clean.jsonl": "cedb0fad12bf599db66a6446cc7852b15d3729a1666cfbfbb1840966ee7bc840",
+    "stream-mixed.jsonl": "790a420350f741fa8e378570d664a0fa5bdb8a0d8298d8279b0e76cdfec12ab8"
+  },
+  "full_letter_count": 903,
+  "full_source_tokens": 1157464,
+  "last_selected_letter": "let902",
+  "letters_sha256": "54e5513c2e6540946d7bc5a8739d9517b2de987941843204d2ab6ec3ec9a2167",
+  "locomo_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "mode": "full",
+  "noise_fraction": 0.09999992224379525,
+  "noise_inventory": {
+    "available_body_tokens": 166284,
+    "conversations": 10,
+    "duplicate_sessions_removed": 0,
+    "exact_duplicate_turn_occurrences": 10,
+    "raw_turns": 5882,
+    "unique_sessions": 272
+  },
+  "noise_tokens": 128607,
+  "partial_boundary_sessions": 1,
+  "requested_noise_percent": 10,
+  "seed": 42,
+  "selected_letters": 903,
+  "selected_sessions": 212,
+  "selection": "without replacement; session and turn order preserved within each conversation; final boundary may be a prefix",
+  "source_tokens": 1157464,
+  "status": "CORPUS_ONLY_NOT_AN_ACTOR_RESULT",
+  "target_noise_tokens": 128607,
+  "token_accounting": "sum of independent <=256-token event bodies; metadata excluded",
+  "tokenizer": "cl100k_base/tiktoken-rs-0.6.0",
+  "version": "realistic-noise-v2"
+}

@@ -284,8 +284,12 @@ pub fn factual_relation_matches(query: &str, core: &str) -> bool {
 /// Explicitly named observed subjects exclude other subjects. An unnamed
 /// design task may use an explicitly attributed analogy from either person.
 pub fn subject_matches(store: &MemoryStore, trace: &MemoryTrace, query: &str) -> bool {
+    subject_matcher(store, query)(trace)
+}
+
+pub(super) fn subject_matcher(store: &MemoryStore, query: &str) -> impl Fn(&MemoryTrace) -> bool {
     let q = words(query);
-    let contains = |subject: &str| {
+    let contains = move |subject: &str| {
         let name = words(subject);
         !name.is_empty() && q.windows(name.len()).any(|p| p == name)
     };
@@ -294,5 +298,8 @@ pub fn subject_matches(store: &MemoryStore, trace: &MemoryTrace, query: &str) ->
         .values()
         .filter_map(|t| crate::encode::core::reported_speech(&t.core))
         .any(|(subject, _)| contains(subject));
-    !named || crate::encode::core::reported_speech(&trace.core).is_some_and(|(s, _)| contains(s))
+    move |trace| {
+        !named
+            || crate::encode::core::reported_speech(&trace.core).is_some_and(|(s, _)| contains(s))
+    }
 }
