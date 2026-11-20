@@ -5,7 +5,12 @@ impl SelectiveMemory {
     ///
     /// Order is the organ: interpret → paint → maybe hear → split → gate →
     /// maybe accept_core → blend mood. `commit_talk` calls this with `hold = false`.
-    pub(super) fn ingest(&mut self, mut input: EncodeInput<'_>, hold: bool) -> EncodeDecision {
+    pub(super) fn ingest(
+        &mut self,
+        mut input: EncodeInput<'_>,
+        hold: bool,
+        observed_excerpt: Option<&str>,
+    ) -> EncodeDecision {
         if let Err(reason) = input.personal.validate() {
             return EncodeDecision {
                 kept: false,
@@ -157,6 +162,7 @@ impl SelectiveMemory {
             && input.paint_from.is_none()
             && input.personal.role == crate::SelfRole::Episode
             && prior_self.is_empty()
+            && observed_excerpt.is_none()
         {
             use crate::core::evidence::ObservationUpdate;
             let update = crate::core::evidence::update(
@@ -243,14 +249,15 @@ impl SelectiveMemory {
         let observation_id = input.observation_id.map(str::to_owned);
         let observation_channel = input.channel;
         let observation_is_external = input.paint_from.is_none() && input_source != "talk";
-        let annotated_core = input.semantics.is_some();
-        let decision = encode::gate::encode_with_interpreter(
+        let annotated_core = input.semantics.is_some() || observed_excerpt.is_some();
+        let decision = encode::gate::encode_with_excerpt(
             &mut self.store,
             &self.profile,
             input,
             self.embedder.as_ref(),
             proposed.as_deref(),
             self.semantic_interpreter.as_deref(),
+            observed_excerpt,
         );
         if !annotated_core {
             encode::maybe_set_core(

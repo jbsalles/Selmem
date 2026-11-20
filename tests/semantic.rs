@@ -1,7 +1,7 @@
 use selmem::core::model::{Bearer, StakeKind};
 use selmem::{
-    EncodeInput, EntityProfile, EventSemantics, LexicalInterpreter, SelectiveMemory,
-    SemanticInterpreter,
+    EncodeInput, EntityProfile, EventSemantics, LexicalInterpreter, RecallBias, RecallWrite,
+    SelectiveMemory, SemanticInterpreter,
 };
 
 struct Annotated;
@@ -17,6 +17,79 @@ impl SemanticInterpreter for Annotated {
         s.core.claim = event.into();
         Ok(s)
     }
+}
+
+#[test]
+fn observed_excerpt_keeps_action_context_and_result_after_sleep_and_reload() {
+    let mut profile = EntityProfile::new("workshop");
+    profile.encode_threshold = 0.0;
+    profile.merge_similarity = 0.0;
+    let mut organ = SelectiveMemory::new(profile.clone()).detach_clock();
+    let intake = |organ: &mut SelectiveMemory, id: &str, count| {
+        let excerpt = format!(
+            "I cut a blank band across the strokes. The print hung under one lamp. Jo saw {count} of 6 visitors point to the turn first."
+        );
+        let raw = format!(
+            "I carried the registered relief proof from the drying shelf to the bench before the session. {excerpt} I cleared the bench."
+        );
+        let mut input = EncodeInput::observed(&raw, id);
+        input.schema = Some("print trials".into());
+        let decision = organ.live_with_observed_excerpt(input, &excerpt).unwrap();
+        assert_eq!(organ.store.archives[&decision.archive_id].verbatim, raw);
+        (decision.trace_id.unwrap(), excerpt)
+    };
+    let first = intake(&mut organ, "trial-a", 5);
+    let second = intake(&mut organ, "trial-b", 1);
+    for _ in 0..4 {
+        organ.advance_hours(24.0);
+        organ.sleep();
+    }
+    let path = std::env::temp_dir().join(format!("selmem-excerpt-{}.snapshot", std::process::id()));
+    organ.path = Some(path.clone());
+    organ.save().unwrap();
+    let mut organ = SelectiveMemory::open(&path, profile).unwrap();
+    std::fs::remove_file(path).unwrap();
+    for (id, excerpt) in [first, second] {
+        let stored = &organ.store.traces[&id];
+        assert_eq!(stored.core, excerpt);
+        assert_eq!(stored.reality.claim, excerpt);
+        assert_eq!(stored.semantic.claim, excerpt);
+        let (recalled, _) = organ.remember_with(
+            "print trials",
+            RecallWrite::ReadOnly,
+            RecallBias::ForceMarked,
+            std::slice::from_ref(&id),
+        );
+        assert_eq!(recalled[0].trace_id, id);
+        assert_eq!(recalled[0].narrative, excerpt);
+    }
+}
+
+#[test]
+fn observed_excerpt_rejects_changed_counts_partial_sentences_and_duplicate_ids() {
+    let mut organ = SelectiveMemory::new(EntityProfile::new("workshop"));
+    let raw = "I did not cut a blank band. Jo saw five visitors point to the turn first.";
+    for excerpt in [
+        "cut a blank band.",
+        "I did not cut a blank band. Jo saw one visitor point to the turn first.",
+        "I did not cut a blank band",
+    ] {
+        let rejected = organ.live_with_observed_excerpt(EncodeInput::observed(raw, "a"), excerpt);
+        assert!(rejected.is_err());
+    }
+    assert!(organ.store.traces.is_empty());
+    assert!(organ.store.archives.is_empty());
+    assert!(organ
+        .live_with_observed_excerpt(EncodeInput::new(raw), raw)
+        .is_err());
+    let mut input = EncodeInput::observed(raw, "a");
+    input.permanence = 1.0;
+    assert!(organ.live_with_observed_excerpt(input, raw).unwrap().kept);
+    assert!(organ
+        .live_with_observed_excerpt(EncodeInput::observed(raw, "a"), raw)
+        .is_err());
+    assert_eq!(organ.store.traces.len(), 1);
+    assert_eq!(organ.store.archives.len(), 1);
 }
 
 #[test]

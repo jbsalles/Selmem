@@ -18,6 +18,7 @@ pub fn run(
         if t.suppressed
             || t.channel != Channel::Selfhood
             || t.personal.role != crate::SelfRole::Episode
+            || t.has_observed_excerpt()
             || !t.personal.appraisal.prior_ids.is_empty()
             || t.personal.protected_until > now_secs()
         {

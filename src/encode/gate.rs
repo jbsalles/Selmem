@@ -41,10 +41,22 @@ pub fn encode_with_parts(
 pub fn encode_with_interpreter(
     store: &mut MemoryStore,
     profile: &EntityProfile,
+    input: EncodeInput<'_>,
+    embedder: &dyn Embedder,
+    proposed: Option<&[String]>,
+    interpreter: Option<&dyn super::semantic::SemanticInterpreter>,
+) -> EncodeDecision {
+    encode_with_excerpt(store, profile, input, embedder, proposed, interpreter, None)
+}
+
+pub(crate) fn encode_with_excerpt(
+    store: &mut MemoryStore,
+    profile: &EntityProfile,
     mut input: EncodeInput<'_>,
     embedder: &dyn Embedder,
     proposed: Option<&[String]>,
     interpreter: Option<&dyn super::semantic::SemanticInterpreter>,
+    observed_excerpt: Option<&str>,
 ) -> EncodeDecision {
     if let Err(reason) = input.personal.validate() {
         return EncodeDecision {
@@ -149,7 +161,7 @@ pub fn encode_with_interpreter(
         };
     }
     if parts.len() == 1 {
-        return encode_one(store, profile, input, embedder, None);
+        return encode_one(store, profile, input, embedder, None, observed_excerpt);
     }
 
     // Interpret and validate all slices before writing anything. Never silently
@@ -263,6 +275,7 @@ pub fn encode_with_interpreter(
             slice,
             embedder,
             Some((&prior_emb, &prior_gists)),
+            None,
         );
         best = best.max(d.score);
         last_reason = d.reason;
@@ -296,6 +309,7 @@ fn encode_one(
     input: EncodeInput<'_>,
     embedder: &dyn Embedder,
     novelty_vs: Option<(&Vec<Vec<f32>>, &Vec<String>)>,
+    observed_excerpt: Option<&str>,
 ) -> EncodeDecision {
     let embedded = embedder.embed_result(input.event);
     let learned = embedder.semantic_similarity()
@@ -467,7 +481,11 @@ fn encode_one(
         trace.absence = semantics.absence;
     }
     // Quoted observations start with the same retained facts in core and gist.
-    if !trace.channel.verbatim() && super::core::reported_speech(input.event).is_some() {
+    if let Some(excerpt) = observed_excerpt {
+        trace.core = excerpt.to_owned();
+        trace.gist = trace.core.clone();
+        trace.semantic.claim = trace.core.clone();
+    } else if !trace.channel.verbatim() && super::core::reported_speech(input.event).is_some() {
         trace.gist = trace.core.clone();
     }
     trace.interpretation.statement = trace.gist.clone();
@@ -491,6 +509,19 @@ fn encode_one(
         confidence: 1.0,
         origin: crate::core::model::EvidenceOrigin::Event,
     });
+    if observed_excerpt.is_some() {
+        trace.record_operation(crate::core::model::MemoryOperation {
+            kind: crate::core::model::OBSERVED_EXCERPT_OPERATION.into(),
+            at: trace.created_at,
+            source_trace_ids: Vec::new(),
+            source_axiom_ids: Vec::new(),
+            source_center: None,
+            before: String::new(),
+            after: String::new(),
+            confidence: 1.0,
+            origin: crate::core::model::EvidenceOrigin::Event,
+        });
+    }
     if store.self_policy.selection && trace.personal.appraisal.revision >= 0.8 {
         trace.personal.protected_until = now_secs().saturating_add(86400);
     }

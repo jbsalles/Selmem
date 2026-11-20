@@ -2,6 +2,18 @@
 
 These observations come from the supplied run archives. They do not substitute for raw evidence or independent replications. Historical manifests identify the code and model used at the time; a source cleanup does not change those identities.
 
+## Workshop transfer (November 2026)
+
+`atelier-transfer-002` completed **96/96 Grok 4.3 proposals**. It swaps the
+outcomes of two printmaking trials and measures whether the enacted device
+switches on a matched brief. One assistant coded the proposals blind.
+SelMem with outcomes switched in **10/12** pairs, BM25 in **12/12**, and
+the SelMem prefix and no-memory controls in **1/12** each. With fit of at
+least 4/5 required for both proposals, the informative arms retained 4/12
+and 5/12 switches. The trials use caller-marked excerpts or raw passages,
+and mean originality across all arms ranges from 1.54 to 1.67/5.
+[Results, limits and compact evidence](ATELIER_TRANSFER_RESULTS.md).
+
 ## Normative memory, wide context (analysis November 8, 2026)
 
 `normative-wide-012` completed **192/192 valid Grok 4.3 responses**, reasoning

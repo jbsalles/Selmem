@@ -15,9 +15,18 @@ The 276 exported rows are not 276 independent lives, and reused influence rows a
 
 Give independent judges only a lot's `blind-proposals.json`, its task instructions and separate blank forms. Do not give them this directory's labelled files, pipeline scores or showcase examples before judging.
 
-No completed independent blind ratings are included. The source discussion's earlier single unblinded review is exploratory and is deliberately not presented as an established benchmark score.
+The four earlier lots have an exploratory unblinded review.
 
 Dataset attribution: source conversations come from the official LoCoMo release by Snap Research: https://github.com/snap-research/locomo . These are conversation-derived creative tasks, not official LoCoMo benchmark scores. SelMem's MIT license does not relicense third-party dataset material. Model outputs are recorded observations, not verified real-world solutions.
+
+## Atelier workshop transfer
+
+The [Atelier 002 answer export](atelier-transfer-002/answers.jsonl) records
+96 original Grok 4.3 proposals with actor declarations and one blind
+assistant rating. The [design](atelier-transfer-002/design.json) gives
+exact deduplicated memory blocks, actor settings, commission texts and
+source hashes. These two files support auditing and rescoring the completed
+study. [Results and limitations](../ATELIER_TRANSFER_RESULTS.md).
 
 ## Normative rule-following evidence
 

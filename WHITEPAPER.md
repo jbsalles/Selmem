@@ -337,6 +337,30 @@ general alignment, adversarial robustness or final-action enforcement.
 [full results and archive hashes](experiments/genesis/NORMATIVE_WIDE_RESULTS.md),
 [compact responses](experiments/evidence/normative-wide-012/answers.jsonl).
 
+### Workshop transfer with retained outcomes
+
+Atelier 002 tests whether preserving the outcome of an earlier trial changes
+the device used in a later artistic commission. A caller-selected excerpt keeps
+the action, viewing conditions and observed result in one factual core. After
+four sleep cycles, fixed recall delivers those excerpts in the SelMem arm.
+The prefix control supplies the same episode identities and stops before
+the counts. BM25 retrieves both original trials.
+
+Across 96 Grok 4.3 proposals, one blind assistant rater observed **10/12**
+forward switches with SelMem, **12/12** with BM25 and **1/12** each with the
+prefix and no-memory controls. A forward switch implements interruption
+in the history where interruption succeeded and concentration in the
+mirror history. The two successful trial counts exchange places in the
+prompts for both informative conditions. Requiring fit of at least 4/5 on
+both proposals leaves **4/12** SelMem pairs and **5/12** BM25 pairs. Mean
+originality ranges from 1.54 to 1.67/5.
+
+This is evidence of outcome-conditioned transfer under an explicit
+trial-comparison instruction. The assay uses one fictional history pair,
+six commissions, two draws per cell, and a single blind rating. It leaves
+creative quality and comparative advantage over retrieval as open questions.
+[Results and compact evidence](experiments/ATELIER_TRANSFER_RESULTS.md).
+
 ## What remains unproved
 
 ### Creative collections: suggestive observations, no established advantage

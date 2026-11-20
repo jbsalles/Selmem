@@ -19,6 +19,8 @@ SelMem is a Rust memory library with a daemon, terminal client and multiple expe
 
 A lived trace contains gist, core, schema, affect, confidence, accessibility and provenance. Gist can change; the core supplies a stable grounding reference. The sealed archive is an audit record and is not supplied to the narrator or consulted for runtime grounding. Grounding detects deviation from core, not objective truth about the world.
 
+`SelectiveMemory::live_with_observed_excerpt` accepts a caller-marked passage of complete sentences from a single sourced observation. Admission evaluates the full event. An admitted trace starts with the excerpt as its gist and factual core, up to 48 words and 280 characters. Marked traces are excluded from consolidation merges. The rule narrator returns the preserved core for an eligible marked trace, and the full observation remains in the sealed archive. [Workshop transfer protocol](experiments/atelier-transfer/README.md).
+
 State transformations carry provenance operations. Readonly recall may generate new output but must not modify the saved memory. GENESIS probes use independent snapshot clones and verify hashes.
 
 Suppression also withholds consolidation inputs: suppressed episodes cannot supply

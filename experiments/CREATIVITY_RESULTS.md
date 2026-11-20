@@ -4,7 +4,7 @@
 
 ## What is published
 
-[Compact exports](evidence/README.md) contain the exact recorded proposals and reduced audit/provenance information from four distinct interventions. Original raw run trees, caches, transport logs and checkpoint vaults stay in separate local evidence archives. No independent blind ratings are included; a prior single unblinded assistant review is not presented as a benchmark.
+[Compact exports](evidence/README.md) retain exact proposals and provenance from the four earlier lots below and the separate Atelier pilot. The earlier lots have an exploratory unblinded review. Atelier adds one blind assistant rating. Original run trees, caches, transport logs and checkpoint vaults stay in separate local archives.
 
 | Lot | Source units and treatment | Recorded work |
 | --- | --- | --- |
@@ -63,3 +63,14 @@ The 600- and 6,480-proposal longitudinal plans remain available; their scale is 
 ## Van Gogh attribution follow-up, November 2026
 
 The [reconstructed-memory audit](VANGOGH_RECONSTRUCTED_RESULTS.md) compares six final memories over two historical windows. A targeted Grok 4.3 pilot supplies 240 words per condition and obtains two completed painting proposals. The survivor-summary output attributes a blue-shadow and yellow-light technique to Delacroix. The reconstructed output recalls performing it personally. Both use the same main palette. The encoded trace already lost the quotation speaker, and generation carries that error forward. The brief was selected after inspecting the failure, surrounding memory content differs, and the review was qualitative. This supplies a concrete attribution-transfer case. The creativity question remains open.
+
+## Atelier workshop transfer, November 2026
+
+Exchanging two remembered trial outcomes changed the enacted device in
+10 of 12 matched SelMem pairs and all 12 BM25 pairs in a single blind
+assistant rating. In one case, the same paper-square commission shifts
+from a break in a grid to a dense arrangement at the target. This shows
+transfer of a remembered result to a design choice in the versioned assay.
+Originality averages 1.67/5 for SelMem with outcomes and 1.67/5 for its
+prefix control. BM25 also delivers both outcomes. The pilot leaves the
+creativity advantage open. [Full results and evidence](ATELIER_TRANSFER_RESULTS.md).

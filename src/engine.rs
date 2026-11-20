@@ -496,7 +496,42 @@ impl SelectiveMemory {
 
     pub fn live_with(&mut self, input: EncodeInput<'_>) -> EncodeDecision {
         let _clock = self.enter_clock();
-        self.ingest(input, true)
+        self.ingest(input, true, None)
+    }
+
+    /// Keep an exact, bounded passage of a single observed episode as its
+    /// factual core. Pass the whole event for admission and audit. The excerpt
+    /// should include the action, relevant conditions and observed result.
+    pub fn live_with_observed_excerpt(
+        &mut self,
+        input: EncodeInput<'_>,
+        excerpt: &str,
+    ) -> Result<EncodeDecision, String> {
+        let observation = input
+            .observation_id
+            .filter(|id| !id.trim().is_empty())
+            .ok_or("observed excerpts require an observation ID")?;
+        if input.personal.role != crate::SelfRole::Episode
+            || input.personal.evidence != crate::SelfEvidence::Observation
+            || input.channel != crate::Channel::Selfhood
+            || input.source.trim().is_empty()
+            || input.paint_from.is_some()
+        {
+            return Err("observed excerpts require a sourced, direct Selfhood observation".into());
+        }
+        if encode::needs_split(input.event) || encode::split_event(input.event, None).len() != 1 {
+            return Err("observed excerpts require a single atomic episode".into());
+        }
+        let excerpt = encode::core::observed_excerpt(input.event, excerpt).ok_or(
+            "use an exact passage of complete sentences within 48 words and 280 characters",
+        )?;
+        if self.store.traces.values().any(|trace| {
+            trace.source == input.source && trace.observation_id.as_deref() == Some(observation)
+        }) {
+            return Err("observation identity already retained".into());
+        }
+        let _clock = self.enter_clock();
+        Ok(self.ingest(input, true, Some(excerpt)))
     }
 
     /// The sitting becomes hours, then the frame dies.
@@ -526,7 +561,7 @@ impl SelectiveMemory {
             ev.utility = 0.45;
             ev.permanence = 0.40;
             ev.schema = schema.clone().or(guessed);
-            let _ = self.ingest(ev, false);
+            let _ = self.ingest(ev, false, None);
         }
     }
 
@@ -754,7 +789,7 @@ impl SelectiveMemory {
                 ev.permanence = 0.35;
                 ev.schema = schema;
             }
-            if self.ingest(ev, false).kept {
+            if self.ingest(ev, false, None).kept {
                 kept += 1;
             }
         }

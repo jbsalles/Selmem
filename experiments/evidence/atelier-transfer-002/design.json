@@ -1,0 +1,164 @@
+{
+  "run": "atelier-transfer-002",
+  "protocol": "atelier-transfer-v2",
+  "mock": false,
+  "source_sha256": {
+    "atelier-transfer-002.tar.gz": "b4e344f6dfdcea90c648da36f2800ff756d41edf940fa341c43091d32cc4c155",
+    "run.json": "40d696775f876844ecfb2ba9ed4095320679fe5e5f4ba69eb0a82e7cf4dee769",
+    "plan.json": "43e3fe40a829030a6dc525d3f75c93e2493ba0d971c194e0fc13d4e3a361d6c3",
+    "blind.json": "e222d0b318046baca4c644b957daa2262bfbc13731fadc87a8665c7da0c255c9",
+    "atelier-transfer-002-ratings-codex.json": "b0cf1d78294ac0773dca3f88d5e4a407975e4b961883fa22e97c135ef919b294"
+  },
+  "http_attempts": 96,
+  "model": "grok-4.3",
+  "temperature": 0.4,
+  "max_output_tokens": 900,
+  "system": "You are an artist responding to a commission. Choose the central device that will draw attention to the target. Before choosing, compare any recorded outcomes from trials with a similar goal and comparable conditions. Use the better-supported device if it fits the commission. If the observations do not apply, choose on the merits of this commission. Return one JSON object in this field order. First, device: use interruption for a gap or break in a pattern, concentration for a local increase in density or frequency, both if both carry the effect, or other. Next, proposal: describe one feasible design that uses the chosen device, in up to 180 words, with no references to past trials. Last, influence: state which observation you used and what it showed, or leave the field empty.",
+  "retrieval": "bm25",
+  "repetitions": 2,
+  "memory_budget_cl100k_base": 173,
+  "matched_entry_ends": [
+    36,
+    89,
+    141,
+    173
+  ],
+  "histories": [
+    {
+      "outcome": "interruption",
+      "trials": [
+        {
+          "id": "band-proof",
+          "observation": {
+            "artist": "I",
+            "observer": "Jo",
+            "setup": "I pinned the print without a caption under one lamp six paces from the visitors.",
+            "action": "cut a blank band across the repeated strokes at the path's turn",
+            "first_choices": 5,
+            "viewers": 6
+          },
+          "excerpt": "I cut a blank band across the repeated strokes at the path's turn. I pinned the print without a caption under one lamp six paces from the visitors. Jo recorded that 5 of 6 visitors noticed the intended turn first."
+        },
+        {
+          "id": "cluster-proof",
+          "observation": {
+            "artist": "I",
+            "observer": "Jo",
+            "setup": "From six paces away the visitors saw the uncaptioned proof by one lamp.",
+            "action": "carved a knot of closely spaced strokes at the path's turn",
+            "first_choices": 1,
+            "viewers": 6
+          },
+          "excerpt": "I carved a knot of closely spaced strokes at the path's turn. From six paces away the visitors saw the uncaptioned proof by one lamp. Jo recorded that 1 of 6 visitors noticed the intended turn first."
+        }
+      ]
+    },
+    {
+      "outcome": "concentration",
+      "trials": [
+        {
+          "id": "band-proof",
+          "observation": {
+            "artist": "I",
+            "observer": "Jo",
+            "setup": "I pinned the print without a caption under one lamp six paces from the visitors.",
+            "action": "cut a blank band across the repeated strokes at the path's turn",
+            "first_choices": 1,
+            "viewers": 6
+          },
+          "excerpt": "I cut a blank band across the repeated strokes at the path's turn. I pinned the print without a caption under one lamp six paces from the visitors. Jo recorded that 1 of 6 visitors noticed the intended turn first."
+        },
+        {
+          "id": "cluster-proof",
+          "observation": {
+            "artist": "I",
+            "observer": "Jo",
+            "setup": "From six paces away the visitors saw the uncaptioned proof by one lamp.",
+            "action": "carved a knot of closely spaced strokes at the path's turn",
+            "first_choices": 5,
+            "viewers": 6
+          },
+          "excerpt": "I carved a knot of closely spaced strokes at the path's turn. From six paces away the visitors saw the uncaptioned proof by one lamp. Jo recorded that 5 of 6 visitors noticed the intended turn first."
+        }
+      ]
+    }
+  ],
+  "briefs": [
+    "Hang eighteen identical paper squares across two equally lit boards of the same size. For someone looking straight at both boards from the entrance, make the middle of the left board the first place they notice. Use only the squares and their placement. Both boards must remain in view.",
+    "Stretch sixteen identical lengths of string on two side-by-side rectangular frames. A visitor stands the same distance from both frames. Make the middle of the right frame the first place they notice. Use one steady light and hold the frames still.",
+    "Arrange twelve identical bowls on one long tabletop split into two equal areas by an existing seam. Viewers face the table from the middle of its long edge. Make the center of the right area the first place they notice. Work with the bowl positions and one steady overhead light.",
+    "Stage forty silent seconds with eight performers and two equal areas on a wide stage. During the second half, a viewer in the center of the back row should first look toward the middle of the left area. Keep both areas equally lit and every performer visible. Use only movement and spacing.",
+    "Make a still shadow image on a wide sheet with one fixed lamp and twelve identical opaque discs. Divide the composition into two equal areas. For a visitor facing the sheet, make the middle of the right area the first place they notice. Keep the background and light fixed.",
+    "Arrange twenty identical wooden blocks on two equal shelves placed side by side at eye level. First-time visitors approach straight on from six paces away. Make the middle of the left shelf the first place they notice. Use one uniform light and keep the blocks still."
+  ],
+  "contexts": [
+    {
+      "memory": "",
+      "episodes": [],
+      "memory_tokens": 0
+    },
+    {
+      "memory": "<entry>\nI inked the lino block for the workshop trial. I cut a blank band across the repeated strokes at the path's turn. I pinned the print without a caption under one lamp six paces from the visitors. Jo recorded that 1 of 6 visitors noticed the intended turn first. I hung the damp sheets near the roller to dry.\n</entry>\n<entry>\nI sharpened the narrow gouge and pulled a proof on the smoother paper. I carved a knot of closely spaced strokes at the path's turn. From six paces away the visitors saw the uncaptioned proof by one lamp. Jo recorded that 5 of 6 visitors noticed the intended turn first. The cuttings went into a tin beside the carving tools.\n</entry>\n",
+      "episodes": [
+        "band-proof",
+        "cluster-proof"
+      ],
+      "memory_tokens": 156
+    },
+    {
+      "memory": "<entry>\nI inked the lino block for the workshop trial. I cut a blank band across the repeated strokes at the path's turn. I pinned the print without a caption under one lamp six paces from the visitors. Jo recorded that 5 of 6 visitors noticed the intended turn first. I hung the damp sheets near the roller to dry.\n</entry>\n<entry>\nI sharpened the narrow gouge and pulled a proof on the smoother paper. I carved a knot of closely spaced strokes at the path's turn. From six paces away the visitors saw the uncaptioned proof by one lamp. Jo recorded that 1 of 6 visitors noticed the intended turn first. The cuttings went into a tin beside the carving tools.\n</entry>\n",
+      "episodes": [
+        "band-proof",
+        "cluster-proof"
+      ],
+      "memory_tokens": 156
+    },
+    {
+      "memory": "<entry>\nI sharpened the narrow gouge and pulled a proof on the smoother paper. I carved a knot of closely spaced strokes at the path's turn. From six paces away the visitors saw the uncaptioned proof by one lamp. Jo recorded that 1 of 6 visitors noticed the intended turn first. The cuttings went into a tin beside the carving tools.\n</entry>\n<entry>\nI inked the lino block for the workshop trial. I cut a blank band across the repeated strokes at the path's turn. I pinned the print without a caption under one lamp six paces from the visitors. Jo recorded that 5 of 6 visitors noticed the intended turn first. I hung the damp sheets near the roller to dry.\n</entry>\n",
+      "episodes": [
+        "cluster-proof",
+        "band-proof"
+      ],
+      "memory_tokens": 156
+    },
+    {
+      "memory": "<entry>\nI sharpened the narrow gouge and pulled a proof on the smoother paper. I carved a knot of closely spaced strokes at the path's turn. From six paces away the visitors saw the uncaptioned proof by one lamp. Jo recorded that 5 of 6 visitors noticed the intended turn first. The cuttings went into a tin beside the carving tools.\n</entry>\n<entry>\nI inked the lino block for the workshop trial. I cut a blank band across the repeated strokes at the path's turn. I pinned the print without a caption under one lamp six paces from the visitors. Jo recorded that 1 of 6 visitors noticed the intended turn first. I hung the damp sheets near the roller to dry.\n</entry>\n",
+      "episodes": [
+        "cluster-proof",
+        "band-proof"
+      ],
+      "memory_tokens": 156
+    },
+    {
+      "memory": "<entry>\nFor a workshop viewing I made a relief print of a path turning between low walls. I wanted the turn to be the first place a viewer noticed.\n</entry>\n<entry>\nI cut a blank band across the repeated strokes at the path's turn. I pinned the print without a caption under one lamp six paces from the visitors. Jo recorded that 1 of 6 visitors noticed the intended turn first.\n</entry>\n<entry>\nI carved a knot of closely spaced strokes at the path's turn. From six paces away the visitors saw the uncaptioned proof by one lamp. Jo recorded that 5 of 6 visitors noticed the intended turn first.\n</entry>\n<entry>\nI put the dried prints on the wide shelf in separate sleeves. The lino scraps went into the small tray beside the roller.\n</entry>\n",
+      "episodes": [
+        "visitors",
+        "band-proof",
+        "cluster-proof",
+        "cleanup"
+      ],
+      "memory_tokens": 173
+    },
+    {
+      "memory": "<entry>\nFor a workshop viewing I made a relief print of a path turning between low walls. I wanted the turn to be the first place a viewer noticed.\n</entry>\n<entry>\nI cut a blank band across the repeated strokes at the path's turn. I pinned the print without a caption under one lamp six paces from the visitors. Jo recorded that 5 of 6 visitors noticed the intended turn first.\n</entry>\n<entry>\nI carved a knot of closely spaced strokes at the path's turn. From six paces away the visitors saw the uncaptioned proof by one lamp. Jo recorded that 1 of 6 visitors noticed the intended turn first.\n</entry>\n<entry>\nI put the dried prints on the wide shelf in separate sleeves. The lino scraps went into the small tray beside the roller.\n</entry>\n",
+      "episodes": [
+        "visitors",
+        "band-proof",
+        "cluster-proof",
+        "cleanup"
+      ],
+      "memory_tokens": 173
+    },
+    {
+      "memory": "<entry>\nFor a workshop viewing I made a relief print of a path turning between low walls. I wanted the turn to be the first place a viewer noticed.\n</entry>\n<entry>\nI inked the lino block for the workshop trial. I cut a blank band across the repeated strokes at the path's turn. I pinned the print without a…\n \t \t \t \t \t \t \t \t \t \t \t \t \t</entry>\n<entry>\nI sharpened the narrow gouge and pulled a proof on the smoother paper. I carved a knot of closely spaced strokes at the path's turn. From six paces…\n \t \t \t \t \t \t \t \t \t \t \t</entry>\n<entry>\nI put the dried prints on the wide shelf in separate sleeves. The lino scraps went into the small tray beside the roller.\n</entry>\n",
+      "episodes": [
+        "visitors",
+        "band-proof",
+        "cluster-proof",
+        "cleanup"
+      ],
+      "memory_tokens": 173
+    }
+  ],
+  "blind_rater": "Codex"
+}

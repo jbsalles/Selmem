@@ -16,7 +16,7 @@
 <div class="wrap">
 <header>
 <a class="brand" href="https://github.com/jbsalles/Selmem/blob/main/README.md" aria-label="SelMem project readme">Sel<span>Mem</span></a>
-<nav aria-label="Page navigation"><a href="#findings">Findings</a><a href="#causal">Causal ablations</a><a href="#normative">Normative memory</a><a href="#self">Contextual self</a><a href="#contextual">Transfer pilots</a><a href="#creativity">Creative examples</a><a href="#record">Run record</a><a href="https://github.com/jbsalles/Selmem">GitHub ↗</a></nav>
+<nav aria-label="Page navigation"><a href="#findings">Findings</a><a href="#causal">Causal ablations</a><a href="#normative">Normative memory</a><a href="#self">Contextual self</a><a href="#contextual">Transfer pilots</a><a href="#atelier">Workshop transfer</a><a href="#creativity">Creative examples</a><a href="#record">Run record</a><a href="https://github.com/jbsalles/Selmem">GitHub ↗</a></nav>
 </header>
 <main>
 <div class="hero">
@@ -92,6 +92,17 @@
 </tbody></table></div>
 <p class="note">The preregistered criterion requires <strong>12 independent domains</strong>, plus a gain of at least 10 percentage points over both summary and retrieval, with both baselines beaten in 8/12 domains. Only <strong>2</strong> were tested in that original v4 pilot; the later causal suite uses different controls. The original run records <strong>meets_preregistered_threshold: false</strong>. Histories are synthetic, source labeling uses a scripted witness, and no independent LLM judge ran. This supports a limited memory-selection result, <strong>not general RAG superiority or autonomous individuality</strong>. <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/genesis/CONTEXTUAL_TRANSFER_RESULTS.md">Read all four pilots, negative controls and archive hashes</a>.</p>
 </section>
+<section id="atelier" aria-labelledby="atelier-title">
+<div class="section-head"><h2 id="atelier-title">When a trial result changes a design.</h2><p>Atelier 002 · November 2026 · 96 Grok 4.3 proposals.</p></div>
+<p>Two printmaking histories exchange which trial drew five of six observers to the target first. The actor is asked to compare the trial results when choosing a device for the new commission.</p>
+<div class="table-wrap"><table><caption class="label" style="text-align:left;margin:20px 0 8px">One blind assistant rating · 12 matched history pairs per condition</caption><thead><tr><th scope="col">Memory condition</th><th scope="col">Forward switches</th><th scope="col">Forward switches with fit ≥ 4/5 on both</th><th scope="col">Mean originality /5</th></tr></thead><tbody>
+<tr><th scope="row">No memory</th><td>1/12</td><td>0/12</td><td>1.58</td></tr>
+<tr><th scope="row">SelMem prefix</th><td>1/12</td><td>0/12</td><td>1.67</td></tr>
+<tr><th scope="row">SelMem with outcomes</th><td>10/12</td><td>4/12</td><td>1.67</td></tr>
+<tr><th scope="row">BM25</th><td>12/12</td><td>5/12</td><td>1.54</td></tr>
+</tbody></table></div>
+<p class="note">A forward switch implements interruption in the first history and concentration in the second. SelMem recalled caller-marked excerpts after four sleep cycles. BM25 retrieved both trials. The result supports transfer when the outcome is delivered to an actor explicitly asked to compare trials. Relative creativity and an advantage over retrieval remain open. <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/ATELIER_TRANSFER_RESULTS.md">Full results and evidence</a>.</p>
+</section>
 <section id="creativity" aria-labelledby="creativity-title">
 <div class="section-head"><h2 id="creativity-title">Ideas worth inspecting.</h2><p>Illustrative summaries of recorded answers. These are not blind rankings.</p></div>
 <div class="grid">
@@ -111,7 +122,8 @@
 
 <section id="record" aria-labelledby="record-title">
 <div class="section-head"><h2 id="record-title">The run record.</h2><p>Completed collections are evidence that a protocol ran. Effectiveness still requires evaluation.</p></div>
-<div class="table-wrap"><table><caption class="label" style="text-align:left;margin-bottom:12px">Four distinct creative interventions</caption><thead><tr><th scope="col">Lot</th><th scope="col">Recorded rows</th><th scope="col">Intervention</th><th scope="col">Boundary</th></tr></thead><tbody>
+<div class="table-wrap"><table><caption class="label" style="text-align:left;margin-bottom:12px">Recorded creative experiments</caption><thead><tr><th scope="col">Lot</th><th scope="col">Recorded rows</th><th scope="col">Intervention</th><th scope="col">Boundary</th></tr></thead><tbody>
+<tr><th scope="row"><a href="https://github.com/jbsalles/Selmem/blob/main/experiments/ATELIER_TRANSFER_RESULTS.md">Atelier 002</a></th><td>96</td><td>Exchanged success counts in two observed trials</td><td>Fixed recall and one blind assistant rating</td></tr>
 <tr><th scope="row"><a href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/creative-preview-003/provenance.json">Preview 003</a></th><td>60</td><td>Fresh 788-turn encoding, twenty sleep cycles, five conditions</td><td>Matched direct generation; profiles/axioms and response selector excluded</td></tr>
 <tr><th scope="row"><a href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/creative-replay-003/provenance.json">Replay 003</a></th><td>72</td><td>Frozen source selection; task-blind retelling and guard</td><td>Controlled readout; no fresh encoding</td></tr>
 <tr><th scope="row"><a href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/creative-replay-004/provenance.json">Replay 004</a></th><td>72</td><td>Structured final memory delivery</td><td>Reuses replay 003 readouts; not an independent replication</td></tr>
@@ -120,7 +132,7 @@
 </section>
 <section aria-labelledby="next-title"><div class="section-head"><h2 id="next-title">Keep the question open.</h2></div>
 <div class="split"><div><h3>What the evidence supports</h3><ul><li>Selective admission and sleep produce inspectable memory changes.</li><li>Post-recall memory cuts change choices in the versioned context-cued suite.</li><li>Concrete proposals and selection tradeoffs can be audited.</li><li>Creative examples justify more controlled investigation.</li></ul></div><div><h3>What still needs demonstrating</h3><ul><li>An independent blind utility–originality advantage over controls.</li><li>Pre-retrieval lesions separating direct belief delivery from episode cueing.</li><li>Replication with fresh histories, unrelated behavioral axes and other models.</li></ul></div></div>
-<details><summary>Scope, negative results and reproduction</summary><p>The ledger also records admission loss, null sleep comparisons, factual abstentions and a persistence defect. Larger economy/full creative-life plans remain available, not completed claims. The compact exports omit raw runtime logs and vaults; resuming old work needs the original complete archive and build. Inspect the <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/RESULTS.md">ledger</a>, <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/REPRODUCIBILITY.md">reproduction guide</a> and <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/README.md">evidence provenance</a>. No independent blind creativity ratings are included.</p></details>
+<details><summary>Scope, negative results and reproduction</summary><p>The ledger also records admission loss, null sleep comparisons, factual abstentions and a persistence defect. A complete archive and its original build are required to resume a run. Atelier 002 includes a single blind assistant rating. See the <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/RESULTS.md">ledger</a>, <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/REPRODUCIBILITY.md">reproduction guide</a> and <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/README.md">evidence provenance</a>.</p></details>
 </section>
 </main>
 <footer><p>SelMem · Experimental results, not a personality or consciousness claim.<br>Published examples are fallible model outputs. LoCoMo-derived tasks are not official benchmark scores.</p><p><a href="https://github.com/jbsalles/Selmem/blob/main/WHITEPAPER.md">Whitepaper</a> · <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/README.md">Replay protocols</a></p></footer>

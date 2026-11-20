@@ -16,6 +16,7 @@ The Van Gogh preparation pipeline and the reconstructed-memory audit add histori
 | Sleep | Compare equal-time no-sleep, ordinary sleep and forced-deep controls | [Sleep protocol](genesis/SLEEP.md) |
 | Guarded creative preview | Fresh encoding, ten nights per history, five conditions, 60 proposals | [Guarded preview](genesis/CREATIVE_PREVIEW_GUARDED.md) |
 | Fixed-selection creative replays | Isolate task-blind readout, then structured memory delivery; 72 proposals per lot | [Replay](genesis/CREATIVE_REPLAY.md), [structured rerun](genesis/CREATIVE_MEMORY_REPLAY.md) |
+| Workshop transfer | 96 Grok 4.3 proposals. Blind outcome-concordant switches in 10/12 SelMem pairs, 12/12 BM25 pairs and 1/12 per control | [Results](ATELIER_TRANSFER_RESULTS.md), [protocol and runner](atelier-transfer/README.md) |
 | Response selection | Separate candidate generation, task-only quality and anonymous grounding | [Influence diagnostic](genesis/MEMORY_INFLUENCE.md) |
 | Longitudinal creative life | Preserved economy/full plans: 600 / 6,480 proposals | [Creative life](genesis/CREATIVE_LIFE.md) |
 | Historical creative transfer | Original four-condition assay and target/sham follow-up | [Creative transfer](genesis/CREATIVITY.md) |

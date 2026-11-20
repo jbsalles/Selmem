@@ -4,6 +4,33 @@ use crate::core::store::MemoryStore;
 use crate::encode::EncodeDecision;
 use crate::recall::narrator::Narrator;
 
+pub(crate) fn observed_excerpt<'a>(event: &str, excerpt: &'a str) -> Option<&'a str> {
+    let excerpt = excerpt.trim();
+    if excerpt.is_empty()
+        || excerpt.chars().count() > 280
+        || excerpt.split_whitespace().count() > 48
+    {
+        return None;
+    }
+    let event = event.trim();
+    event
+        .match_indices(excerpt)
+        .any(|(start, _)| {
+            let before = &event[..start];
+            let after = &event[start + excerpt.len()..];
+            (before.is_empty()
+                || (before.ends_with(char::is_whitespace)
+                    && before
+                        .trim_end_matches([' ', '\t', '\r'])
+                        .ends_with(['.', '!', '?', '\n'])))
+                && (after.is_empty()
+                    || after.starts_with('\n')
+                    || (after.starts_with(char::is_whitespace)
+                        && excerpt.ends_with(['.', '!', '?'])))
+        })
+        .then_some(excerpt)
+}
+
 fn content_tokens(s: &str) -> Vec<String> {
     s.split_whitespace()
         .map(|w| {

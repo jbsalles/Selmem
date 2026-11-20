@@ -562,7 +562,15 @@ pub struct MemoryTrace {
     pub absence: Option<AbsenceKind>,
 }
 
+pub(crate) const OBSERVED_EXCERPT_OPERATION: &str = "observed-excerpt";
+
 impl MemoryTrace {
+    pub(crate) fn has_observed_excerpt(&self) -> bool {
+        self.operations
+            .iter()
+            .any(|op| op.kind == OBSERVED_EXCERPT_OPERATION)
+    }
+
     pub fn record_operation(&mut self, op: MemoryOperation) {
         self.operations.push(op);
     }
