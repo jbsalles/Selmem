@@ -50,6 +50,16 @@ The influence diagnostic separates generation, anonymous task-only quality and a
 
 [Changed selections](evidence/memory-influence-005/changed-selections.json) and [selection audits](evidence/memory-influence-005/selection-audit.json) expose the tradeoffs. Pipeline model ratings are not independent scientific judges. A higher coefficient may produce more switches without better answers.
 
+## Atelier 003 connects recall to a design choice
+
+On six held-out commissions, swapping remembered outcomes produced
+11/12 forward switches in SelMem proposals and 9/12 in BM25 proposals
+under one blind assistant rating. Four SelMem pairs and seven BM25 pairs
+also met the feasibility criterion on both sides. The review checks the
+device and whether the design accounts for all supplied pieces.
+Originality and effects on viewers remain open.
+[Full results and scored proposals](atelier-recall/RESULTS.md).
+
 ## What would strengthen the claim
 
 1. At least two independent, condition-blind judges rating original answers for utility, mechanism originality, feasibility and concrete constraint compliance.

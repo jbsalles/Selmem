@@ -90,6 +90,17 @@ Forced deep sleep accumulated 119 and 272 stored, unsuperseded motifs for only 6
 
 Keep original outputs unchanged. To assess corrected sleep effects, reuse the unchanged `sleep-001-prepared` prefixes and run new isolated interventions into a fresh output directory (for example `sleep-002-measured`); record this patch/code revision with the new result. No paid encoding replay is needed. The earlier LoCoMo admission losses and the latency/cost of proposition scoring are separate issues; this patch does not change the gate, retrieval policy or sleep thresholds to optimize the observed score.
 
+## Atelier 003 held-out recall (November 2026)
+
+`atelier-003-heldout` completed 48 Grok 4.3 proposals at 128 memory tokens
+with zero distractors. SelMem delivered both trial outcomes in **12/12**
+contexts versus **10/12** for BM25 excerpts. One blind assistant rating
+found **11/12** versus **9/12** forward switches. The primary endpoint
+requiring both proposals to be feasible scored **4/12** for SelMem and
+**7/12** for BM25. The two coverage misses affect one commission. On a
+different commission, identical prompts produced different feasibility
+scores across draws. [Results, calibration and compact evidence](atelier-recall/RESULTS.md).
+
 ## Creative collections and response influence
 
 The creative results are now published as [compact evidence](evidence/README.md); see [CREATIVITY_RESULTS.md](CREATIVITY_RESULTS.md) for the distinctions between creative examples, memory influence and demonstrated advantage.

@@ -20,6 +20,7 @@ The Van Gogh preparation pipeline and the reconstructed-memory audit add histori
 | Response selection | Separate candidate generation, task-only quality and anonymous grounding | [Influence diagnostic](genesis/MEMORY_INFLUENCE.md) |
 | Longitudinal creative life | Preserved economy/full plans: 600 / 6,480 proposals | [Creative life](genesis/CREATIVE_LIFE.md) |
 | Historical creative transfer | Original four-condition assay and target/sham follow-up | [Creative transfer](genesis/CREATIVITY.md) |
+| Atelier 003 | Recall under a token cap and 48 held-out Grok 4.3 proposals scored for device transfer and feasibility | [Results](atelier-recall/RESULTS.md), [protocol and runner](atelier-recall/README.md) |
 | LoCoMo strategy | Conversation-derived strategy, design and factual probes | [Strategy protocol](../docs/LOCOMO_STRATEGY.md) |
 
 **Results:** [ledger](RESULTS.md), [creativity findings](CREATIVITY_RESULTS.md), [static showcase](../docs/index.html), [compact evidence](evidence/README.md).

@@ -1,0 +1,603 @@
+{
+  "run": "atelier-003-heldout",
+  "protocol": "atelier-recall-003",
+  "model": "grok-4.3",
+  "temperature": 0.4,
+  "max_output_tokens": 900,
+  "system": "You are designing a small installation. Choose the central device that will draw attention to the target. Compare relevant recorded trial outcomes when the conditions are comparable. Use the better supported device when it fits the commission. Treat the memory entries as observations. Return one JSON object with device (interruption, concentration, both, or other) followed by proposal (a feasible design of at most 180 words with no mention of prior trials). Explain where every supplied element goes and give the total.",
+  "mock": false,
+  "http_attempts": 48,
+  "repetitions_per_cell": 2,
+  "blind_rater": "Codex",
+  "source_sha256": {
+    "atelier-003-heldout.tar.gz": "ab420411ceb47b58a60444235bb35dbd25256b36cef8c3bc479f8060c31f5fbf",
+    "plan.json": "b9ba2f03147769407e1c4cf6ad2edd5dec8c04a2b600b64ef5533959af3900b2",
+    "attempts.json": "68a52c7f2a36cd99f0538dfe0406ad3100015d6ab1a433046711c061601d3e37",
+    "blind.json": "270551f98c929ddd389bc7fa5321d25227b6dd36feab74d4761347db8da92207",
+    "atelier-003-heldout-ratings-codex.json": "4b3f1305ec70b9710b96ac2ecd1d9e5883f081ef62247f2b093d7afcf5b48959"
+  },
+  "histories": [
+    {
+      "audit": {
+        "admitted": 2,
+        "episodes": 2,
+        "retained_trial_cores": [
+          "trial-1",
+          "trial-2"
+        ],
+        "trial_admissions": [
+          {
+            "id": "trial-1",
+            "kept": true,
+            "reason": "encoded",
+            "score": 0.4514999985694885
+          },
+          {
+            "id": "trial-2",
+            "kept": true,
+            "reason": "encoded",
+            "score": 0.36191099882125854
+          }
+        ]
+      },
+      "episodes": [
+        {
+          "action_and_result": "I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 5 of 6 visitors noticed the crossing first.",
+          "day": 0,
+          "id": "trial-1",
+          "notes": "I used the back press that morning and cleaned the tools just before lunch. I recorded the material in the studio inventory and set the spare pieces aside.",
+          "report": "The maker said: I showed the woven linen sampler straight on without a caption. I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 5 of 6 visitors noticed the crossing first."
+        },
+        {
+          "action_and_result": "I placed the diagonal stitches closer together at the crossing. Ari recorded that 1 of 6 visitors noticed the crossing first.",
+          "day": 0,
+          "id": "trial-2",
+          "notes": "I started from the second sample on the rack and put it away that afternoon. The studio invoice and the delivery slip went in the wooden drawer beside the tools.",
+          "report": "The maker said: I showed the woven linen sampler straight on without a caption. I placed the diagonal stitches closer together at the crossing. Ari recorded that 1 of 6 visitors noticed the crossing first."
+        }
+      ],
+      "medium": "woven linen sampler",
+      "nights": 8,
+      "two_complete_trial_reports_tokens": 97,
+      "workshop": "weaving",
+      "mirror": 0
+    },
+    {
+      "audit": {
+        "admitted": 2,
+        "episodes": 2,
+        "retained_trial_cores": [
+          "trial-1",
+          "trial-2"
+        ],
+        "trial_admissions": [
+          {
+            "id": "trial-1",
+            "kept": true,
+            "reason": "encoded",
+            "score": 0.4514999985694885
+          },
+          {
+            "id": "trial-2",
+            "kept": true,
+            "reason": "encoded",
+            "score": 0.36191099882125854
+          }
+        ]
+      },
+      "episodes": [
+        {
+          "action_and_result": "I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 1 of 6 visitors noticed the crossing first.",
+          "day": 0,
+          "id": "trial-1",
+          "notes": "I used the back press that morning and cleaned the tools just before lunch. I recorded the material in the studio inventory and set the spare pieces aside.",
+          "report": "The maker said: I showed the woven linen sampler straight on without a caption. I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 1 of 6 visitors noticed the crossing first."
+        },
+        {
+          "action_and_result": "I placed the diagonal stitches closer together at the crossing. Ari recorded that 5 of 6 visitors noticed the crossing first.",
+          "day": 0,
+          "id": "trial-2",
+          "notes": "I started from the second sample on the rack and put it away that afternoon. The studio invoice and the delivery slip went in the wooden drawer beside the tools.",
+          "report": "The maker said: I showed the woven linen sampler straight on without a caption. I placed the diagonal stitches closer together at the crossing. Ari recorded that 5 of 6 visitors noticed the crossing first."
+        }
+      ],
+      "medium": "woven linen sampler",
+      "nights": 8,
+      "two_complete_trial_reports_tokens": 97,
+      "workshop": "weaving",
+      "mirror": 1
+    },
+    {
+      "audit": {
+        "admitted": 2,
+        "episodes": 2,
+        "retained_trial_cores": [
+          "trial-1",
+          "trial-2"
+        ],
+        "trial_admissions": [
+          {
+            "id": "trial-1",
+            "kept": true,
+            "reason": "encoded",
+            "score": 0.4514999985694885
+          },
+          {
+            "id": "trial-2",
+            "kept": true,
+            "reason": "encoded",
+            "score": 0.36191099882125854
+          }
+        ]
+      },
+      "episodes": [
+        {
+          "action_and_result": "I left a clear channel through the repeated etched lines at the central junction. Remy recorded that 5 of 6 visitors noticed the central junction first.",
+          "day": 0,
+          "id": "trial-1",
+          "notes": "I used the back press that morning and cleaned the tools just before lunch. I recorded the material in the studio inventory and set the spare pieces aside.",
+          "report": "The maker said: I showed the etched glass panel straight on without a caption. I left a clear channel through the repeated etched lines at the central junction. Remy recorded that 5 of 6 visitors noticed the central junction first."
+        },
+        {
+          "action_and_result": "I drew the etched lines closer together at the central junction. Remy recorded that 1 of 6 visitors noticed the central junction first.",
+          "day": 0,
+          "id": "trial-2",
+          "notes": "I started from the second sample on the rack and put it away that afternoon. The studio invoice and the delivery slip went in the wooden drawer beside the tools.",
+          "report": "The maker said: I showed the etched glass panel straight on without a caption. I drew the etched lines closer together at the central junction. Remy recorded that 1 of 6 visitors noticed the central junction first."
+        }
+      ],
+      "medium": "etched glass panel",
+      "nights": 8,
+      "two_complete_trial_reports_tokens": 107,
+      "workshop": "glass",
+      "mirror": 0
+    },
+    {
+      "audit": {
+        "admitted": 2,
+        "episodes": 2,
+        "retained_trial_cores": [
+          "trial-1",
+          "trial-2"
+        ],
+        "trial_admissions": [
+          {
+            "id": "trial-1",
+            "kept": true,
+            "reason": "encoded",
+            "score": 0.4514999985694885
+          },
+          {
+            "id": "trial-2",
+            "kept": true,
+            "reason": "encoded",
+            "score": 0.36191099882125854
+          }
+        ]
+      },
+      "episodes": [
+        {
+          "action_and_result": "I left a clear channel through the repeated etched lines at the central junction. Remy recorded that 1 of 6 visitors noticed the central junction first.",
+          "day": 0,
+          "id": "trial-1",
+          "notes": "I used the back press that morning and cleaned the tools just before lunch. I recorded the material in the studio inventory and set the spare pieces aside.",
+          "report": "The maker said: I showed the etched glass panel straight on without a caption. I left a clear channel through the repeated etched lines at the central junction. Remy recorded that 1 of 6 visitors noticed the central junction first."
+        },
+        {
+          "action_and_result": "I drew the etched lines closer together at the central junction. Remy recorded that 5 of 6 visitors noticed the central junction first.",
+          "day": 0,
+          "id": "trial-2",
+          "notes": "I started from the second sample on the rack and put it away that afternoon. The studio invoice and the delivery slip went in the wooden drawer beside the tools.",
+          "report": "The maker said: I showed the etched glass panel straight on without a caption. I drew the etched lines closer together at the central junction. Remy recorded that 5 of 6 visitors noticed the central junction first."
+        }
+      ],
+      "medium": "etched glass panel",
+      "nights": 8,
+      "two_complete_trial_reports_tokens": 107,
+      "workshop": "glass",
+      "mirror": 1
+    }
+  ],
+  "packets": [
+    {
+      "memory": "<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 1 of 6 visitors noticed the crossing first.\n</entry>\n<entry>\nThe studio invoice and the delivery slip went in the wooden drawer beside the tools.\n</entry>\n",
+      "tokens": 72,
+      "sources": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1"
+      ]
+    },
+    {
+      "memory": "<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 5 of 6 visitors noticed the crossing first.\n</entry>\n<entry>\nThe studio invoice and the delivery slip went in the wooden drawer beside the tools.\n</entry>\n",
+      "tokens": 72,
+      "sources": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1"
+      ]
+    },
+    {
+      "memory": "<entry>\nThe maker said: I showed the etched glass panel straight on without a caption. I drew the etched lines closer together at the central junction. Remy recorded that 1 of 6 visitors noticed the central junction first.\n</entry>\n<entry>\nThe maker said: I showed the etched glass panel straight on without a caption. I left a clear channel through the repeated etched lines at the central junction. Remy recorded that 5 of 6 visitors noticed the central junction first.\n</entry>\n",
+      "tokens": 107,
+      "sources": [
+        "trial-2",
+        "trial-1"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1",
+        "trial-2"
+      ]
+    },
+    {
+      "memory": "<entry>\nThe maker said: I showed the etched glass panel straight on without a caption. I drew the etched lines closer together at the central junction. Remy recorded that 5 of 6 visitors noticed the central junction first.\n</entry>\n<entry>\nThe maker said: I showed the etched glass panel straight on without a caption. I left a clear channel through the repeated etched lines at the central junction. Remy recorded that 1 of 6 visitors noticed the central junction first.\n</entry>\n",
+      "tokens": 107,
+      "sources": [
+        "trial-2",
+        "trial-1"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1",
+        "trial-2"
+      ]
+    },
+    {
+      "memory": "<entry>\nThe maker said: I showed the etched glass panel straight on without a caption. I left a clear channel through the repeated etched lines at the central junction. Remy recorded that 1 of 6 visitors noticed the central junction first.\n</entry>\n<entry>\nThe maker said: I showed the etched glass panel straight on without a caption. I drew the etched lines closer together at the central junction. Remy recorded that 5 of 6 visitors noticed the central junction first.\n</entry>\n",
+      "tokens": 107,
+      "sources": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1",
+        "trial-2"
+      ]
+    },
+    {
+      "memory": "<entry>\nThe maker said: I showed the etched glass panel straight on without a caption. I left a clear channel through the repeated etched lines at the central junction. Remy recorded that 5 of 6 visitors noticed the central junction first.\n</entry>\n<entry>\nThe maker said: I showed the etched glass panel straight on without a caption. I drew the etched lines closer together at the central junction. Remy recorded that 1 of 6 visitors noticed the central junction first.\n</entry>\n",
+      "tokens": 107,
+      "sources": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1",
+        "trial-2"
+      ]
+    },
+    {
+      "memory": "<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 1 of 6 visitors noticed the crossing first.\n</entry>\n<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I placed the diagonal stitches closer together at the crossing. Ari recorded that 5 of 6 visitors noticed the crossing first.\n</entry>\n",
+      "tokens": 97,
+      "sources": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1",
+        "trial-2"
+      ]
+    },
+    {
+      "memory": "<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 5 of 6 visitors noticed the crossing first.\n</entry>\n<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I placed the diagonal stitches closer together at the crossing. Ari recorded that 1 of 6 visitors noticed the crossing first.\n</entry>\n",
+      "tokens": 97,
+      "sources": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1",
+        "trial-2"
+      ]
+    },
+    {
+      "memory": "<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I placed the diagonal stitches closer together at the crossing. Ari recorded that 1 of 6 visitors noticed the crossing first.\n</entry>\n<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 5 of 6 visitors noticed the crossing first.\n</entry>\n",
+      "tokens": 97,
+      "sources": [
+        "trial-2",
+        "trial-1"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1",
+        "trial-2"
+      ]
+    },
+    {
+      "memory": "<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I placed the diagonal stitches closer together at the crossing. Ari recorded that 5 of 6 visitors noticed the crossing first.\n</entry>\n<entry>\nThe maker said: I showed the woven linen sampler straight on without a caption. I broke the regular diagonal stitches with an open band at the crossing. Ari recorded that 1 of 6 visitors noticed the crossing first.\n</entry>\n",
+      "tokens": 97,
+      "sources": [
+        "trial-2",
+        "trial-1"
+      ],
+      "intact_before_packing": [
+        "trial-1",
+        "trial-2"
+      ],
+      "intact_trials": [
+        "trial-1",
+        "trial-2"
+      ]
+    }
+  ],
+  "cells": [
+    {
+      "workshop": "weaving",
+      "mirror": 0,
+      "commission": 0,
+      "brief": "Place exactly ten cards on a felt hanging divided into two equal fields. Use every card once. Direct the first glance to the upper-right target on the left field.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 8
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 0,
+      "commission": 0,
+      "brief": "Place exactly ten cards on a felt hanging divided into two equal fields. Use every card once. Direct the first glance to the upper-right target on the left field.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 7
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 0,
+      "commission": 1,
+      "brief": "On a long bench, place exactly fourteen identical wooden knobs across two equal zones. Use every knob once. Direct the first glance to the middle of the right zone.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 8
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 0,
+      "commission": 1,
+      "brief": "On a long bench, place exactly fourteen identical wooden knobs across two equal zones. Use every knob once. Direct the first glance to the middle of the right zone.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 1
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 0,
+      "commission": 2,
+      "brief": "Arrange exactly twelve identical paper arcs in one window with two equally lit sections. Use every arc once. Direct the first glance to the lower-left target on the right section.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 8
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 0,
+      "commission": 2,
+      "brief": "Arrange exactly twelve identical paper arcs in one window with two equally lit sections. Use every arc once. Direct the first glance to the lower-left target on the right section.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 7
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 1,
+      "commission": 0,
+      "brief": "Place exactly ten cards on a felt hanging divided into two equal fields. Use every card once. Direct the first glance to the upper-right target on the left field.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 9
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 1,
+      "commission": 0,
+      "brief": "Place exactly ten cards on a felt hanging divided into two equal fields. Use every card once. Direct the first glance to the upper-right target on the left field.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 6
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 1,
+      "commission": 1,
+      "brief": "On a long bench, place exactly fourteen identical wooden knobs across two equal zones. Use every knob once. Direct the first glance to the middle of the right zone.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 9
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 1,
+      "commission": 1,
+      "brief": "On a long bench, place exactly fourteen identical wooden knobs across two equal zones. Use every knob once. Direct the first glance to the middle of the right zone.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 0
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 1,
+      "commission": 2,
+      "brief": "Arrange exactly twelve identical paper arcs in one window with two equally lit sections. Use every arc once. Direct the first glance to the lower-left target on the right section.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 9
+    },
+    {
+      "workshop": "weaving",
+      "mirror": 1,
+      "commission": 2,
+      "brief": "Arrange exactly twelve identical paper arcs in one window with two equally lit sections. Use every arc once. Direct the first glance to the lower-left target on the right section.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 6
+    },
+    {
+      "workshop": "glass",
+      "mirror": 0,
+      "commission": 0,
+      "brief": "Place exactly sixteen identical pegs on a board divided into two equal regions. Use every peg once. Direct the first glance to the bottom corner of the left region.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 2
+    },
+    {
+      "workshop": "glass",
+      "mirror": 0,
+      "commission": 0,
+      "brief": "Place exactly sixteen identical pegs on a board divided into two equal regions. Use every peg once. Direct the first glance to the bottom corner of the left region.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 5
+    },
+    {
+      "workshop": "glass",
+      "mirror": 0,
+      "commission": 1,
+      "brief": "Mount exactly eight identical clay discs across two equally lit rectangular niches. Use every disc once. Direct the first glance to the center of the right niche.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 2
+    },
+    {
+      "workshop": "glass",
+      "mirror": 0,
+      "commission": 1,
+      "brief": "Mount exactly eight identical clay discs across two equally lit rectangular niches. Use every disc once. Direct the first glance to the center of the right niche.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 2
+    },
+    {
+      "workshop": "glass",
+      "mirror": 0,
+      "commission": 2,
+      "brief": "Place exactly twelve identical paper fans across two panels of the same size. Use every fan once. Direct the first glance to the top center of the left panel.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 2
+    },
+    {
+      "workshop": "glass",
+      "mirror": 0,
+      "commission": 2,
+      "brief": "Place exactly twelve identical paper fans across two panels of the same size. Use every fan once. Direct the first glance to the top center of the left panel.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 5
+    },
+    {
+      "workshop": "glass",
+      "mirror": 1,
+      "commission": 0,
+      "brief": "Place exactly sixteen identical pegs on a board divided into two equal regions. Use every peg once. Direct the first glance to the bottom corner of the left region.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 3
+    },
+    {
+      "workshop": "glass",
+      "mirror": 1,
+      "commission": 0,
+      "brief": "Place exactly sixteen identical pegs on a board divided into two equal regions. Use every peg once. Direct the first glance to the bottom corner of the left region.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 4
+    },
+    {
+      "workshop": "glass",
+      "mirror": 1,
+      "commission": 1,
+      "brief": "Mount exactly eight identical clay discs across two equally lit rectangular niches. Use every disc once. Direct the first glance to the center of the right niche.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 3
+    },
+    {
+      "workshop": "glass",
+      "mirror": 1,
+      "commission": 1,
+      "brief": "Mount exactly eight identical clay discs across two equally lit rectangular niches. Use every disc once. Direct the first glance to the center of the right niche.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 3
+    },
+    {
+      "workshop": "glass",
+      "mirror": 1,
+      "commission": 2,
+      "brief": "Place exactly twelve identical paper fans across two panels of the same size. Use every fan once. Direct the first glance to the top center of the left panel.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "selmem",
+      "packet": 3
+    },
+    {
+      "workshop": "glass",
+      "mirror": 1,
+      "commission": 2,
+      "brief": "Place exactly twelve identical paper fans across two panels of the same size. Use every fan once. Direct the first glance to the top center of the left panel.",
+      "distractors": 0,
+      "budget": 128,
+      "arm": "bm25_snippets",
+      "packet": 4
+    }
+  ]
+}

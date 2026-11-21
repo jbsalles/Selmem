@@ -27,6 +27,8 @@ SelMem goal is not more memory, but path-dependent memory: selection, reconstruc
 
 **Van Gogh follow-up, November 2026.** Six memory artifacts cover two historical windows and three conditions. Their final assembly preserves all saved chapter text. In a targeted two-response Grok 4.3 pilot, the reconstructed condition turns a color technique quoted from Delacroix into a personal painting recollection. The survivor-summary control preserves the attribution. Both outputs choose the same main palette. This selected case exposes an attribution failure reaching generation. Creativity benefit and the full-run 8,000-token delivery budget remain unverified. [Memory audit and pilot](experiments/VANGOGH_RECONSTRUCTED_RESULTS.md).
 
+**Atelier 003, November 2026.** With a 128-token memory cap and zero distractors, SelMem supplied both trial outcomes in **12/12 contexts** versus **10/12** for BM25 excerpts. In 48 Grok 4.3 proposals, one blind rating found **11/12** outcome-concordant switches for SelMem and **9/12** for BM25. When both proposals also had to be feasible, the counts were **4/12** and **7/12**. One commission accounts for the recall difference. [Results and evidence](experiments/atelier-recall/RESULTS.md).
+
 **Manifest:** [WHITEPAPER.md](WHITEPAPER.md)\
 **Layout:** [ARCHITECTURE.md](ARCHITECTURE.md) — encode / judge / night / snapshot.\
 **Benches:** [experiments/RESULTS.md](experiments/RESULTS.md) — observations and limits. Replay from [experiments/README.md](experiments/README.md).\

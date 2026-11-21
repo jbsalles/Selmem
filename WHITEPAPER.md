@@ -375,6 +375,25 @@ Fixed-selection replay 003 and structured-delivery replay 004 each produced 72 p
 
 The [compact evidence](experiments/evidence/README.md) publishes proposals, condition labels, state/selection summaries and original-file hashes. Original raw archives remain separate. Reproduction requires the recorded protocol and a fresh output directory; resuming historical work additionally requires its original build and complete archives. The larger 600- and 6,480-proposal longitudinal plans are retained but have not established a result.
 
+### Atelier 003 held-out recall and transfer
+
+Atelier 003 holds the commission fixed and swaps two observed outcomes
+between mirrored histories. At a 128-token memory cap with zero distractors,
+native SelMem recall supplied both action–outcome links in 12/12 contexts.
+BM25 over short excerpts supplied both in 10/12. Both BM25 misses came from
+one commission whose query ranked an administrative note above the second
+trial report from the same source.
+
+Across 48 Grok 4.3 proposals, one blind assistant rater coded 11/12
+outcome-concordant switches for SelMem and 9/12 for BM25. Requiring both
+proposals in a pair to be feasible brought those counts to 4/12 and 7/12.
+One commission has identical prompts in both arms and different realized
+feasibility scores across its draws. The offline printmaking calibration
+had zero complete contexts in both arms at 128 tokens with 16 or 64
+distractors. The pilot quantifies evidence delivery and design choices.
+Comparative creative quality remains an open question.
+[Results and evidence](experiments/atelier-recall/RESULTS.md).
+
 ### Remaining tests
 
 - Durable behavioral differences beyond the trained actor and situation.

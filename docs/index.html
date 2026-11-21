@@ -31,6 +31,7 @@
 </div>
 <section id="findings" aria-labelledby="findings-title">
 <div class="section-head"><h2 id="findings-title">What has actually moved.</h2><p>State change, answer selection and useful creativity are separate outcomes.</p></div>
+<p>Atelier 003 tracks how recalled trial outcomes affect a design choice. <a href="#atelier-003">See the held-out comparison</a>.</p>
 <div class="grid">
 <article class="card"><span class="label">Observed · preview 003</span><span class="number">192 latent traces</span><h3>Sleep changes the saved memory.</h3><p>After ten nights per history, 113/261 and 79/219 retained traces were latent. The states contained 81 axioms afterward.</p><p class="caveat">Latent does not mean deleted or usefully forgotten. These axioms were withheld from preview generation.</p><a class="evidence-link" href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/creative-preview-003/state-summary.json">Inspect state summaries →</a></article>
 <article class="card"><span class="label">Observed · influence 005</span><span class="number">3 / 24 switches</span><h3>Memory weighting can change selection.</h3><p>The moderate coefficient changed three choices on fixed candidate pools. The pipeline model rated utility lower twice and equal once.</p><p class="caveat">Mean originality on those switches was unchanged. This is a selection intervention, not a creativity win.</p><a class="evidence-link" href="https://github.com/jbsalles/Selmem/blob/main/experiments/evidence/memory-influence-005/changed-selections.json">Inspect the changed choices →</a></article>
@@ -119,6 +120,17 @@
 <p><a href="../experiments/VANGOGH_RECONSTRUCTED_RESULTS.md">Read the memory audit, pilot and limitations</a></p>
 </section>
 
+<section id="atelier-003" aria-labelledby="atelier-003-title">
+<div class="section-head"><h2 id="atelier-003-title">Which designs survive the constraints?</h2><p>Atelier 003 · 48 Grok 4.3 proposals · 128 memory tokens · zero distractors.</p></div>
+<p>Two workshops each supply mirrored histories that swap the observed outcomes of interruption and concentration. A forward switch follows that change in the proposed design.</p>
+<div class="table-wrap"><table><caption class="label" style="text-align:left;margin:20px 0 8px">Held-out recall and transfer · one blind assistant rater</caption><thead><tr><th scope="col">Metric</th><th scope="col">SelMem</th><th scope="col">BM25 excerpts</th></tr></thead><tbody>
+<tr><th scope="row">Both trial outcomes delivered</th><td>12/12 contexts</td><td>10/12 contexts</td></tr>
+<tr><th scope="row">Forward switches declared</th><td>12/12 pairs</td><td>11/12 pairs</td></tr>
+<tr><th scope="row">Forward switches coded blind</th><td>11/12 pairs</td><td>9/12 pairs</td></tr>
+<tr><th scope="row">Forward switches with two feasible designs</th><td>4/12 pairs</td><td>7/12 pairs</td></tr>
+</tbody></table></div>
+<p class="note">One commission accounts for the coverage difference. On the clay-disc commission, identical prompts yielded different feasibility scores across draws. In the separate offline sweep, both methods lost complete coverage at 128 tokens with 16 or 64 distractors. <a href="https://github.com/jbsalles/Selmem/blob/main/experiments/atelier-recall/RESULTS.md">Read the analysis and examine the proposals</a>.</p>
+</section>
 
 <section id="record" aria-labelledby="record-title">
 <div class="section-head"><h2 id="record-title">The run record.</h2><p>Completed collections are evidence that a protocol ran. Effectiveness still requires evaluation.</p></div>
